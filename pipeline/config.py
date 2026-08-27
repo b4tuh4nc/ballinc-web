@@ -96,7 +96,7 @@ DISPLAY_TZ = "Europe/Istanbul"
 # FotMob tarayıcıya yalnızca maç listesi ucunda CORS izni veriyor; golcü
 # bilgisini taşıyan uç kapalı. worker/ altındaki Cloudflare Worker o çağrıyı
 # sunucu tarafında yapıyor. Adres boşken site golcü göstermeye çalışmıyor.
-GOAL_PROXY_URL = ""
+GOAL_PROXY_URL = "https://ballinc-proxy.1903batuhancftc.workers.dev/"
 
 # ─── Tahmin penceresi ────────────────────────────────────────────────────────
 # Bundan uzaktaki fikstürlerde saatler placeholder ve form verisi anlamsız.
