@@ -124,7 +124,9 @@ function matchRow(match, index = 0) {
       <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
       <div class="match-teams">
         <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span><span class="team-score live-h"></span></div>
+        <div class="scorers goals-h"></div>
         <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span><span class="team-score live-a"></span></div>
+        <div class="scorers goals-a"></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
       <div class="chev" aria-hidden="true">›</div>
@@ -623,6 +625,7 @@ async function viewMatch(id) {
         <div class="hero-team">
           ${crest(match.home.id, "lg")}
           <strong>${esc(match.home.name)}</strong><span>Elo ${match.home.elo}</span>
+          <span class="scorers goals-h"></span>
         </div>
         <div class="hero-mid">
           <!-- Canlı skor alanları applyLive() ile doluyor; maç başlamadıysa
@@ -636,6 +639,7 @@ async function viewMatch(id) {
         <div class="hero-team">
           ${crest(match.away.id, "lg")}
           <strong>${esc(match.away.name)}</strong><span>Elo ${match.away.elo}</span>
+          <span class="scorers goals-a"></span>
         </div>
       </div>
 
@@ -1070,9 +1074,80 @@ async function paintNav() {
    olmadan tam çalışıyor. */
 
 const LIVE_URL = "https://www.fotmob.com/api/data/matches?date=";
+const DETAILS_URL = "https://www.fotmob.com/api/data/matchDetails?matchId=";
 const LIVE_INTERVAL = 60_000;
 let liveTimer = null;
 let liveData = new Map();
+
+/* Golcü bilgisi ayrı bir uçta ve FotMob oraya CORS izni VERMİYOR (liste ucuna
+   veriyor, matchDetails'e vermiyor — ikisi de tarayıcıdan test edildi). Yani
+   canlı golcü bilgisi tarayıcıdan doğrudan alınamıyor; küçük bir proxy
+   gerekiyor.
+
+   Kod yerinde bırakıldı ama ilk başarısızlıkta kendini kapatıyor: dakikada
+   bir boşuna istek atmasın. Bir proxy eklenirse DETAILS_URL'i ona çevirmek
+   yeterli, gerisi çalışır. */
+const goalCache = new Map();
+let goalsUnavailable = false;
+
+async function fetchGoals(matchId, scoreKey) {
+  if (goalsUnavailable) throw new Error("golcü kaynağı erişilebilir değil");
+  const cached = goalCache.get(matchId);
+  if (cached && cached.scoreKey === scoreKey) return cached.goals;
+
+  let response;
+  try {
+    response = await fetch(DETAILS_URL + matchId, { cache: "no-store" });
+  } catch (error) {
+    goalsUnavailable = true;   // CORS engeli: bir daha denemenin anlamı yok
+    throw error;
+  }
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+  const events = payload?.content?.matchFacts?.events?.events ?? [];
+
+  const goals = events
+    .filter((e) => e.type === "Goal")
+    .map((e) => ({
+      name: e.nameStr ?? e.player?.name ?? "",
+      minute: e.timeStr ?? e.time,
+      home: !!e.isHome,
+      own: !!e.ownGoal,
+      penalty: /penalty/i.test(e.goalDescription ?? ""),
+    }))
+    .sort((a, b) => a.minute - b.minute);
+
+  goalCache.set(matchId, { scoreKey, goals });
+  return goals;
+}
+
+/** "Aspas 14'" — kendi kalesine ve penaltı işaretleriyle. */
+function goalLabel(goal) {
+  const marks = `${goal.penalty ? " (P)" : ""}${goal.own ? " (KK)" : ""}`;
+  return `${esc(goal.name)} ${goal.minute}'${marks}`;
+}
+
+async function paintGoals() {
+  if (goalsUnavailable) return;
+  for (const node of document.querySelectorAll("[data-live]")) {
+    const state = liveData.get(node.dataset.live);
+    if (!state?.matchId) continue;
+    const total = (state.home ?? 0) + (state.away ?? 0);
+    const slots = node.querySelectorAll(".goals-h, .goals-a");
+    if (!slots.length) continue;
+    if (!total) { slots.forEach((s) => { s.textContent = ""; }); continue; }
+
+    let goals;
+    try {
+      goals = await fetchGoals(state.matchId, `${state.home}-${state.away}`);
+    } catch { continue; }
+
+    const home = goals.filter((g) => g.home).map(goalLabel).join(", ");
+    const away = goals.filter((g) => !g.home).map(goalLabel).join(", ");
+    node.querySelectorAll(".goals-h").forEach((s) => { s.innerHTML = home; });
+    node.querySelectorAll(".goals-a").forEach((s) => { s.innerHTML = away; });
+  }
+}
 
 /** Maçı canlı veriyle eşleştiren anahtar. İsimle değil kimlikle eşleşiyor. */
 function liveKey(match) {
@@ -1092,6 +1167,7 @@ async function fetchLive() {
       const status = match.status ?? {};
       if (!status.started) continue;
       map.set(`${match.home?.id}|${match.away?.id}`, {
+        matchId: match.id,
         home: match.home?.score,
         away: match.away?.score,
         // FotMob dakikayı görünmez yön işaretleriyle gönderiyor.
@@ -1130,6 +1206,7 @@ async function refreshLive() {
   try {
     await fetchLive();
     applyLive();
+    await paintGoals();
   } catch {
     /* canlı veri isteğe bağlı; sessizce geç */
   }

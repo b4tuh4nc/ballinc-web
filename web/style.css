@@ -977,3 +977,18 @@ td.pts { font-weight: 700; }
 }
 .match-hero.is-live .clock { color: var(--accent); }
 .match-hero.is-live { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+
+/* ─── Golcüler ────────────────────────────────────────────────────────── */
+
+.scorers {
+  font-size: .7rem; color: var(--text-muted);
+  line-height: 1.4;
+}
+.scorers:empty { display: none; }
+
+/* Listede golcü satırı takım adının altına, armanın hizasına giriyor. */
+.match-teams .scorers { padding-left: calc(21px + .45rem); margin: -.12rem 0 .1rem; }
+.match-teams .scorers::before { content: "⚽ "; opacity: .75; }
+
+.hero-team .scorers { margin-top: .25rem; text-align: center; }
+.hero-team .scorers::before { content: "⚽ "; opacity: .75; }
