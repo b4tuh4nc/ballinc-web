@@ -1094,3 +1094,8 @@ td.pts { font-weight: 700; }
 @media (prefers-reduced-motion: no-preference) {
   .filter-scrim { animation: fade .2s ease both; }
 }
+
+/* Önceki günden devam eden maçlar bölümü */
+.carry[hidden] { display: none; }
+.carry .match[hidden] { display: none; }
+.carry-head { color: var(--accent); }

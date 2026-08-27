@@ -353,6 +353,18 @@ async function viewHome() {
 
   const list = all.filter((m) => dayKey(m.kickoff) === selected);
 
+  // Gece yarısını aşan maçlar: bir önceki güne ait olup hâlâ devam edenler
+  // seçili günün listesinde yer almıyor ve ekrandan tamamen kayboluyordu.
+  // Adayları gizli olarak basıyoruz; applyLive() yalnızca gerçekten devam
+  // edenleri açıyor. Böylece canlı durumu bilmeden render edebiliyoruz.
+  const previous = shiftKey(selected, -1);
+  const carry = all.filter((m) => dayKey(m.kickoff) === previous && liveKey(m));
+  const carryHTML = carry.length ? `
+    <div class="carry" hidden>
+      <div class="date-head carry-head">Önceki günden devam eden</div>
+      <div class="match-list">${carry.map(matchRow).join("")}</div>
+    </div>` : "";
+
   // Gün içindeki maçlar lig lig ayrılıyor: karışık bir listede hangi maçın
   // hangi ligden olduğunu okumak zordu. Ligler o gün ilk maçı oynayandan
   // başlayarak sıralanıyor.
@@ -377,6 +389,7 @@ async function viewHome() {
     ${head}
     ${idleNote}
     ${dateStripHTML(dates, selected, start, counts)}
+    ${carryHTML}
     <div class="date-head">${esc(dayLabel(list[0].kickoff))} · ${list.length} maç ·
       ${byLeague.size} lig</div>
     ${groups}`;
@@ -1297,6 +1310,7 @@ async function fetchLive() {
 }
 
 function applyLive() {
+  revealCarry();
   for (const node of document.querySelectorAll("[data-live]")) {
     const state = liveData.get(node.dataset.live);
     const clock = node.querySelector(".clock");
@@ -1315,6 +1329,20 @@ function applyLive() {
       clock.textContent = "BİTTİ";
     }
   }
+}
+
+/** Önceki günden devam eden maçlardan yalnızca gerçekten oynananları açar. */
+function revealCarry() {
+  const section = document.querySelector(".carry");
+  if (!section) return;
+  let visible = 0;
+  for (const row of section.querySelectorAll("[data-live]")) {
+    const state = liveData.get(row.dataset.live);
+    const live = !!state?.ongoing;
+    row.hidden = !live;
+    if (live) visible += 1;
+  }
+  section.hidden = visible === 0;
 }
 
 async function refreshLive() {
