@@ -318,6 +318,10 @@ async function viewHome() {
   if (start == null) start = dates.indexOf(selected) - 2;
   start = clamp(start, 0, Math.max(0, dates.length - STRIP_DAYS));
 
+  // Takvimin tek başına yeniden çizilebilmesi için gereken bağlam.
+  // Olmazsa ay değiştirmek tüm sayfayı yeniden çizmeyi gerektirirdi.
+  state.calCtx = { dates, selected, start, counts };
+
   const list = all.filter((m) => dayKey(m.kickoff) === selected);
 
   // Gün içindeki maçlar lig lig ayrılıyor: karışık bir listede hangi maçın
@@ -751,12 +755,38 @@ async function viewModel() {
 
 // ─── Durum ve yönlendirme ──────────────────────────────────────────────────
 
-const state = { day: null, stripStart: null, week: null, calOpen: false, calMonth: null };
+const state = {
+  day: null, stripStart: null, week: null,
+  calOpen: false, calMonth: null, calCtx: null,
+};
+
+/** Yalnızca takvimi yeniden çizer. Ay değiştirmek ya da takvimi açıp kapamak
+    sayfanın geri kalanını ilgilendirmiyor; route() çağırmak listeyi ve bütün
+    giriş animasyonlarını baştan oynatıyor, bu da sayfa yenileniyormuş gibi
+    hissettiriyordu. */
+function renderCalendar() {
+  const wrap = document.querySelector(".cal-wrap");
+  const ctx = state.calCtx;
+  if (!wrap || !ctx) return route();
+
+  const existing = wrap.querySelector(".cal");
+  if (existing) existing.remove();
+  const button = wrap.querySelector("[data-cal]");
+  if (button) button.setAttribute("aria-expanded", String(state.calOpen));
+  if (state.calOpen) {
+    wrap.insertAdjacentHTML("beforeend",
+      calendarHTML(ctx.dates, ctx.selected, ctx.counts));
+  }
+}
 
 async function route() {
   const view = el("view");
   const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-  view.innerHTML = '<div class="loading">Yükleniyor…</div>';
+  // İlk boyamada yükleniyor göster; sonrasında mevcut içerik yerinde kalsın.
+  // Her gezinmede ekranı boşaltmak sayfa yenileniyormuş gibi hissettiriyordu.
+  if (!view.dataset.painted) {
+    view.innerHTML = '<div class="loading">Yükleniyor…</div>';
+  }
 
   try {
     let html;
@@ -770,6 +800,7 @@ async function route() {
       html = await viewHome();
     }
     view.innerHTML = html;
+    view.dataset.painted = "1";
     scrollSelectedIntoView();
   } catch (err) {
     view.innerHTML = `<div class="empty">Veri yüklenemedi.<br>
@@ -798,15 +829,24 @@ el("view").addEventListener("click", (event) => {
     return route();
   }
 
+  // Takvimle ilgili tıklamalar işaretleniyor: renderCalendar() eski takvimi
+  // DOM'dan siliyor, olay document'a kabardığında `event.target` artık kopmuş
+  // oluyor ve closest(".cal-wrap") null dönüyor — dışarı tıklama sanılıp
+  // takvim hemen kapanıyordu.
   const calToggle = event.target.closest("[data-cal]");
   if (calToggle) {
+    event.insideCalendar = true;
     state.calOpen = !state.calOpen;
     if (state.calOpen) state.calMonth = null;
-    return route();
+    return renderCalendar();
   }
 
   const calMonth = event.target.closest("[data-calmonth]");
-  if (calMonth) { state.calMonth = calMonth.dataset.calmonth; return route(); }
+  if (calMonth) {
+    event.insideCalendar = true;
+    state.calMonth = calMonth.dataset.calmonth;
+    return renderCalendar();
+  }
 
   const strip = event.target.closest("[data-strip]");
   if (strip) {
@@ -830,15 +870,16 @@ el("view").addEventListener("click", (event) => {
 // Takvim dışına tıklayınca kapansın; Esc de kapatsın.
 document.addEventListener("click", (event) => {
   if (!state.calOpen) return;
+  if (event.insideCalendar) return;
   if (event.target.closest(".cal-wrap")) return;
   state.calOpen = false;
-  route();
+  renderCalendar();
 });
 
 document.addEventListener("keydown", (event) => {
   if (event.key === "Escape" && state.calOpen) {
     state.calOpen = false;
-    route();
+    renderCalendar();
   }
 });
 
