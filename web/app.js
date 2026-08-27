@@ -368,8 +368,19 @@ async function viewHome() {
   // Gün içindeki maçlar lig lig ayrılıyor: karışık bir listede hangi maçın
   // hangi ligden olduğunu okumak zordu. Ligler o gün ilk maçı oynayandan
   // başlayarak sıralanıyor.
+  // Favori takımların maçları günün en üstüne sabitleniyor ve lig
+  // gruplarından çıkarılıyor — yoksa aynı maç iki kez görünürdü.
+  const favs = favourites();
+  const isFav = (m) => favs.has(m.home.id) || favs.has(m.away.id);
+  const pinned = list.filter(isFav);
+  const rest = list.filter((m) => !isFav(m));
+
+  const pinnedHTML = pinned.length ? `
+    <div class="date-head pinned-head">★ Favori takımların</div>
+    <div class="match-list">${pinned.map(matchRow).join("")}</div>` : "";
+
   const byLeague = new Map();
-  for (const m of list) {
+  for (const m of rest) {
     if (!byLeague.has(m.league)) byLeague.set(m.league, []);
     byLeague.get(m.league).push(m);
   }
@@ -390,8 +401,9 @@ async function viewHome() {
     ${idleNote}
     ${dateStripHTML(dates, selected, start, counts)}
     ${carryHTML}
+    ${pinnedHTML}
     <div class="date-head">${esc(dayLabel(list[0].kickoff))} · ${list.length} maç ·
-      ${byLeague.size} lig</div>
+      ${new Set(list.map((m) => m.league)).size} lig</div>
     ${groups}`;
 }
 
@@ -1400,6 +1412,110 @@ function applyTheme(theme) {
     applyTheme(next);
   });
 })();
+
+// ─── Takım arama ve favoriler ──────────────────────────────────────────────
+
+/* Favoriler localStorage'da: sunucu yok, kullanıcı hesabı yok. Favori takımın
+   maçı, maç günü listenin en üstüne sabitleniyor. */
+
+function favourites() {
+  try { return new Set(JSON.parse(localStorage.getItem("ballinc-fav") || "[]")); }
+  catch { return new Set(); }
+}
+
+function setFavourites(set) {
+  try { localStorage.setItem("ballinc-fav", JSON.stringify([...set])); }
+  catch { /* özel pencere */ }
+}
+
+function toggleFavourite(id) {
+  const set = favourites();
+  if (set.has(id)) set.delete(id); else set.add(id);
+  setFavourites(set);
+  return set;
+}
+
+/** Türkçe arama: aksan ve büyük/küçük harf farkı aranan sonucu kaçırmasın
+    ("besiktas" da "Beşiktaş"ı bulsun). */
+function foldTr(text) {
+  return String(text)
+    .toLocaleLowerCase("tr")
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/ı/g, "i").replace(/ş/g, "s").replace(/ğ/g, "g")
+    .replace(/ü/g, "u").replace(/ö/g, "o").replace(/ç/g, "c");
+}
+
+let teamIndex = null;
+
+async function loadTeams() {
+  if (teamIndex) return teamIndex;
+  const data = await getJSON("teams.json");
+  teamIndex = data.teams ?? [];
+  return teamIndex;
+}
+
+async function renderSearch(query = "") {
+  const teams = await loadTeams();
+  const meta = await getJSON("meta.json");
+  const names = Object.fromEntries(meta.leagues.map((l) => [l.code, l.name]));
+  const favs = favourites();
+  const needle = foldTr(query.trim());
+
+  // Sorgu yokken favoriler gösteriliyor: arama kutusu aynı zamanda favori
+  // yönetim ekranı oluyor, ayrı bir sayfaya gerek kalmıyor.
+  const list = needle
+    ? teams.filter((t) =>
+        foldTr(t.name).includes(needle) || foldTr(t.alt ?? "").includes(needle))
+    : teams.filter((t) => favs.has(t.id));
+
+  const box = el("search-results");
+  if (!list.length) {
+    box.innerHTML = `<p class="search-empty">${needle
+      ? "Takım bulunamadı."
+      : "Henüz favori takımın yok. Aramaya başla ve yıldıza dokun."}</p>`;
+    return;
+  }
+
+  box.innerHTML = list.slice(0, 40).map((t) => `
+    <div class="search-row">
+      <a class="search-team" href="#/lig/${encodeURIComponent(t.league)}">
+        ${crest(t.id)}<span>${esc(t.name)}</span>
+        <span class="search-league">${esc(names[t.league] ?? t.league)}</span>
+      </a>
+      <button class="star" type="button" data-fav="${esc(t.id)}"
+              aria-pressed="${favs.has(t.id)}"
+              aria-label="${favs.has(t.id) ? "Favorilerden çıkar" : "Favorilere ekle"}">★</button>
+    </div>`).join("");
+}
+
+function setSearch(open) {
+  el("search").hidden = !open;
+  el("search-scrim").hidden = !open;
+  el("search-btn").setAttribute("aria-expanded", String(open));
+  document.body.classList.toggle("search-open", open);
+  if (open) {
+    renderSearch(el("search-input").value);
+    el("search-input").focus();
+  }
+}
+
+el("search-btn").addEventListener("click", () => setSearch(el("search").hidden));
+el("search-close").addEventListener("click", () => setSearch(false));
+el("search-scrim").addEventListener("click", () => setSearch(false));
+el("search-input").addEventListener("input", (e) => renderSearch(e.target.value));
+el("search").addEventListener("click", (event) => {
+  const star = event.target.closest("[data-fav]");
+  if (star) {
+    toggleFavourite(star.dataset.fav);
+    renderSearch(el("search-input").value);
+    route();          // favori listesi değişti, sabitlenen maçlar yenilensin
+    return;
+  }
+  if (event.target.closest(".search-team")) setSearch(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !el("search").hidden) setSearch(false);
+});
 
 // ─── Mobil çekmece ─────────────────────────────────────────────────────────
 

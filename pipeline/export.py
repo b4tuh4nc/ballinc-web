@@ -165,6 +165,38 @@ def attach_fotmob_ids(matches: list[dict]) -> int:
     return hits
 
 
+def build_teams(df) -> list[dict]:
+    """Arama ve favori için bütün takımların dizini.
+
+    Güncel sezonun bütün maçlarından türetiliyor (oynanmış veya değil), yani
+    ligden düşmüş takımlar listeye girmiyor. Kimlik kanonik takım kimliği;
+    logo dosyaları da aynı adla duruyor.
+    """
+    season = df[df["season"] == CURRENT_SEASON]
+    # FotMob'un yerel yazımı arama takma adı olarak ekleniyor: bizim kanonik
+    # adımız Understat'tan geliyor ("Bayern Munich") ama kullanıcı yerel
+    # yazımı arayabilir ("Bayern München").
+    aliases = {
+        us_id: entry["fotmob_name"]
+        for us_id, entry in crosswalk.load().items()
+    }
+
+    teams: dict[str, dict] = {}
+    for row in season.itertuples(index=False):
+        for team_id, name, league in (
+            (row.home_id, row.home_team, row.league),
+            (row.away_id, row.away_team, row.league),
+        ):
+            if team_id in teams:
+                continue
+            entry = {"id": team_id, "name": name, "league": league}
+            alias = aliases.get(team_id)
+            if alias and alias != name:
+                entry["alt"] = alias
+            teams[team_id] = entry
+    return sorted(teams.values(), key=lambda t: t["name"])
+
+
 def _write(path, payload) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -228,6 +260,10 @@ def main() -> int:
         "window_days": predict_mod.PREDICT_WINDOW_DAYS,
         "goal_proxy": GOAL_PROXY_URL,
     }
+    teams = build_teams(df)
+    _write(WEB_DATA_DIR / "teams.json", {"teams": teams})
+    print(f"  {'takım dizini':12s} {len(teams):3d} takım")
+
     _write(WEB_DATA_DIR / "meta.json", meta)
     print(f"\n{len(predictions)} tahmin → {WEB_DATA_DIR}")
     return 0

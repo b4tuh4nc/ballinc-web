@@ -30,6 +30,12 @@
       <span class="brand-text">Ballinc</span>
     </a>
     <nav class="leagues" id="league-nav" aria-label="Ligler"></nav>
+    <button id="search-btn" class="icon-btn" type="button"
+            aria-label="Takım ara" aria-expanded="false">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor"
+           stroke-width="2" stroke-linecap="round" aria-hidden="true">
+        <circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    </button>
     <button id="theme-toggle" class="icon-btn" type="button" aria-label="Temayı değiştir">
       <span aria-hidden="true">◐</span>
     </button>
@@ -37,6 +43,15 @@
 </header>
 
 <div id="scrim" class="scrim" hidden></div>
+<div id="search-scrim" class="search-scrim" hidden></div>
+<div id="search" class="search-modal" hidden role="dialog" aria-label="Takım ara">
+  <div class="search-head">
+    <input id="search-input" type="search" placeholder="Takım ara…"
+           autocomplete="off" spellcheck="false" aria-label="Takım adı">
+    <button id="search-close" class="icon-btn" type="button" aria-label="Kapat">✕</button>
+  </div>
+  <div id="search-results" class="search-results"></div>
+</div>
 <aside id="drawer" class="drawer" hidden aria-label="Ligler">
   <div class="drawer-head">
     <span>Ligler</span>
