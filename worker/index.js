@@ -112,9 +112,11 @@ export default {
     }
 
     // Sadece gereken alanlar geçiriliyor: 145 KB'lık yanıtın tamamını
-    // taşımanın anlamı yok, gol olaylarını çıkarıp küçük bir gövde dönüyoruz.
+    // taşımanın anlamı yok, gol ve kırmızı kartları çıkarıp küçük bir gövde
+    // dönüyoruz.
     const payload = await upstream.json();
     const events = payload?.content?.matchFacts?.events?.events ?? [];
+
     const goals = events
       .filter((e) => e.type === "Goal")
       .map((e) => ({
@@ -126,7 +128,17 @@ export default {
         assist: e.assistStr ?? null,
       }));
 
-    const body = JSON.stringify({ matchId, goals });
+    // "YellowRed" ikinci sarıdan gelen kırmızı; o da kırmızı sayılıyor.
+    const redCards = events
+      .filter((e) => e.type === "Card" && /red/i.test(e.card ?? ""))
+      .map((e) => ({
+        name: e.nameStr ?? e.player?.name ?? "",
+        minute: e.timeStr ?? e.time,
+        home: !!e.isHome,
+        second: /yellowred/i.test(e.card ?? ""),
+      }));
+
+    const body = JSON.stringify({ matchId, goals, redCards });
     memorySet(matchId, body);
 
     const response = new Response(body, {

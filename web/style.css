@@ -1040,3 +1040,19 @@ td.pts { font-weight: 700; }
   .goal-flash { animation: none; opacity: 1; }
   .goal-flash span, .goal-flash i { animation: none; }
 }
+
+/* ─── Kırmızı kart ────────────────────────────────────────────────────── */
+
+.redcard {
+  display: inline-grid; place-items: center;
+  width: 11px; height: 15px;
+  margin-left: .35rem;
+  border-radius: 2px;
+  background: #d92d20;
+  color: #fff; font-size: .58rem; font-weight: 700;
+  line-height: 1; vertical-align: -2px;
+  flex-shrink: 0;
+}
+.redcard:empty { width: 10px; }
+.cards-h:empty, .cards-a:empty { display: none; }
+.hero-team .redcard { vertical-align: 1px; }

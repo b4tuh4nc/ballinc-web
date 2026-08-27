@@ -123,8 +123,8 @@ function matchRow(match, index = 0) {
        href="#/mac/${encodeURIComponent(match.id)}">
       <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
       <div class="match-teams">
-        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span><span class="team-score live-h"></span></div>
-        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span><span class="team-score live-a"></span></div>
+        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span><span class="cards-h"></span><span class="team-score live-h"></span></div>
+        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span><span class="cards-a"></span><span class="team-score live-a"></span></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
       <div class="chev" aria-hidden="true">›</div>
@@ -622,7 +622,8 @@ async function viewMatch(id) {
       <div class="hero-names">
         <div class="hero-team">
           ${crest(match.home.id, "lg")}
-          <strong>${esc(match.home.name)}</strong><span>Elo ${match.home.elo}</span>
+          <strong>${esc(match.home.name)}<span class="cards-h"></span></strong>
+          <span>Elo ${match.home.elo}</span>
           <span class="scorers goals-h"></span>
         </div>
         <div class="hero-mid">
@@ -636,7 +637,8 @@ async function viewMatch(id) {
         </div>
         <div class="hero-team">
           ${crest(match.away.id, "lg")}
-          <strong>${esc(match.away.name)}</strong><span>Elo ${match.away.elo}</span>
+          <strong>${esc(match.away.name)}<span class="cards-a"></span></strong>
+          <span>Elo ${match.away.elo}</span>
           <span class="scorers goals-a"></span>
         </div>
       </div>
@@ -1134,7 +1136,7 @@ let goalsUnavailable = false;
 async function fetchGoals(matchId, scoreKey) {
   if (goalsUnavailable || !goalProxy) throw new Error("golcü kaynağı yok");
   const cached = goalCache.get(matchId);
-  if (cached && cached.scoreKey === scoreKey) return cached.goals;
+  if (cached && cached.scoreKey === scoreKey) return cached.events;
 
   let response;
   try {
@@ -1147,11 +1149,20 @@ async function fetchGoals(matchId, scoreKey) {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
 
   const payload = await response.json();
-  const goals = (payload.goals ?? []).slice()
-    .sort((a, b) => a.minute - b.minute);
+  const goals = (payload.goals ?? []).slice().sort((a, b) => a.minute - b.minute);
+  const redCards = (payload.redCards ?? []).slice().sort((a, b) => a.minute - b.minute);
 
-  goalCache.set(matchId, { scoreKey, goals });
-  return goals;
+  const events = { goals, redCards };
+  goalCache.set(matchId, { scoreKey, events });
+  return events;
+}
+
+/** Kırmızı kart rozeti. Birden fazlaysa kartın içinde sayı yazıyor. */
+function redCardBadge(cards) {
+  if (!cards.length) return "";
+  const title = cards.map((c) => `${c.name} ${c.minute}'`).join(", ");
+  const count = cards.length > 1 ? cards.length : "";
+  return `<span class="redcard" title="${esc(title)}">${count}</span>`;
 }
 
 /** Canlı dakika. Uzatmada "46" yerine "45+1" gösteriliyor: FotMob ham
@@ -1182,20 +1193,24 @@ async function paintGoals() {
   for (const node of document.querySelectorAll("[data-live]")) {
     const state = liveData.get(node.dataset.live);
     if (!state?.matchId) continue;
-    const total = (state.home ?? 0) + (state.away ?? 0);
-    const slots = node.querySelectorAll(".goals-h, .goals-a");
-    if (!slots.length) continue;
-    if (!total) { slots.forEach((s) => { s.textContent = ""; }); continue; }
+    if (!node.querySelector(".goals-h, .cards-h")) continue;
 
-    let goals;
+    let events;
     try {
-      goals = await fetchGoals(state.matchId, `${state.home}-${state.away}`);
+      // Skor anahtarına dakika da eklendi: kırmızı kart skoru değiştirmiyor,
+      // yalnızca skora bakılsaydı kart maç boyunca hiç görünmezdi.
+      events = await fetchGoals(state.matchId,
+        `${state.home}-${state.away}@${state.minute}`);
     } catch { continue; }
 
-    const home = goals.filter((g) => g.home).map(goalLabel).join(", ");
-    const away = goals.filter((g) => !g.home).map(goalLabel).join(", ");
-    node.querySelectorAll(".goals-h").forEach((s) => { s.innerHTML = home; });
-    node.querySelectorAll(".goals-a").forEach((s) => { s.innerHTML = away; });
+    const { goals, redCards } = events;
+    const put = (selector, html) =>
+      node.querySelectorAll(selector).forEach((s) => { s.innerHTML = html; });
+
+    put(".goals-h", goals.filter((g) => g.home).map(goalLabel).join(", "));
+    put(".goals-a", goals.filter((g) => !g.home).map(goalLabel).join(", "));
+    put(".cards-h", redCardBadge(redCards.filter((c) => c.home)));
+    put(".cards-a", redCardBadge(redCards.filter((c) => !c.home)));
   }
 }
 
