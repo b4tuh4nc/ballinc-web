@@ -189,10 +189,63 @@ function dateStripHTML(dates, selected, start, counts) {
       <div class="strip-track">${buttons}</div>
       <button class="strip-nav" type="button" data-strip="1" ${canNext ? "" : "disabled"}
               aria-label="Sonraki günler">›</button>
-      <span class="strip-nav strip-date" title="Tarih seç">📅
-        <input type="date" id="jump-date" value="${selected}"
-               min="${dates[0]}" max="${dates[dates.length - 1]}" aria-label="Tarihe git">
+      <span class="cal-wrap">
+        <button class="strip-nav" type="button" data-cal="toggle"
+                aria-expanded="${state.calOpen}" aria-label="Takvimden tarih seç">📅</button>
+        ${state.calOpen ? calendarHTML(dates, selected, counts) : ""}
       </span>
+    </div>`;
+}
+
+const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+const CAL_DOW = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"];
+
+/** Ay takvimi. Maçı olan günler noktalı ve tıklanabilir, diğerleri devre dışı. */
+function calendarHTML(dates, selected, counts) {
+  const first = dates[0], last = dates[dates.length - 1];
+  const month = state.calMonth ?? selected.slice(0, 7);
+  const [year, mon] = month.split("-").map(Number);
+
+  const firstOfMonth = new Date(Date.UTC(year, mon - 1, 1));
+  const daysInMonth = new Date(Date.UTC(year, mon, 0)).getUTCDate();
+  // Pazartesi haftanın ilk günü: getUTCDay 0=Pazar, bunu 6'ya kaydırıyoruz.
+  const lead = (firstOfMonth.getUTCDay() + 6) % 7;
+
+  const cells = Array.from({ length: lead }, () => '<span class="cal-empty"></span>');
+  for (let day = 1; day <= daysInMonth; day += 1) {
+    const key = `${year}-${String(mon).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const n = counts.get(key) ?? 0;
+    const classes = ["cal-day"];
+    if (key === todayKey()) classes.push("today");
+    cells.push(`
+      <button class="${classes.join(" ")}" type="button" data-day="${key}"
+              aria-pressed="${key === selected}" ${n ? "" : "disabled"}>
+        ${day}${n ? '<span class="cal-dot"></span>' : ""}
+      </button>`);
+  }
+
+  const prevMonth = mon === 1 ? `${year - 1}-12` : `${year}-${String(mon - 1).padStart(2, "0")}`;
+  const nextMonth = mon === 12 ? `${year + 1}-01` : `${year}-${String(mon + 1).padStart(2, "0")}`;
+  const canPrev = prevMonth >= first.slice(0, 7);
+  const canNext = nextMonth <= last.slice(0, 7);
+  const todayUsable = counts.has(todayKey());
+
+  return `
+    <div class="cal" role="dialog" aria-label="Tarih seç">
+      <div class="cal-head">
+        <button class="cal-nav" type="button" data-calmonth="${prevMonth}"
+                ${canPrev ? "" : "disabled"} aria-label="Önceki ay">‹</button>
+        <strong>${MONTHS[mon - 1]} ${year}</strong>
+        <button class="cal-nav" type="button" data-calmonth="${nextMonth}"
+                ${canNext ? "" : "disabled"} aria-label="Sonraki ay">›</button>
+      </div>
+      <div class="cal-grid cal-dow">${CAL_DOW.map((d) => `<span>${d}</span>`).join("")}</div>
+      <div class="cal-grid">${cells.join("")}</div>
+      <div class="cal-foot">
+        <button class="cal-today-btn" type="button" data-day="${todayKey()}"
+                ${todayUsable ? "" : "disabled"}>Bugün</button>
+      </div>
     </div>`;
 }
 
@@ -571,7 +624,7 @@ async function viewModel() {
 
 // ─── Durum ve yönlendirme ──────────────────────────────────────────────────
 
-const state = { day: null, stripStart: null, week: null };
+const state = { day: null, stripStart: null, week: null, calOpen: false, calMonth: null };
 
 async function route() {
   const view = el("view");
@@ -605,8 +658,26 @@ function scrollSelectedIntoView() {
 }
 
 el("view").addEventListener("click", (event) => {
-  const day = event.target.closest(".day-btn");
-  if (day) { state.day = day.dataset.day; return route(); }
+  const day = event.target.closest("[data-day]");
+  if (day) {
+    state.day = day.dataset.day;
+    // Şeritten seçildiyse şerit yerinde kalsın (tıklanan gün zaten görünür);
+    // takvimden seçildiyse şerit o günün etrafına yeniden konumlansın.
+    if (!day.classList.contains("day-btn")) state.stripStart = null;
+    state.calOpen = false;
+    state.calMonth = null;
+    return route();
+  }
+
+  const calToggle = event.target.closest("[data-cal]");
+  if (calToggle) {
+    state.calOpen = !state.calOpen;
+    if (state.calOpen) state.calMonth = null;
+    return route();
+  }
+
+  const calMonth = event.target.closest("[data-calmonth]");
+  if (calMonth) { state.calMonth = calMonth.dataset.calmonth; return route(); }
 
   const strip = event.target.closest("[data-strip]");
   if (strip) {
@@ -627,11 +698,19 @@ el("view").addEventListener("click", (event) => {
   }
 });
 
-el("view").addEventListener("change", (event) => {
-  if (event.target.id !== "jump-date") return;
-  state.day = event.target.value;
-  state.stripStart = null;   // şerit seçilen günün etrafına yeniden konumlansın
+// Takvim dışına tıklayınca kapansın; Esc de kapatsın.
+document.addEventListener("click", (event) => {
+  if (!state.calOpen) return;
+  if (event.target.closest(".cal-wrap")) return;
+  state.calOpen = false;
   route();
+});
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && state.calOpen) {
+    state.calOpen = false;
+    route();
+  }
 });
 
 async function paintNav() {
@@ -671,6 +750,7 @@ function applyTheme(theme) {
 
 window.addEventListener("hashchange", () => {
   state.day = null; state.stripStart = null; state.week = null;
+  state.calOpen = false; state.calMonth = null;
   route();
 });
 route();

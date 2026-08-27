@@ -106,7 +106,9 @@ img { max-width: 100%; }
   font-weight: 750; font-size: 1.08rem; letter-spacing: -.02em;
   color: var(--text); text-decoration: none; flex-shrink: 0;
 }
-.brand-mark { font-size: 1.15rem; }
+/* Logo hem açık hem koyu zeminde çalışan tek bir yeşil işaret; ayrı
+   varyant gerekmiyor. */
+.brand-mark { width: 26px; height: 26px; object-fit: contain; flex-shrink: 0; }
 
 .leagues { display: flex; gap: .2rem; overflow-x: auto; flex: 1; scrollbar-width: none; }
 .leagues::-webkit-scrollbar { display: none; }
@@ -522,3 +524,73 @@ td.pts { font-weight: 700; }
   .compare-row { grid-template-columns: 2.2rem 1fr auto 1fr 2.2rem; gap: .35rem; font-size: .78rem; }
   .day-btn { min-width: 3.5rem; }
 }
+
+/* ─── Takvim ──────────────────────────────────────────────────────────── */
+/* Tarayıcının yerleşik <input type="date"> penceresi CSS ile biçimlendirilemiyor
+   ve siteyle uyumsuz duruyordu; bu yüzden takvim baştan yazıldı. */
+
+.cal-wrap { position: relative; flex-shrink: 0; }
+
+.cal {
+  position: absolute; top: calc(100% + .45rem); right: 0; z-index: 30;
+  width: 17.5rem; padding: .7rem;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18), var(--shadow);
+}
+
+.cal-head {
+  display: grid; grid-template-columns: 2rem 1fr 2rem;
+  align-items: center; gap: .3rem; margin-bottom: .5rem;
+}
+.cal-head strong { text-align: center; font-size: .88rem; }
+.cal-nav {
+  width: 2rem; height: 2rem;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: none; color: var(--text-muted);
+  cursor: pointer; font-size: .95rem;
+}
+.cal-nav:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.cal-nav:disabled { opacity: .3; cursor: default; }
+
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: .15rem; }
+.cal-dow {
+  margin-bottom: .2rem;
+  font-size: .68rem; color: var(--text-muted); text-align: center;
+  letter-spacing: .03em;
+}
+
+.cal-day {
+  aspect-ratio: 1; display: grid; place-items: center;
+  position: relative;
+  border: 1px solid transparent; border-radius: 8px;
+  background: none; color: var(--text);
+  font: inherit; font-size: .8rem; font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.cal-day:hover:not(:disabled) { background: var(--surface-2); }
+.cal-day:disabled { color: var(--text-muted); opacity: .35; cursor: default; }
+.cal-day.today { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.cal-day[aria-pressed="true"] {
+  background: var(--accent); color: #fff; font-weight: 680; border-color: var(--accent);
+}
+/* Maçı olan günler noktalı: kullanıcı hangi güne tıklayabileceğini görsün. */
+.cal-day .cal-dot {
+  position: absolute; bottom: .22rem;
+  width: 4px; height: 4px; border-radius: 50%; background: var(--accent);
+}
+.cal-day[aria-pressed="true"] .cal-dot { background: #fff; }
+.cal-empty { aspect-ratio: 1; }
+
+.cal-foot {
+  display: flex; justify-content: flex-end;
+  margin-top: .5rem; padding-top: .5rem;
+  border-top: 1px solid var(--border);
+}
+.cal-today-btn {
+  border: 0; background: none; color: var(--accent);
+  font: inherit; font-size: .8rem; font-weight: 620; cursor: pointer;
+  padding: .2rem .4rem; border-radius: 6px;
+}
+.cal-today-btn:hover:not(:disabled) { background: var(--accent-soft); }
+.cal-today-btn:disabled { color: var(--text-muted); cursor: default; }
