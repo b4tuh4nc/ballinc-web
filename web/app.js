@@ -729,6 +729,67 @@ async function viewMatch(id) {
     </section>`;
 }
 
+/** Tek takımın sayfası: yaklaşan maçları, sonuçları ve puan durumundaki yeri.
+    Ek veri gerekmiyor — lig JSON'u zaten hepsini taşıyor, takıma göre
+    süzüyoruz. */
+async function viewTeam(id) {
+  const teams = await loadTeams();
+  const team = teams.find((t) => t.id === id);
+  if (!team) {
+    return `<a class="back" href="#/"><span class="arrow">←</span>Maçlar</a>
+      <div class="empty">Takım bulunamadı.</div>`;
+  }
+
+  const data = await getJSON(`${team.league}.json`);
+  const meta = await getJSON("meta.json");
+  const leagueName = meta.leagues.find((l) => l.code === team.league)?.name ?? team.league;
+  const involves = (m) => m.home.id === id || m.away.id === id;
+
+  const upcoming = data.matches.filter(involves);
+  const played = data.results.filter(involves);
+  const row = data.standings.find((r) => r.team_id === id);
+  const fav = favourites().has(id);
+
+  const rank = row
+    ? `${row.rank}. sıra · ${row.points} puan · ${row.played} maç`
+    : "bu sezon henüz maç oynamadı";
+
+  const upcomingHTML = upcoming.length
+    ? groupByDay(upcoming).map(([, day]) => `
+        <div class="date-head">${esc(dayLabel(day[0].kickoff))}</div>
+        <div class="match-list">${day.map(matchRow).join("")}</div>`).join("")
+    : `<div class="empty">Tahmin penceresinde maçı yok.</div>`;
+
+  // Sonuçlar gün gün: sezon ilerledikçe yalnızca saat göstermek hangi maçın
+  // ne zaman oynandığını belirsiz bırakıyor.
+  const playedHTML = played.length
+    ? groupByDay(played).reverse().map(([, day]) => `
+        <div class="date-head">${esc(dayLabel(day[0].kickoff))}</div>
+        <div class="match-list">${day.map(resultRow).join("")}</div>`).join("")
+    : "";
+
+  return `
+    <a class="back" href="${lastList.href}"><span class="arrow">←</span>${esc(lastList.label)}</a>
+
+    <div class="team-hero">
+      ${crest(id, "lg")}
+      <div class="team-hero-text">
+        <h1>${esc(team.name)}</h1>
+        <p class="sub">
+          <a href="#/lig/${encodeURIComponent(team.league)}">${esc(leagueName)}</a> · ${esc(rank)}
+        </p>
+        ${row ? `<div class="pills">${row.form.map((f) =>
+          `<span class="pill ${f}">${f}</span>`).join("")}</div>` : ""}
+      </div>
+      <button class="star team-star" type="button" data-fav="${esc(id)}"
+              aria-pressed="${fav}"
+              aria-label="${fav ? "Favorilerden çıkar" : "Favorilere ekle"}">★</button>
+    </div>
+
+    ${upcomingHTML}
+    ${playedHTML}`;
+}
+
 async function liveRecordHTML() {
   let data;
   try { data = await getJSON("accuracy.json"); } catch { return ""; }
@@ -934,6 +995,8 @@ async function route() {
       html = await viewLeague(decodeURIComponent(parts[1]), parts[2]);
     } else if (parts[0] === "mac" && parts[1]) {
       html = await viewMatch(decodeURIComponent(parts[1]));
+    } else if (parts[0] === "takim" && parts[1]) {
+      html = await viewTeam(decodeURIComponent(parts[1]));
     } else if (parts[0] === "model") {
       html = await viewModel();
     } else {
@@ -968,6 +1031,12 @@ function scrollSelectedIntoView() {
 }
 
 el("view").addEventListener("click", (event) => {
+  const star = event.target.closest("[data-fav]");
+  if (star) {
+    toggleFavourite(star.dataset.fav);
+    return route();
+  }
+
   const day = event.target.closest("[data-day]");
   if (day) {
     state.day = day.dataset.day;
@@ -1478,7 +1547,7 @@ async function renderSearch(query = "") {
 
   box.innerHTML = list.slice(0, 40).map((t) => `
     <div class="search-row">
-      <a class="search-team" href="#/lig/${encodeURIComponent(t.league)}">
+      <a class="search-team" href="#/takim/${encodeURIComponent(t.id)}">
         ${crest(t.id)}<span>${esc(t.name)}</span>
         <span class="search-league">${esc(names[t.league] ?? t.league)}</span>
       </a>

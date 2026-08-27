@@ -1164,3 +1164,22 @@ body.search-open { overflow: hidden; }
 @media (max-width: 620px) {
   .search-modal { top: 3.8rem; width: calc(100vw - 1.5rem); max-height: calc(100vh - 5.5rem); }
 }
+
+/* ─── Takım sayfası ───────────────────────────────────────────────────── */
+
+.team-hero {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.1rem;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.team-hero-text { flex: 1; min-width: 0; }
+.team-hero h1 { margin: 0; font-size: 1.3rem; letter-spacing: -.02em; }
+.team-hero .sub { margin: .2rem 0 .5rem; font-size: .85rem; color: var(--text-muted); }
+.team-star { width: 40px; height: 40px; font-size: 1.3rem; }
+
+@media (max-width: 620px) {
+  .team-hero { gap: .7rem; padding: .9rem; }
+  .team-hero h1 { font-size: 1.1rem; }
+}
