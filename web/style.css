@@ -751,3 +751,104 @@ td.pts { font-weight: 700; }
   .cal-slide { animation: calSlide .2s cubic-bezier(.22, .68, .36, 1) both; }
   .cal-head strong { transition: none; }
 }
+
+/* ─── Mobil ───────────────────────────────────────────────────────────── */
+/* Masaüstü düzenine dokunulmuyor: hamburger ve çekmece yalnızca dar
+   ekranlarda görünür, geniş ekranda gizli kalır. */
+
+.menu-btn { display: none; }
+.bars { display: grid; gap: 3px; width: 15px; }
+.bars i { display: block; height: 2px; border-radius: 2px; background: currentColor; }
+
+.scrim {
+  position: fixed; inset: 0; z-index: 40;
+  background: rgba(0, 0, 0, .5);
+  backdrop-filter: blur(2px);
+}
+
+.drawer {
+  position: fixed; inset: 0 auto 0 0; z-index: 50;
+  width: min(19rem, 84vw);
+  padding: .9rem;
+  background: var(--surface);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: .5rem;
+}
+.drawer[hidden], .scrim[hidden] { display: none; }
+
+.drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding-bottom: .6rem; margin-bottom: .2rem;
+  border-bottom: 1px solid var(--border);
+  font-weight: 680;
+}
+
+.drawer-item {
+  display: flex; align-items: center; gap: .65rem;
+  padding: .7rem .6rem;
+  border-radius: 10px;
+  color: var(--text); text-decoration: none;
+}
+.drawer-item img { width: 22px; height: 22px; object-fit: contain; }
+.drawer-item .d-count { margin-left: auto; font-size: .75rem; color: var(--text-muted); }
+.drawer-item:hover { background: var(--surface-2); }
+.drawer-item[aria-current="page"] { background: var(--accent-soft); color: var(--accent); }
+
+@media (max-width: 620px) {
+  .menu-btn { display: grid; place-items: center; }
+  .leagues { display: none; }              /* yerini hamburger alıyor */
+  .brand { margin-right: auto; }
+
+  /* Oklar dar ekranda yer harcıyordu; şerit parmakla kaydırılıyor ve
+     sonraki gün yarım görünerek kaydırılabilir olduğunu belli ediyor. */
+  .datestrip { padding: .45rem; gap: .35rem; }
+  .datestrip .strip-nav[data-strip] { display: none; }
+  .strip-track { scroll-snap-type: x mandatory; }
+  .day-btn { min-width: 4.2rem; scroll-snap-align: center; }
+
+  /* Chevron alt satıra düşüp boşluk yaratıyordu; satırın tamamı zaten
+     dokunulabilir olduğu için gereksiz. */
+  .match { grid-template-columns: 2.6rem minmax(0, 1fr); padding: .6rem .7rem; }
+  .match .chev { display: none; }
+  .match-markets { grid-column: 1 / -1; }
+  .odds-cell { min-width: 0; }
+
+  .league-head { padding: .5rem .6rem; }
+  .page-head { padding: 1rem 0 .5rem; }
+  .page-head h1 { font-size: 1.24rem; }
+  .card { padding: .8rem; }
+  .cal { width: min(17.5rem, calc(100vw - 2rem)); }
+}
+
+@media (max-width: 620px) {
+  /* Sağdaki gün yarım kalıp takvim düğmesinin arkasında ince bir dilim
+     olarak görünüyordu; solma ile kesim kasıtlı hale getirildi. */
+  .strip-track {
+    -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 1.6rem), transparent);
+            mask-image: linear-gradient(90deg, #000 calc(100% - 1.6rem), transparent);
+  }
+  .day-btn { min-width: 3.9rem; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes drawerIn {
+    from { transform: translateX(-100%); }
+    to   { transform: none; }
+  }
+  .drawer { animation: drawerIn .22s cubic-bezier(.2, .8, .3, 1) both; }
+  .scrim { animation: fade .22s ease both; }
+  .drawer-item { transition: background .15s ease, color .15s ease; }
+}
+
+@media (max-width: 620px) {
+  /* 5 sütunlu piyasa tablosu 390 px'e sığmıyordu, EV sütunu kesiliyordu. */
+  .market-table { font-size: .76rem; }
+  .market-table th, .market-table td { padding: .42rem .3rem; }
+  .market-table th { font-size: .62rem; letter-spacing: 0; }
+
+  .hero-team strong { font-size: .9rem; }
+  .hero-mid strong { font-size: 1.1rem; }
+  .prob-legend { font-size: .64rem; gap: .3rem; }
+  .prob-seg { font-size: .76rem; }
+}

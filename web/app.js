@@ -916,6 +916,14 @@ async function paintNav() {
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span></a>`;
   }).join("");
 
+  el("drawer-nav").innerHTML = meta.leagues.map((l) => {
+    const current = l.code === active ? ' aria-current="page"' : "";
+    const count = l.upcoming ? `${l.upcoming} maç` : "fikstür yok";
+    return `<a class="drawer-item" href="#/lig/${encodeURIComponent(l.code)}"${current}>
+      ${leagueLogo(l.code)}<span>${esc(l.name)}</span>
+      <span class="d-count">${count}</span></a>`;
+  }).join("");
+
   el("generated-at").textContent = `Son güncelleme: ${new Date(meta.generated_at)
     .toLocaleString("tr-TR", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" })}`;
 }
@@ -940,7 +948,28 @@ function applyTheme(theme) {
   });
 })();
 
+// ─── Mobil çekmece ─────────────────────────────────────────────────────────
+
+function setDrawer(open) {
+  el("drawer").hidden = !open;
+  el("scrim").hidden = !open;
+  el("menu-btn").setAttribute("aria-expanded", String(open));
+  // Çekmece açıkken arka planın kaymasını engelle.
+  document.body.style.overflow = open ? "hidden" : "";
+}
+
+el("menu-btn").addEventListener("click", () => setDrawer(el("drawer").hidden));
+el("drawer-close").addEventListener("click", () => setDrawer(false));
+el("scrim").addEventListener("click", () => setDrawer(false));
+el("drawer").addEventListener("click", (e) => {
+  if (e.target.closest(".drawer-item")) setDrawer(false);
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !el("drawer").hidden) setDrawer(false);
+});
+
 window.addEventListener("hashchange", () => {
+  setDrawer(false);
   state.day = null; state.stripStart = null; state.week = null;
   state.calOpen = false; state.calMonth = null;
   route();
