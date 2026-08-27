@@ -120,6 +120,7 @@ function matchRow(match, index = 0) {
   const live = liveKey(match);
   return `
     <a class="match" style="--i:${index}"${live ? ` data-live="${live}"` : ""}
+       data-fmday="${fotmobDay(match.kickoff)}"
        href="#/mac/${encodeURIComponent(match.id)}">
       <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
       <div class="match-teams">
@@ -618,7 +619,8 @@ async function viewMatch(id) {
   return `
     ${backLink(data)}
 
-    <div class="match-hero"${liveKey(match) ? ` data-live="${liveKey(match)}"` : ""}>
+    <div class="match-hero"${liveKey(match) ? ` data-live="${liveKey(match)}"` : ""}
+         data-fmday="${fotmobDay(match.kickoff)}">
       <div class="hero-names">
         <div class="hero-team">
           ${crest(match.home.id, "lg")}
@@ -1095,6 +1097,7 @@ const LIVE_URL = "https://www.fotmob.com/api/data/matches?date=";
 /* Golcü proxy'sinin adresi meta.json'dan geliyor (pipeline/config.py ->
    GOAL_PROXY_URL). Boşsa golcü gösterimi hiç denenmiyor. */
 let goalProxy = "";
+const MAX_ADDED_TIME = 20;   // bundan fazlası kaynağın saymaya devam etmesi
 const LIVE_IDLE = 60_000;
 const LIVE_ACTIVE = 25_000;   // canlı maç varken daha sık bak
 let liveTimer = null;
@@ -1193,7 +1196,10 @@ function liveMinute(state) {
   const minute = Number.parseInt(raw, 10);
   const end = Number(state.maxTime);
   if (Number.isFinite(minute) && Number.isFinite(end) && minute > end) {
-    return `${end}+${minute - end}'`;
+    // Kaynak, hakem düdüğü ile `finished` bayrağı arasında saymayı
+    // sürdürebiliyor; makul olmayan değerleri "90+" olarak kesiyoruz.
+    const added = minute - end;
+    return added > MAX_ADDED_TIME ? `${end}+` : `${end}+${added}'`;
   }
   return Number.isFinite(minute) ? `${minute}'` : raw;
 }
@@ -1236,13 +1242,37 @@ function liveKey(match) {
   return h && a ? `${h}|${a}` : null;
 }
 
+/** FotMob maçları UTC gününe göre grupluyor; kick-off zaten UTC. */
+const fotmobDay = (iso) => iso.slice(0, 10).replaceAll("-", "");
+
+/** Hangi günleri çekmeliyiz: ekrandaki maçların kendi günleri.
+    Yalnızca "bugün"ü çekmek gece yarısından sonra devam eden maçları
+    kaybettiriyordu — İstanbul günü ilerliyor ama maç hâlâ önceki UTC
+    gününde listeleniyor, satır canlı veri bulamayıp başlama saatine
+    dönüyordu. */
+function liveDays() {
+  // Nitelik adı bilerek `data-fmday`: `data-day` tarih şeridi düğmelerinde
+  // kullanılıyor ve orada tarih tireli biçimde duruyor. Aynı adı paylaşınca
+  // şeridin günleri de çekilmeye çalışılıyor, canlı veri hiç gelmiyordu.
+  const days = new Set();
+  for (const node of document.querySelectorAll("[data-fmday]")) {
+    if (node.dataset.fmday) days.add(node.dataset.fmday);
+  }
+  if (!days.size) days.add(todayKey().replaceAll("-", ""));
+  return [...days].slice(0, 3);   // makul üst sınır
+}
+
 async function fetchLive() {
-  const stamp = todayKey().replaceAll("-", "");
-  const response = await fetch(LIVE_URL + stamp, { cache: "no-store" });
-  if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const payload = await response.json();
+  const payloads = await Promise.all(
+    liveDays().map((day) =>
+      fetch(LIVE_URL + day, { cache: "no-store" })
+        .then((r) => (r.ok ? r.json() : null))
+        .catch(() => null)),
+  );
+  if (payloads.every((p) => !p)) throw new Error("canlı veri alınamadı");
 
   const map = new Map();
+  for (const payload of payloads.filter(Boolean)) {
   for (const league of payload.leagues ?? []) {
     for (const match of league.matches ?? []) {
       const status = match.status ?? {};
@@ -1261,6 +1291,7 @@ async function fetchLive() {
         ongoing: !!status.ongoing,
       });
     }
+  }
   }
   liveData = map;
 }
