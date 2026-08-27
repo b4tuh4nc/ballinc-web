@@ -7,6 +7,14 @@ const cache = new Map();
 const DOW = ["PAZ", "PTS", "SAL", "ÇAR", "PER", "CUM", "CTS"];
 const STRIP_DAYS = 7;
 
+// Emoji takvim, yanındaki ok düğmeleriyle uyumsuz duruyordu: kendi rengi var,
+// platformdan platforma değişiyor ve küçük kalıyordu. Çizgi ikon currentColor
+// kullanıyor, dolayısıyla temayla ve hover durumuyla birlikte değişiyor.
+const CAL_ICON = `<svg viewBox="0 0 24 24" width="17" height="17" fill="none"
+  stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true">
+  <rect x="3" y="5" width="18" height="16" rx="2.5"/>
+  <path d="M3 10h18M8 3v4M16 3v4"/></svg>`;
+
 const SIDE_MARKETS = [
   { key: "over_2_5", title: "2.5 Alt / Üst",  labels: ["2.5 Alt", "2.5 Üst"], fills: ["draw", "yes"] },
   { key: "btts",     title: "Karşılıklı Gol", labels: ["Yok", "Var"],         fills: ["draw", "yes"] },
@@ -203,8 +211,8 @@ function dateStripHTML(dates, selected, start, counts) {
       <button class="strip-nav" type="button" data-strip="1" ${canNext ? "" : "disabled"}
               aria-label="Sonraki günler">›</button>
       <span class="cal-wrap">
-        <button class="strip-nav" type="button" data-cal="toggle"
-                aria-expanded="${state.calOpen}" aria-label="Takvimden tarih seç">📅</button>
+        <button class="strip-nav cal-btn" type="button" data-cal="toggle"
+                aria-expanded="${state.calOpen}" aria-label="Takvimden tarih seç">${CAL_ICON}</button>
         ${state.calOpen ? calendarHTML(dates, selected, counts) : ""}
       </span>
     </div>`;

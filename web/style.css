@@ -436,13 +436,20 @@ td.pts { font-weight: 700; }
 .day-btn:disabled { opacity: .32; cursor: default; }
 .day-btn:disabled:hover { background: none; }
 
+/* Ok ve takvim düğmeleri aynı ölçüde; dar-uzun kutu içinde ikon sıkışık
+   duruyordu. */
 .strip-nav {
   flex-shrink: 0;
-  width: 30px; height: 44px;
+  width: 38px; height: 44px;
   display: grid; place-items: center;
-  border: 1px solid var(--border); border-radius: 8px;
+  border: 1px solid var(--border); border-radius: 10px;
   background: var(--surface); color: var(--text-muted);
-  cursor: pointer; font-size: 1rem;
+  cursor: pointer; font-size: 1.05rem; line-height: 1;
+}
+.strip-nav svg { display: block; }
+.cal-btn[aria-expanded="true"] {
+  background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--accent);
 }
 .strip-nav:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
 .strip-nav:disabled { opacity: .3; cursor: default; }
