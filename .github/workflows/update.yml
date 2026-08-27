@@ -11,7 +11,7 @@ on:
         default: false
 
 concurrency:
-  group: ballinc-update
+  group: ballinc-pages
   cancel-in-progress: false
 
 permissions:
