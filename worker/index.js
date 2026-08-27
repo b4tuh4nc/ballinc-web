@@ -12,6 +12,11 @@
  *   * Yalnızca izin verilen origin'lere CORS başlığı dönüyor.
  *   * Yanıt 30 saniye önbelleğe alınıyor; aynı maç için gelen ardışık
  *     istekler FotMob'a ulaşmıyor.
+ *
+ * Önbellek notu: Cloudflare'in Cache API'si `*.workers.dev` adreslerinde
+ * çalışmıyor (sessizce hiçbir şey yapmıyor). Bu yüzden isolate ömrü boyunca
+ * yaşayan basit bir bellek içi önbellek de var; ikisi birlikte hem
+ * workers.dev'de hem kendi alan adına bağlanmış bir route'ta koruma sağlıyor.
  */
 
 const ALLOWED_ORIGINS = new Set([
@@ -21,6 +26,25 @@ const ALLOWED_ORIGINS = new Set([
 
 const UPSTREAM = "https://www.fotmob.com/api/data/matchDetails?matchId=";
 const CACHE_SECONDS = 30;
+
+// workers.dev'de Cache API devre dışı olduğu için bellek içi yedek.
+const memory = new Map();
+
+function memoryGet(matchId) {
+  const hit = memory.get(matchId);
+  if (!hit) return null;
+  if (Date.now() - hit.at > CACHE_SECONDS * 1000) {
+    memory.delete(matchId);
+    return null;
+  }
+  return hit.body;
+}
+
+function memorySet(matchId, body) {
+  // Sınırsız büyümesin: en eski kayıt atılıyor.
+  if (memory.size > 200) memory.delete(memory.keys().next().value);
+  memory.set(matchId, { at: Date.now(), body });
+}
 
 function corsHeaders(origin) {
   return {
@@ -50,6 +74,16 @@ export default {
     const matchId = new URL(request.url).searchParams.get("matchId") ?? "";
     if (!/^\d{1,12}$/.test(matchId)) {
       return new Response("geçersiz matchId", { status: 400, headers: corsHeaders(origin) });
+    }
+
+    const fromMemory = memoryGet(matchId);
+    if (fromMemory) {
+      return new Response(fromMemory, {
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+          ...corsHeaders(origin),
+        },
+      });
     }
 
     const cache = caches.default;
@@ -92,7 +126,10 @@ export default {
         assist: e.assistStr ?? null,
       }));
 
-    const response = new Response(JSON.stringify({ matchId, goals }), {
+    const body = JSON.stringify({ matchId, goals });
+    memorySet(matchId, body);
+
+    const response = new Response(body, {
       headers: {
         "Content-Type": "application/json; charset=utf-8",
         "Cache-Control": `public, max-age=${CACHE_SECONDS}`,

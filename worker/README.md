@@ -8,6 +8,14 @@ Açık proxy değil: hedef URL sabit, `matchId` yalnızca rakam olabiliyor,
 yalnızca izinli origin'lere yanıt veriyor ve 30 saniye önbellekliyor.
 Ayrıca 145 KB'lık yanıtın tamamını değil, yalnızca gol olaylarını döndürüyor.
 
+**Maliyet:** ücretsiz katman günde 100.000 istek veriyor, kredi kartı
+istemiyor. Bu projenin kullanımı günde birkaç yüz istek.
+
+**Önbellek:** Cloudflare'in Cache API'si `*.workers.dev` adreslerinde
+çalışmıyor. Bu yüzden worker'da bellek içi bir yedek önbellek de var.
+Kendi alan adına bir route bağlarsan Cache API de devreye girer, ama
+gerekli değil.
+
 ## Kurulum
 
 Panelden (en kolay):
