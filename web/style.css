@@ -570,6 +570,9 @@ td.pts { font-weight: 700; }
 
 .cal-wrap { position: relative; flex-shrink: 0; }
 
+/* Masaüstünde takvim bir açılır kutu; bulanık katman yalnızca mobilde. */
+.cal-scrim { display: none; }
+
 .cal {
   position: absolute; top: calc(100% + .45rem); right: 0; z-index: 30;
   width: 17.5rem; padding: .7rem;
@@ -851,4 +854,77 @@ td.pts { font-weight: 700; }
   .hero-mid strong { font-size: 1.1rem; }
   .prob-legend { font-size: .64rem; gap: .3rem; }
   .prob-seg { font-size: .76rem; }
+}
+
+/* ─── Lig filtresi ────────────────────────────────────────────────────── */
+
+.filter-wrap { position: relative; z-index: 45; display: inline-block; margin-top: .7rem; }
+
+.filter-btn {
+  display: inline-flex; align-items: center; gap: .4rem;
+  padding: .38rem .75rem;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface); color: var(--text-muted);
+  font: inherit; font-size: .82rem; cursor: pointer;
+}
+.filter-btn b { color: var(--text); font-variant-numeric: tabular-nums; }
+.filter-btn:hover { background: var(--surface-2); color: var(--text); }
+.filter-btn[aria-expanded="true"] {
+  background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--accent);
+}
+.filter-btn .f-icon { font-size: .9rem; }
+
+.filter-panel {
+  position: absolute; top: calc(100% + .4rem); left: 0; z-index: 46;
+  width: 15.5rem; padding: .4rem;
+  background: var(--surface);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, .18), var(--shadow);
+}
+
+.filter-row {
+  display: flex; align-items: center; gap: .55rem; width: 100%;
+  padding: .5rem .55rem;
+  border: 0; border-radius: 9px;
+  background: none; color: var(--text-muted);
+  font: inherit; font-size: .85rem; text-align: left; cursor: pointer;
+}
+.filter-row img { width: 19px; height: 19px; object-fit: contain; }
+.filter-row .tick { margin-left: auto; opacity: 0; color: var(--accent); font-weight: 700; }
+.filter-row[aria-pressed="true"] { color: var(--text); }
+.filter-row[aria-pressed="true"] .tick { opacity: 1; }
+.filter-row:hover { background: var(--surface-2); }
+
+.filter-foot {
+  display: flex; justify-content: flex-end;
+  margin-top: .3rem; padding-top: .4rem;
+  border-top: 1px solid var(--border);
+}
+
+.drawer-sep { height: 1px; background: var(--border); margin: .35rem .2rem; }
+.d-icon { width: 22px; text-align: center; font-size: 1rem; }
+
+/* ─── Mobilde takvim: ekranın ortasında, arkası bulanık ───────────────── */
+
+@media (max-width: 620px) {
+  .cal-scrim { display: block; }
+  .cal-wrap .cal {
+    position: fixed; inset: 0; margin: auto;
+    width: min(20rem, calc(100vw - 2rem)); height: max-content;
+    z-index: 60;
+  }
+  .cal-scrim {
+    position: fixed; inset: 0; z-index: 55;
+    background: rgba(0, 0, 0, .45);
+    backdrop-filter: blur(4px);
+  }
+  body.cal-open { overflow: hidden; }
+  .filter-panel { width: min(17rem, calc(100vw - 2.5rem)); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .filter-panel { animation: pop .18s cubic-bezier(.2, .8, .3, 1) both; transform-origin: top left; }
+  .filter-row, .filter-btn { transition: background .15s ease, color .15s ease; }
+  .cal-scrim { animation: fade .2s ease both; }
 }

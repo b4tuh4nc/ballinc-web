@@ -268,8 +268,12 @@ function calendarInner(dates, selected, counts) {
       </div>`;
 }
 
+// Bulanık katman takvimle AYNI yığınlama bağlamında olmalı. Kök seviyeye
+// koyduğumda .datestrip'in kendi bağlamı yüzünden takvimin z-index'i o
+// katmanın altında kalıyor ve takvimin kendisi de bulanıklaşıyordu.
 const calendarHTML = (dates, selected, counts) =>
-  `<div class="cal" role="dialog" aria-label="Tarih seç">
+  `<div class="cal-scrim" aria-hidden="true"></div>
+   <div class="cal" role="dialog" aria-label="Tarih seç">
      ${calendarInner(dates, selected, counts)}
    </div>`;
 
@@ -277,26 +281,45 @@ const calendarHTML = (dates, selected, counts) =>
 
 async function viewHome() {
   const meta = await getJSON("meta.json");
+  const hidden = hiddenLeagues();
+  const active = meta.leagues.filter((l) => l.upcoming > 0);
   const all = [];
-  for (const league of meta.leagues.filter((l) => l.upcoming > 0)) {
+  for (const league of active) {
+    if (hidden.has(league.code)) continue;
     const data = await getJSON(`${league.code}.json`);
     all.push(...data.matches);
   }
   all.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+  const shown = active.length - active.filter((l) => hidden.has(l.code)).length;
 
   const idle = meta.leagues.filter((l) => l.upcoming === 0);
   const idleNote = idle.length ? `
     <p class="note">${idle.map((l) => esc(l.name)).join(", ")} için bu sezon
       fikstür verisi henüz yok. Yayınlandığında otomatik olarak listeye girecek.</p>` : "";
 
+  lastList = { href: "#/", label: "Tüm maçlar" };
+
   const head = `
     <div class="page-head">
       <div class="page-title"><h1>Yaklaşan maçlar</h1></div>
       <p class="sub">Önümüzdeki ${meta.window_days} günün maçları · ${all.length} tahmin ·
         <a href="#/model">model ne kadar isabetli?</a></p>
+      <div class="filter-wrap">
+        <button class="filter-btn" type="button" data-filter="toggle"
+                aria-expanded="${state.filterOpen}">
+          <span class="f-icon" aria-hidden="true">⚙</span>
+          Ligler <b>${shown}/${active.length}</b>
+        </button>
+        ${state.filterOpen ? filterPanelHTML(active) : ""}
+      </div>
     </div>`;
 
-  if (!all.length) return `${head}${idleNote}<div class="empty">Yaklaşan maç yok.</div>`;
+  if (!all.length) {
+    const why = hidden.size
+      ? "Seçili ligler gizli. Yukarıdan lig filtresini açıp tekrar göster."
+      : "Yaklaşan maç yok.";
+    return `${head}${idleNote}<div class="empty">${why}</div>`;
+  }
 
   const counts = new Map();
   for (const m of all) {
@@ -359,6 +382,7 @@ async function viewHome() {
 async function viewLeague(code, tab) {
   const data = await getJSON(`${code}.json`);
   const base = `#/lig/${encodeURIComponent(code)}`;
+  lastList = { href: base, label: data.name, league: code };
   const tabs = [["", "Maçlar"], ["puan", "Puan Durumu"], ["sonuclar", "Sonuçlar"]]
     .map(([slug, label]) => {
       const href = slug ? `${base}/${slug}` : base;
@@ -501,6 +525,16 @@ function compareRow(label, a, b) {
     <span class="v r">${b}</span></div>`;
 }
 
+/** Geri bağlantısı: gelinen listeye döner. Doğrudan bağlantıyla açılmışsa
+    (elimizde kaynak yoksa) maçın ligine düşer. */
+function backLink(data) {
+  const sameLeague = lastList.league === data.league;
+  const href = lastList.href;
+  const label = sameLeague ? data.name : lastList.label;
+  const logo = sameLeague || lastList.league ? leagueLogo(lastList.league ?? data.league) : "";
+  return `<a class="back" href="${href}"><span class="arrow">←</span>${logo}${esc(label)}</a>`;
+}
+
 /** Model olasılıkları ile bahis piyasasının fiyatladığı olasılıkları
     yan yana koyar ve beklenen değeri (EV) gösterir. */
 function marketHTML(match) {
@@ -580,7 +614,7 @@ async function viewMatch(id) {
   const info = reliability(meta.metrics, "result");
 
   return `
-    <a class="back" href="#/lig/${encodeURIComponent(data.league)}"><span class="arrow">←</span>${leagueLogo(data.league)}${esc(data.name)}</a>
+    ${backLink(data)}
 
     <div class="match-hero">
       <div class="hero-names">
@@ -760,8 +794,44 @@ async function viewModel() {
 
 const state = {
   day: null, stripStart: null, week: null,
-  calOpen: false, calMonth: null, calCtx: null,
+  calOpen: false, calMonth: null, calCtx: null, filterOpen: false,
 };
+
+let lastHash = null;
+
+/** Kullanıcının ana sayfada görmek istediği ligler. Boş küme "hepsi"
+    demek — filtre kurulmamışken hiçbir şey gizlenmemeli. localStorage'da
+    saklanıyor ki ziyaretler arasında kalsın. */
+function hiddenLeagues() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("ballinc-hidden") || "[]"));
+  } catch { return new Set(); }
+}
+
+function setHiddenLeagues(set) {
+  try { localStorage.setItem("ballinc-hidden", JSON.stringify([...set])); }
+  catch { /* özel pencere */ }
+}
+
+function filterPanelHTML(leagues) {
+  const hidden = hiddenLeagues();
+  const rows = leagues.map((l) => `
+    <button class="filter-row" type="button" data-toggle-league="${esc(l.code)}"
+            aria-pressed="${!hidden.has(l.code)}">
+      ${leagueLogo(l.code)}<span>${esc(l.name)}</span>
+      <span class="tick" aria-hidden="true">✓</span>
+    </button>`).join("");
+  return `<div class="filter-panel" role="dialog" aria-label="Lig filtresi">
+      ${rows}
+      <div class="filter-foot">
+        <button class="cal-today-btn" type="button" data-league-all>Hepsini göster</button>
+      </div>
+    </div>`;
+}
+
+/** Maç sayfasından "geri" hangi listeye dönmeli. Kullanıcı tüm maçlardan
+    geldiyse tüm maçlara, bir lig sayfasından geldiyse o lige dönmeli. */
+let lastList = { href: "#/", label: "Tüm maçlar" };
 
 /** Yalnızca takvimi yeniden çizer. Ay değiştirmek ya da takvimi açıp kapamak
     sayfanın geri kalanını ilgilendirmiyor; route() çağırmak listeyi ve bütün
@@ -776,8 +846,10 @@ function renderCalendar(direction = 0) {
   if (button) button.setAttribute("aria-expanded", String(state.calOpen));
 
   const existing = wrap.querySelector(".cal");
+  document.body.classList.toggle("cal-open", state.calOpen);
   if (!state.calOpen) {
     if (existing) existing.remove();
+    wrap.querySelector(".cal-scrim")?.remove();
     return;
   }
 
@@ -795,6 +867,7 @@ function renderCalendar(direction = 0) {
   }
 
   if (existing) existing.remove();
+  wrap.querySelector(".cal-scrim")?.remove();
   wrap.insertAdjacentHTML("beforeend",
     calendarHTML(ctx.dates, ctx.selected, ctx.counts));
 }
@@ -821,6 +894,14 @@ async function route() {
     }
     view.innerHTML = html;
     view.dataset.painted = "1";
+    document.body.classList.toggle("cal-open", state.calOpen);
+    // Gerçek gezinmede sayfa başına dön. Gün/hafta seçimi gibi yerinde
+    // durum değişikliklerinde kaydırma korunuyor, yoksa listede aşağıdayken
+    // gün değiştirmek kullanıcıyı yukarı fırlatırdı.
+    if (location.hash !== lastHash) {
+      window.scrollTo(0, 0);
+      lastHash = location.hash;
+    }
     scrollSelectedIntoView();
   } catch (err) {
     view.innerHTML = `<div class="empty">Veri yüklenemedi.<br>
@@ -853,6 +934,14 @@ el("view").addEventListener("click", (event) => {
   // DOM'dan siliyor, olay document'a kabardığında `event.target` artık kopmuş
   // oluyor ve closest(".cal-wrap") null dönüyor — dışarı tıklama sanılıp
   // takvim hemen kapanıyordu.
+  // Bulanık katman .cal-wrap içinde olduğu için "dışarı tıklama" sayılmıyor;
+  // ayrıca ele alınması gerekiyor.
+  if (event.target.classList.contains("cal-scrim")) {
+    event.insideCalendar = true;
+    state.calOpen = false;
+    return renderCalendar();
+  }
+
   const calToggle = event.target.closest("[data-cal]");
   if (calToggle) {
     event.insideCalendar = true;
@@ -868,6 +957,31 @@ el("view").addEventListener("click", (event) => {
     const current = state.calMonth ?? state.calCtx?.selected?.slice(0, 7) ?? target;
     state.calMonth = target;
     return renderCalendar(target > current ? 1 : -1);
+  }
+
+  const filterToggle = event.target.closest("[data-filter]");
+  if (filterToggle) {
+    event.insideFilter = true;
+    state.filterOpen = !state.filterOpen;
+    return route();
+  }
+
+  const toggleLeague = event.target.closest("[data-toggle-league]");
+  if (toggleLeague) {
+    event.insideFilter = true;
+    const code = toggleLeague.dataset.toggleLeague;
+    const set = hiddenLeagues();
+    if (set.has(code)) set.delete(code); else set.add(code);
+    setHiddenLeagues(set);
+    state.day = null; state.stripStart = null;
+    return route();
+  }
+
+  if (event.target.closest("[data-league-all]")) {
+    event.insideFilter = true;
+    setHiddenLeagues(new Set());
+    state.day = null; state.stripStart = null;
+    return route();
   }
 
   const strip = event.target.closest("[data-strip]");
@@ -891,6 +1005,11 @@ el("view").addEventListener("click", (event) => {
 
 // Takvim dışına tıklayınca kapansın; Esc de kapatsın.
 document.addEventListener("click", (event) => {
+  if (state.filterOpen && !event.insideFilter && !event.target.closest(".filter-wrap")) {
+    state.filterOpen = false;
+    route();
+    return;
+  }
   if (!state.calOpen) return;
   if (event.insideCalendar) return;
   if (event.target.closest(".cal-wrap")) return;
@@ -916,7 +1035,13 @@ async function paintNav() {
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span></a>`;
   }).join("");
 
-  el("drawer-nav").innerHTML = meta.leagues.map((l) => {
+  const onHome = !parts.length;
+  const homeItem = `<a class="drawer-item"${onHome ? ' aria-current="page"' : ""} href="#/">
+      <span class="d-icon" aria-hidden="true">⚽</span><span>Tüm maçlar</span>
+      <span class="d-count">${meta.leagues.reduce((n, l) => n + l.upcoming, 0)} maç</span></a>
+    <div class="drawer-sep"></div>`;
+
+  el("drawer-nav").innerHTML = homeItem + meta.leagues.map((l) => {
     const current = l.code === active ? ' aria-current="page"' : "";
     const count = l.upcoming ? `${l.upcoming} maç` : "fikstür yok";
     return `<a class="drawer-item" href="#/lig/${encodeURIComponent(l.code)}"${current}>
