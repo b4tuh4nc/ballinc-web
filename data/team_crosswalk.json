@@ -1,4 +1,19 @@
 {
+  "fm10189": {
+    "fotmob_id": "10189",
+    "fotmob_name": "Schalke 04",
+    "understat_name": "Schalke 04"
+  },
+  "fm8232": {
+    "fotmob_id": "8232",
+    "fotmob_name": "Elversberg",
+    "understat_name": "Elversberg"
+  },
+  "fm8460": {
+    "fotmob_id": "8460",
+    "fotmob_name": "Paderborn",
+    "understat_name": "Paderborn"
+  },
   "us101": {
     "fotmob_id": "10233",
     "fotmob_name": "Genoa",
