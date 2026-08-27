@@ -833,7 +833,15 @@ function filterPanelHTML(leagues) {
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span>
       <span class="tick" aria-hidden="true">✓</span>
     </button>`).join("");
-  return `<div class="filter-panel" role="dialog" aria-label="Lig filtresi">
+  // Bulanık katman panelle AYNI yığınlama bağlamında olmalı; kök seviyeye
+  // koyulursa .page-head'in kendi bağlamı yüzünden panelin altında kalıyor
+  // ve panelin kendisi de bulanıklaşıyor (takvimde aynı hatayı yapmıştım).
+  return `<div class="filter-scrim" aria-hidden="true"></div>
+    <div class="filter-panel" role="dialog" aria-label="Lig filtresi">
+      <div class="filter-head">
+        <span>Ligler</span>
+        <button class="icon-btn" type="button" data-filter="close" aria-label="Kapat">✕</button>
+      </div>
       ${rows}
       <div class="filter-foot">
         <button class="cal-today-btn" type="button" data-league-all>Hepsini göster</button>
@@ -907,6 +915,7 @@ async function route() {
     view.innerHTML = html;
     view.dataset.painted = "1";
     document.body.classList.toggle("cal-open", state.calOpen);
+    document.body.classList.toggle("filter-open", state.filterOpen);
     if (document.querySelector("[data-live]")) { applyLive(); startLive(); }
     // Gerçek gezinmede sayfa başına dön. Gün/hafta seçimi gibi yerinde
     // durum değişikliklerinde kaydırma korunuyor, yoksa listede aşağıdayken
@@ -972,10 +981,17 @@ el("view").addEventListener("click", (event) => {
     return renderCalendar(target > current ? 1 : -1);
   }
 
+  // Katman .filter-wrap içinde olduğu için "dışarı tıklama" sayılmıyor.
+  if (event.target.classList.contains("filter-scrim")) {
+    event.insideFilter = true;
+    state.filterOpen = false;
+    return route();
+  }
+
   const filterToggle = event.target.closest("[data-filter]");
   if (filterToggle) {
     event.insideFilter = true;
-    state.filterOpen = !state.filterOpen;
+    state.filterOpen = filterToggle.dataset.filter === "close" ? false : !state.filterOpen;
     return route();
   }
 

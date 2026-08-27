@@ -1056,3 +1056,41 @@ td.pts { font-weight: 700; }
 .redcard:empty { width: 10px; }
 .cards-h:empty, .cards-a:empty { display: none; }
 .hero-team .redcard { vertical-align: 1px; }
+
+/* ─── Mobilde lig filtresi: ortada, arkası bulanık ────────────────────── */
+
+.filter-scrim { display: none; }
+
+.filter-head {
+  display: none;
+  align-items: center; justify-content: space-between;
+  padding: .2rem .3rem .6rem;
+  margin-bottom: .3rem;
+  border-bottom: 1px solid var(--border);
+  font-size: .9rem; font-weight: 680;
+}
+
+@media (max-width: 620px) {
+  .filter-scrim {
+    display: block;
+    position: fixed; inset: 0; z-index: 55;
+    background: rgba(0, 0, 0, .45);
+    backdrop-filter: blur(4px);
+  }
+  .filter-head { display: flex; }
+
+  .filter-wrap .filter-panel {
+    position: fixed; inset: 0; margin: auto;
+    width: min(20rem, calc(100vw - 2rem)); height: max-content;
+    max-height: calc(100vh - 3rem); overflow-y: auto;
+    z-index: 60;
+    padding: .7rem;
+    transform-origin: center;
+  }
+  .filter-row { padding: .65rem .55rem; font-size: .9rem; }
+  body.filter-open { overflow: hidden; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .filter-scrim { animation: fade .2s ease both; }
+}
