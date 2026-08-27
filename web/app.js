@@ -117,12 +117,14 @@ function extraChips(match) {
 
 function matchRow(match, index = 0) {
   const tbd = match.time_confirmed === false ? '<span class="tbd">saat?</span>' : "";
+  const live = liveKey(match);
   return `
-    <a class="match" style="--i:${index}" href="#/mac/${encodeURIComponent(match.id)}">
-      <div class="match-time">${timeIn(match.kickoff)}${tbd}</div>
+    <a class="match" style="--i:${index}"${live ? ` data-live="${live}"` : ""}
+       href="#/mac/${encodeURIComponent(match.id)}">
+      <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
       <div class="match-teams">
-        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span></div>
-        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span></div>
+        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span><span class="team-score live-h"></span></div>
+        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span><span class="team-score live-a"></span></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
       <div class="chev" aria-hidden="true">›</div>
@@ -895,6 +897,7 @@ async function route() {
     view.innerHTML = html;
     view.dataset.painted = "1";
     document.body.classList.toggle("cal-open", state.calOpen);
+    if (document.querySelector("[data-live]")) { applyLive(); startLive(); }
     // Gerçek gezinmede sayfa başına dön. Gün/hafta seçimi gibi yerinde
     // durum değişikliklerinde kaydırma korunuyor, yoksa listede aşağıdayken
     // gün değiştirmek kullanıcıyı yukarı fırlatırdı.
@@ -1052,6 +1055,90 @@ async function paintNav() {
   el("generated-at").textContent = `Son güncelleme: ${new Date(meta.generated_at)
     .toLocaleString("tr-TR", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" })}`;
 }
+
+// ─── Canlı skorlar ─────────────────────────────────────────────────────────
+/* Site statik ve gecede bir güncelleniyor; canlı skor ise dakikalık veri
+   ister. Tarayıcı FotMob'a doğrudan erişebildiği için (Origin gönderildiğinde
+   CORS izni veriyor) ek sunucuya, proxy'ye ya da dakikalık deploy'a gerek
+   yok. Çağrı başarısız olursa hiçbir şey bozulmaz: site zaten canlı veri
+   olmadan tam çalışıyor. */
+
+const LIVE_URL = "https://www.fotmob.com/api/data/matches?date=";
+const LIVE_INTERVAL = 60_000;
+let liveTimer = null;
+let liveData = new Map();
+
+/** Maçı canlı veriyle eşleştiren anahtar. İsimle değil kimlikle eşleşiyor. */
+function liveKey(match) {
+  const h = match.home?.fm, a = match.away?.fm;
+  return h && a ? `${h}|${a}` : null;
+}
+
+async function fetchLive() {
+  const stamp = todayKey().replaceAll("-", "");
+  const response = await fetch(LIVE_URL + stamp, { cache: "no-store" });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  const payload = await response.json();
+
+  const map = new Map();
+  for (const league of payload.leagues ?? []) {
+    for (const match of league.matches ?? []) {
+      const status = match.status ?? {};
+      if (!status.started) continue;
+      map.set(`${match.home?.id}|${match.away?.id}`, {
+        home: match.home?.score,
+        away: match.away?.score,
+        // FotMob dakikayı görünmez yön işaretleriyle gönderiyor.
+        minute: (status.liveTime?.short ?? "").replace(/[‎‏]/g, ""),
+        finished: !!status.finished,
+        ongoing: !!status.ongoing,
+      });
+    }
+  }
+  liveData = map;
+}
+
+function applyLive() {
+  for (const node of document.querySelectorAll("[data-live]")) {
+    const state = liveData.get(node.dataset.live);
+    const clock = node.querySelector(".clock");
+    const home = node.querySelector(".live-h");
+    const away = node.querySelector(".live-a");
+    if (!state || !clock) continue;
+
+    if (home) home.textContent = state.home ?? "";
+    if (away) away.textContent = state.away ?? "";
+    node.classList.toggle("is-live", state.ongoing);
+    node.classList.toggle("is-done", state.finished);
+
+    if (state.ongoing) {
+      clock.innerHTML = `<span class="live-dot"></span>${esc(state.minute || "canlı")}`;
+    } else if (state.finished) {
+      clock.textContent = "BİTTİ";
+    }
+  }
+}
+
+async function refreshLive() {
+  if (document.hidden) return;
+  try {
+    await fetchLive();
+    applyLive();
+  } catch {
+    /* canlı veri isteğe bağlı; sessizce geç */
+  }
+}
+
+function startLive() {
+  if (liveTimer) return;
+  refreshLive();
+  liveTimer = setInterval(refreshLive, LIVE_INTERVAL);
+}
+
+// Sekme arka plandayken boşuna istek atma.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) refreshLive();
+});
 
 // ─── Tema ──────────────────────────────────────────────────────────────────
 

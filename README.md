@@ -168,6 +168,20 @@ pipeline/
 web/            statik site
 ```
 
+## Canlı skorlar
+
+Devam eden maçların skoru ve dakikası, tarayıcıdan doğrudan FotMob'dan
+çekiliyor (60 saniyede bir, sekme arka plandayken durur). Ek sunucu, proxy ya
+da dakikalık deploy gerekmiyor: FotMob `Origin` başlığı gelen isteklere CORS
+izni veriyor, dolayısıyla statik site kendi başına canlı veri alabiliyor.
+
+Maçlar canlı veriyle **isimle değil kimlikle** eşleşiyor; `export` her maça
+FotMob takım kimliklerini yazıyor. Çağrı başarısız olursa hiçbir şey bozulmaz,
+site canlı veri olmadan tam çalışmaya devam eder.
+
+`predict.upcoming` penceresi 3.5 saat geriye de açık: aksi halde bir maç
+başlar başlamaz fikstürden düşüyor ve canlı skoru gösterilemiyordu.
+
 ## Model ve bahis piyasası
 
 Maç sayfalarında model olasılıkları, bahis piyasasının fiyatladığı olasılıkların

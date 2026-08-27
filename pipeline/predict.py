@@ -17,6 +17,12 @@ from pipeline.model import GoalModel, top_scores
 # Bu kadar ileri tarihli maçlarda başlama saati genelde henüz kesin değil.
 TIME_CONFIRMED_DAYS = 7
 
+# Başlamış maçlar listeden düşmesin diye pencere geriye doğru da açılıyor.
+# Bir maç devre arasıyla birlikte ~2 saat sürüyor; 3.5 saat uzatmalı maçlara
+# ve gecikmeli başlangıçlara da yetiyor. Bu olmadan canlı skor gösterilemezdi:
+# maç başlar başlamaz fikstürden çıkıyordu.
+LIVE_WINDOW_HOURS = 3.5
+
 
 def load_features() -> pd.DataFrame:
     path = PROCESSED_DIR / "features.parquet"
@@ -28,7 +34,8 @@ def upcoming(df: pd.DataFrame, now: pd.Timestamp | None = None,
     """Tahmin penceresindeki oynanmamış maçlar."""
     now = now or pd.Timestamp.utcnow().tz_localize(None)
     horizon = now + pd.Timedelta(days=window_days)
-    mask = (~df["is_result"]) & (df["datetime"] >= now) & (df["datetime"] <= horizon)
+    earliest = now - pd.Timedelta(hours=LIVE_WINDOW_HOURS)
+    mask = (~df["is_result"]) & (df["datetime"] >= earliest) & (df["datetime"] <= horizon)
     return df[mask].sort_values("datetime")
 
 

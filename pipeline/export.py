@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from pipeline import features, market, predict as predict_mod
+from pipeline import crosswalk, features, market, predict as predict_mod
 from pipeline.config import (
     CURRENT_SEASON,
     LEAGUES,
@@ -142,6 +142,28 @@ def build_results(season_df: pd.DataFrame, predictions: dict | None = None) -> l
     return out
 
 
+def attach_fotmob_ids(matches: list[dict]) -> int:
+    """Her maça FotMob takım kimliklerini ekler.
+
+    Site, canlı skorları tarayıcıdan doğrudan FotMob'dan çekiyor; gelen olayı
+    bizim fikstürümüzle eşleştirmek için ortak bir anahtar gerekiyor. İsimle
+    eşleştirmek yerine kimlik kullanılıyor — isim eşleştirmesi bu projede
+    zaten bir kez pahalıya patlamıştı.
+    """
+    entries = crosswalk.load()
+    hits = 0
+    for match in matches:
+        for side in ("home", "away"):
+            team_id = match[side]["id"]
+            if str(team_id).startswith("fm"):
+                match[side]["fm"] = str(team_id).removeprefix("fm")
+            elif team_id in entries:
+                match[side]["fm"] = entries[team_id]["fotmob_id"]
+        if "fm" in match["home"] and "fm" in match["away"]:
+            hits += 1
+    return hits
+
+
 def _write(path, payload) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -159,6 +181,7 @@ def main() -> int:
     all_upcoming = predict_mod.upcoming(df)
     predictions = predict_mod.predict(all_upcoming, model)
     market.attach(predictions)
+    linked = attach_fotmob_ids(predictions)
     by_league: dict[str, list[dict]] = {}
     for p in predictions:
         by_league.setdefault(p["league"], []).append(p)

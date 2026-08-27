@@ -935,3 +935,25 @@ td.pts { font-weight: 700; }
   .filter-row, .filter-btn { transition: background .15s ease, color .15s ease; }
   .cal-scrim { animation: fade .2s ease both; }
 }
+
+/* ─── Canlı maç ───────────────────────────────────────────────────────── */
+
+.match.is-live { background: color-mix(in srgb, var(--accent) 7%, var(--surface)); }
+.match.is-live .clock { color: var(--accent); font-weight: 680; }
+.match.is-live .team-score,
+.match.is-done .team-score { font-size: .95rem; }
+.match.is-done .clock { font-size: .68rem; letter-spacing: .04em; }
+
+.live-dot {
+  display: inline-block; width: 6px; height: 6px;
+  margin-right: .28rem; border-radius: 50%;
+  background: var(--accent); vertical-align: middle;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes livePulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .35; transform: scale(.8); }
+  }
+  .live-dot { animation: livePulse 1.6s ease-in-out infinite; }
+}
