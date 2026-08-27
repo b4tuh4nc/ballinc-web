@@ -53,23 +53,51 @@ def browser():
 
 
 def _get(driver, url: str, retries: int = 3) -> dict:
+    """JSON okur. Hata gövdelerini başarı sanmaz.
+
+    Chrome, API'nin döndürdüğü hata JSON'unu da (`{"error": {"code": 403}}`)
+    bir <pre> içinde gösteriyor. Bu gövde sorunsuz parse edildiği için
+    "boş ama geçerli yanıt" gibi görünüyor ve lig sessizce atlanıyordu.
+    Hata anahtarı artık açıkça yakalanıyor.
+    """
+    last = "bilinmeyen hata"
     for attempt in range(retries):
         driver.get(url)
         time.sleep(PAGE_PAUSE)
         try:
-            return json.loads(driver.find_element("tag name", "pre").text)
-        except Exception:
-            if attempt == retries - 1:
-                raise SofascoreError(f"{url} okunamadı (Cloudflare veya boş yanıt)")
+            payload = json.loads(driver.find_element("tag name", "pre").text)
+        except Exception as exc:
+            last = f"gövde JSON değil ({type(exc).__name__}) — muhtemelen Cloudflare sayfası"
+            payload = None
+
+        if isinstance(payload, dict):
+            error = payload.get("error")
+            if error:
+                last = f"API hatası: {error}"
+            else:
+                return payload
+
+        if attempt < retries - 1:
             time.sleep(PAGE_PAUSE * (attempt + 2))
-    raise SofascoreError(url)
+
+    raise SofascoreError(f"{url} → {last}")
 
 
 def season_id(driver, tournament: int, season: str) -> int | None:
-    """'2026_2027' → SofaScore sezon id'si. Sezon yoksa None."""
+    """'2026_2027' → SofaScore sezon id'si. Sezon listede yoksa None.
+
+    Boş sezon listesi meşru bir sonuç değil: her turnuvanın en az bir sezonu
+    vardır. Boş dönerse erişim engellenmiş demektir ve bu, "sezon yok" ile
+    karıştırılmamalı — biri atlanır, diğeri pipeline'ı durdurur.
+    """
     payload = _get(driver, f"{API}/unique-tournament/{tournament}/seasons")
+    seasons = payload.get("seasons") or []
+    if not seasons:
+        raise SofascoreError(
+            f"turnuva {tournament} için sezon listesi boş döndü — erişim engellenmiş olabilir"
+        )
     wanted = season_label(season)
-    for entry in payload.get("seasons", []):
+    for entry in seasons:
         if entry.get("year") == wanted:
             return int(entry["id"])
     return None

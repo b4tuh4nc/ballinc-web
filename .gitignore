@@ -19,7 +19,13 @@ models/
 # İSTİSNALAR — bunlar kalıcı durum:
 #   predictions.sqlite : doğrulanmış isabet kaydı, silinirse geri gelmez
 #   metrics.json       : backtest çıktısı; küçük ama üretmesi dakikalar sürüyor
+#   TSL_*.parquet      : SofaScore veri merkezi IP'lerini engelliyor, yani bu
+#                        veri CI'da yeniden çekilemiyor. Commit edilmezse
+#                        Süper Lig gecelik akışta tamamen kaybolur.
 !data/predictions.sqlite
+!data/raw/
+data/raw/*
+!data/raw/TSL_*.parquet
 !models/
 models/*
 !models/metrics.json

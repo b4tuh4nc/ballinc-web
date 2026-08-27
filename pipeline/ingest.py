@@ -56,17 +56,28 @@ def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
 
 
 def ingest_sofascore(leagues: list[str], seasons: list[str]) -> int:
-    """SofaScore tek bir tarayıcı oturumunu bütün lig-sezonlar için paylaşır."""
+    """SofaScore tek bir tarayıcı oturumunu bütün lig-sezonlar için paylaşır.
+
+    SofaScore veri merkezi IP'lerini engelleyebiliyor, dolayısıyla bu kaynak
+    CI'da çalışmayabilir. Çekim başarısızsa diskteki mevcut dosya korunuyor
+    ve bu bir hata değil "tazelenemedi" olarak sayılıyor — yoksa tek bir
+    ligin erişim sorunu bütün gecelik akışı durdururdu.
+    """
     failures = 0
     with sofascore.browser() as driver:
         for league in leagues:
             for season in seasons:
                 label = f"{league} {season_label(season)}"
+                path = raw_path(league, season)
                 try:
                     df = sofascore.fetch_league_season(league, season, driver=driver)
-                except (sofascore.SofascoreError, Exception) as exc:
-                    print(f"  ✗ {label:24s} {type(exc).__name__}: {exc}")
-                    failures += 1
+                except Exception as exc:
+                    if path.exists():
+                        print(f"  ! {label:24s} tazelenemedi, mevcut veri korundu "
+                              f"({type(exc).__name__})")
+                    else:
+                        print(f"  ✗ {label:24s} {type(exc).__name__}: {exc}")
+                        failures += 1
                     continue
 
                 if df.empty:
@@ -74,7 +85,7 @@ def ingest_sofascore(leagues: list[str], seasons: list[str]) -> int:
                     continue
 
                 played = int(df["is_result"].sum())
-                _write_atomic(df, raw_path(league, season))
+                _write_atomic(df, path)
                 print(f"  ✓ {label:24s} {len(df):3d} maç  "
                       f"({played:3d} oynanmış, xG yok)")
     return failures
