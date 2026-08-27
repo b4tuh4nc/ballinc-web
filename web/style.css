@@ -663,3 +663,10 @@ td.pts { font-weight: 700; }
 .lh-name { font-size: .86rem; font-weight: 640; }
 .lh-count { margin-left: auto; font-size: .74rem; color: var(--text-muted); }
 .league-head .chev { font-size: 1rem; color: var(--text-muted); }
+
+
+/* ─── Model / piyasa tablosu ──────────────────────────────────────────── */
+
+.market-table td.pos { color: var(--accent); font-weight: 680; }
+.market-table th:first-child, .market-table td:first-child { width: auto; }
+.market-table td { font-variant-numeric: tabular-nums; }

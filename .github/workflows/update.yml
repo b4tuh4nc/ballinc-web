@@ -74,6 +74,13 @@ jobs:
             echo "Backtest atlandı (pazartesi değil, elle tetiklenmedi)."
           fi
 
+      # Oranlar ayrı adımda: servis çökerse ya da kota biterse site son
+      # bilinen oranlarla çalışmaya devam eder.
+      - name: Bahis oranları
+        env:
+          ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
+        run: python -m pipeline.market
+
       - name: Siteyi üret
         run: python -m pipeline.export
 
@@ -85,7 +92,8 @@ jobs:
           git config user.name "ballinc-bot"
           git config user.email "actions@github.com"
           git add web/data web/assets models/metrics.json \
-                  data/predictions.sqlite data/team_crosswalk.json
+                  data/predictions.sqlite data/team_crosswalk.json \
+                  data/market_odds.json
           if git diff --staged --quiet; then
             echo "Değişiklik yok."
           else

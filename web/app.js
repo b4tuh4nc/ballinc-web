@@ -494,6 +494,47 @@ function compareRow(label, a, b) {
     <span class="v r">${b}</span></div>`;
 }
 
+/** Model olasılıkları ile bahis piyasasının fiyatladığı olasılıkları
+    yan yana koyar ve beklenen değeri (EV) gösterir. */
+function marketHTML(match) {
+  const mk = match.market;
+  if (!mk) return "";
+  const labels = ["1 · Ev", "X · Beraberlik", "2 · Deplasman"];
+  const model = match.markets.result;
+
+  const rows = labels.map((label, i) => {
+    const ev = mk.ev[i];
+    const cls = ev > 0 ? "pos" : "";
+    return `<tr>
+      <td>${esc(label)}</td>
+      <td>%${pct(model[i])}</td>
+      <td>%${pct(mk.probs[i])}</td>
+      <td>${mk.best_odds[i].toFixed(2)}</td>
+      <td class="${cls}">${ev > 0 ? "+" : ""}${(ev * 100).toFixed(1)}%</td>
+    </tr>`;
+  }).join("");
+
+  const edges = mk.ev.filter((v) => v > 0).length;
+  return `<section class="card">
+    <h2>Model ve piyasa
+      <span class="badge">${mk.bookmakers} bahisçi · marj %${(mk.margin * 100).toFixed(1)}</span>
+    </h2>
+    <div class="table-scroll"><table class="table-metrics market-table">
+      <thead><tr><th>Sonuç</th><th>Model</th><th>Piyasa</th><th>En iyi oran</th><th>EV</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <p class="note">
+      Piyasa sütunu, ${mk.bookmakers} bahisçinin oranlarından kâr marjı
+      temizlenerek hesaplandı. EV pozitifse model o sonuca piyasanın
+      fiyatladığından daha yüksek ihtimal veriyor demektir.
+      ${edges ? "" : "Bu maçta modelin piyasadan ayrıştığı bir sonuç yok."}
+      <strong>Bu bir kâr vaadi değil:</strong> modelin bahis piyasasını gerçekten
+      geçip geçmediği tahminler sonuçlandıkça ölçülüyor ve
+      <a href="#/model">açıkça yayınlanıyor</a>.
+    </p>
+  </section>`;
+}
+
 async function viewMatch(id) {
   const meta = await getJSON("meta.json");
   let match = null, data = null;
@@ -583,6 +624,8 @@ async function viewMatch(id) {
       </div>
     </section>
 
+    ${marketHTML(match)}
+
     ${SIDE_MARKETS.map((m) => barsHTML(match.markets[m.key], m, meta.metrics)).join("")}
 
     <section class="card">
@@ -609,9 +652,31 @@ async function viewMatch(id) {
 async function liveRecordHTML() {
   let data;
   try { data = await getJSON("accuracy.json"); } catch { return ""; }
+  const vs = data.vs_market;
+  const vsHTML = vs ? `<section class="card">
+    <h2>Model ve bahis piyasası
+      <span class="badge${vs.model_better ? "" : " weak"}">
+        ${vs.model_better ? "model önde" : "piyasa önde"}</span></h2>
+    <div class="bars">
+      <div class="bar-row"><span>Model</span>
+        <div class="bar-track"><div class="bar-fill ${vs.model_better ? "yes" : ""}"
+          style="width:${Math.min(100, (1 - vs.model_logloss / 1.2) * 100).toFixed(1)}%"></div></div>
+        <span class="bar-pct">${vs.model_logloss.toFixed(4)}</span></div>
+      <div class="bar-row"><span>Piyasa</span>
+        <div class="bar-track"><div class="bar-fill ${vs.model_better ? "" : "yes"}"
+          style="width:${Math.min(100, (1 - vs.market_logloss / 1.2) * 100).toFixed(1)}%"></div></div>
+        <span class="bar-pct">${vs.market_logloss.toFixed(4)}</span></div>
+    </div>
+    <p class="note">Aynı ${vs.n} maçta, aynı ölçüyle (logloss — düşük olan iyi).
+      Baseline'ı geçmek kolaydır; asıl zor olan bahis piyasasını geçmektir, çünkü
+      oranlar sakatlık ve kadro bilgisini de içerir. ${vs.since} tarihinden beri
+      biriken bu kıyas, tahminler maçtan önce kaydedildiği için geriye dönük
+      değiştirilemez.</p>
+  </section>` : "";
+
   const markets = Object.values(data.markets ?? {});
   if (!markets.length) {
-    return `<section class="card">
+    return vsHTML + `<section class="card">
       <h2>Yayındaki isabet</h2>
       <p class="muted" style="margin:0">Henüz sonuçlanmış tahmin yok. Site
         yayınlandıktan sonra her tahmin kaydediliyor ve maç bitince sonucuyla
@@ -623,7 +688,7 @@ async function liveRecordHTML() {
       <td>%${(m.accuracy * 100).toFixed(1)}</td>
       <td>%${(m.baseline_accuracy * 100).toFixed(1)}</td>
       <td>${m.logloss.toFixed(4)}</td><td>${esc(m.since)}</td></tr>`).join("");
-  return `<section class="card">
+  return vsHTML + `<section class="card">
     <h2>Yayındaki isabet <span class="badge">${data.total} tahmin doğrulandı</span></h2>
     <div class="table-scroll"><table class="table-metrics">
       <thead><tr><th>Market</th><th>Tahmin</th><th>İsabet</th>

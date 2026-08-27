@@ -84,6 +84,7 @@ python -m pipeline.validate    # bütünlük kontrolü (bloklayıcı)
 python -m pipeline.features    # Elo + rolling feature'lar
 python -m pipeline.train       # gol modeli
 python -m pipeline.backtest    # walk-forward ölçüm → models/metrics.json
+python -m pipeline.market      # bahis oranları (ODDS_API_KEY gerekir)
 python -m pipeline.export      # web/data/*.json
 python -m pipeline.track       # tahmin kaydı + sonuç eşleştirme
 
@@ -162,8 +163,26 @@ pipeline/
   backtest.py   walk-forward ölçüm
   predict.py    yaklaşan maçlar
   export.py     web/data/*.json
+  market.py     bahis oranları -> data/market_odds.json
   track.py      tahmin geçmişi (data/predictions.sqlite)
 web/            statik site
 ```
+
+## Model ve bahis piyasası
+
+Maç sayfalarında model olasılıkları, bahis piyasasının fiyatladığı olasılıkların
+yanında gösteriliyor. Piyasa sütunu ~25 bahisçinin oranlarından kâr marjı
+(overround) temizlenip medyan alınarak hesaplanıyor; EV sütunu
+`p_model × (oran − 1) − (1 − p_model)`.
+
+Bu bir kâr vaadi değil. Baseline'ı geçmek kolaydır; asıl zor olan bahis
+piyasasını geçmektir, çünkü oranlar sakatlık ve kadro bilgisini de içerir.
+Her tahmin, piyasa olasılığıyla birlikte **maç oynanmadan önce** kaydediliyor;
+maçlar sonuçlandıkça ikisi aynı ölçüyle (logloss) kıyaslanıyor ve sonuç
+"Model ne kadar iyi?" sayfasında yayınlanıyor — model geride kalırsa da öyle
+yazacak.
+
+API anahtarı yalnızca `ODDS_API_KEY` ortam değişkeninden okunuyor, hiçbir
+dosyaya yazılmıyor (CI'da GitHub secret olarak duruyor).
 
 Bilgi amaçlıdır, bahis tavsiyesi değildir.

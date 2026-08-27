@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 import numpy as np
 import pandas as pd
 
-from pipeline import features, predict as predict_mod
+from pipeline import features, market, predict as predict_mod
 from pipeline.config import (
     CURRENT_SEASON,
     LEAGUES,
@@ -158,6 +158,7 @@ def main() -> int:
 
     all_upcoming = predict_mod.upcoming(df)
     predictions = predict_mod.predict(all_upcoming, model)
+    market.attach(predictions)
     by_league: dict[str, list[dict]] = {}
     for p in predictions:
         by_league.setdefault(p["league"], []).append(p)
