@@ -115,10 +115,10 @@ function extraChips(match) {
   </div>`;
 }
 
-function matchRow(match) {
+function matchRow(match, index = 0) {
   const tbd = match.time_confirmed === false ? '<span class="tbd">saat?</span>' : "";
   return `
-    <a class="match" href="#/mac/${encodeURIComponent(match.id)}">
+    <a class="match" style="--i:${index}" href="#/mac/${encodeURIComponent(match.id)}">
       <div class="match-time">${timeIn(match.kickoff)}${tbd}</div>
       <div class="match-teams">
         <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span></div>
@@ -141,10 +141,10 @@ function forecastChip(result) {
     ${PICK_LABEL[f.pick]} <b>%${pct(f.probs[f.pick])}</b></span>`;
 }
 
-function resultRow(result) {
+function resultRow(result, index = 0) {
   const [hg, ag] = result.score;
   return `
-    <div class="match">
+    <div class="match" style="--i:${index}">
       <div class="match-time">${timeIn(result.kickoff)}</div>
       <div class="match-teams">
         <div class="team-line${hg < ag ? " dim" : ""}">

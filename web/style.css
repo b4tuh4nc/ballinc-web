@@ -671,3 +671,67 @@ td.pts { font-weight: 700; }
 .market-table td.pos { color: var(--accent); font-weight: 680; }
 .market-table th:first-child, .market-table td:first-child { width: auto; }
 .market-table td { font-variant-numeric: tabular-nums; }
+
+/* ─── Hareket ─────────────────────────────────────────────────────────── */
+/* Tamamı prefers-reduced-motion ile kapanıyor: hareket hassasiyeti olan
+   kullanıcılar için bu bir erişilebilirlik gereği, tercih değil.
+   GSAP yerine CSS: bu efektler tarayıcının kendi imkânlarıyla ek bir
+   bağımlılık ve indirme maliyeti olmadan yapılabiliyor. */
+
+@media (prefers-reduced-motion: no-preference) {
+
+  @keyframes rise {
+    from { opacity: 0; transform: translateY(9px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: scale(.96) translateY(-6px); }
+    to   { opacity: 1; transform: none; }
+  }
+  @keyframes growX {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(1); }
+  }
+
+  /* Görünüm değişince içerik yumuşak giriyor. */
+  #view > * { animation: fade .22s ease both; }
+
+  /* Maç ve sonuç satırları sırayla beliriyor. Gecikme 10. satırdan sonra
+     sabitleniyor: 25 maçlık bir günde son satırın 1 saniye beklemesi
+     akıcı değil, yavaş hissettirir. */
+  .match-list .match {
+    animation: rise .3s cubic-bezier(.22, .68, .36, 1) both;
+    animation-delay: calc(min(var(--i, 0), 10) * 26ms);
+  }
+
+  .league-head { animation: rise .3s ease both; }
+  .card { animation: rise .34s cubic-bezier(.22, .68, .36, 1) both; }
+  .match-hero { animation: rise .36s cubic-bezier(.22, .68, .36, 1) both; }
+
+  /* Takvim sağ üstten açılıyor — düğmeden çıkıyormuş gibi. */
+  .cal { animation: pop .18s cubic-bezier(.2, .8, .3, 1) both; transform-origin: top right; }
+
+  /* Çubuklar soldan büyüyor. scaleX kullanılıyor çünkü genişlik satır içi
+     stille veriliyor ve CSS onu hedef olarak alamıyor. */
+  .bar-fill, .cmp-track .cmp-fill {
+    transform-origin: left;
+    animation: growX .5s cubic-bezier(.22, .68, .36, 1) both;
+  }
+  .cmp-track.left .cmp-fill { transform-origin: right; }
+  .prob-bar { animation: rise .4s cubic-bezier(.22, .68, .36, 1) both; }
+
+  .datestrip { animation: rise .3s ease both; }
+  .day-btn, .week-chip, .league-tab, .odds-cell, .strip-nav, .back {
+    transition: background .15s ease, color .15s ease,
+                border-color .15s ease, transform .12s ease;
+  }
+  .day-btn:active, .week-chip:active, .strip-nav:active { transform: scale(.95); }
+  a.match { transition: background .15s ease; }
+  .crest, .brand-mark { transition: transform .2s ease; }
+  a.match:hover .crest { transform: scale(1.08); }
+  .brand:hover .brand-mark { transform: rotate(-12deg); }
+}
