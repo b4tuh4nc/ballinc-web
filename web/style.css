@@ -130,7 +130,6 @@ img { max-width: 100%; }
   border-color: color-mix(in srgb, var(--accent) 28%, transparent);
   font-weight: 620;
 }
-.league-tab.idle { opacity: .45; }
 
 .icon-btn {
   flex-shrink: 0;
@@ -267,9 +266,10 @@ a.match:hover { background: var(--surface-2); }
 
 .back { display: inline-block; margin: 1.1rem 0 .5rem; font-size: .875rem; text-decoration: none; }
 
+/* Üç sütunlu düzen artık içteki .hero-names'te; hero'nun kendisi dikey
+   akıyor ki olasılık çubuğu tam genişlikte alta gelsin. */
 .match-hero {
-  display: grid; grid-template-columns: 1fr auto 1fr;
-  align-items: center; gap: 1rem;
+  display: block;
   padding: 1.5rem 1rem;
   background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius);
@@ -373,4 +373,149 @@ td.team-cell { display: flex; align-items: center; gap: .45rem; }
   .bar-row { grid-template-columns: 5rem 1fr 2.7rem; }
   .crest.lg { width: 42px; height: 42px; }
   .page-title img { width: 28px; height: 28px; }
+}
+
+
+/* ─── Tarih şeridi (ana sayfa) ────────────────────────────────────────── */
+
+.datestrip {
+  display: flex; align-items: center; gap: .35rem;
+  margin: .9rem 0 .3rem;
+  padding: .4rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+
+.strip-track {
+  display: flex; gap: .25rem; flex: 1;
+  overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none;
+}
+.strip-track::-webkit-scrollbar { display: none; }
+
+.day-btn {
+  flex: 1 0 auto; min-width: 4.1rem;
+  display: flex; flex-direction: column; align-items: center; gap: .1rem;
+  padding: .4rem .3rem;
+  border: 1px solid transparent; border-radius: 9px;
+  background: none; color: var(--text-muted);
+  font: inherit; font-size: .78rem; cursor: pointer;
+  line-height: 1.25;
+}
+.day-btn .dow { font-size: .68rem; letter-spacing: .05em; }
+.day-btn .dnum { font-variant-numeric: tabular-nums; font-weight: 620; color: var(--text); }
+.day-btn .dot {
+  width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); margin-top: .1rem;
+}
+.day-btn:hover { background: var(--surface-2); }
+.day-btn[aria-pressed="true"] {
+  background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 32%, transparent);
+  color: var(--accent);
+}
+.day-btn[aria-pressed="true"] .dnum { color: var(--accent); }
+.day-btn:disabled { opacity: .32; cursor: default; }
+.day-btn:disabled:hover { background: none; }
+
+.strip-nav {
+  flex-shrink: 0;
+  width: 28px; height: 34px;
+  display: grid; place-items: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface); color: var(--text-muted);
+  cursor: pointer; font-size: 1rem;
+}
+.strip-nav:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.strip-nav:disabled { opacity: .3; cursor: default; }
+.strip-date { position: relative; }
+.strip-date input {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  border: 0; padding: 0;
+}
+
+/* ─── Hafta carousel'i ────────────────────────────────────────────────── */
+
+.week-bar { display: flex; align-items: center; gap: .35rem; margin: .9rem 0 .2rem; }
+.weeks {
+  display: flex; gap: .3rem; flex: 1;
+  overflow-x: auto; scroll-behavior: smooth; scrollbar-width: none;
+  padding: .1rem;
+}
+
+/* ─── Maç sayfası ─────────────────────────────────────────────────────── */
+
+.hero-names { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 1rem; }
+
+/* 1X2 tek bir yığılmış çubukta: üç ayrı çubuk yerine payların birbirine
+   göre büyüklüğü tek bakışta okunuyor. */
+.prob-bar {
+  display: flex; height: 34px; margin-top: 1.1rem;
+  border-radius: 9px; overflow: hidden;
+  background: var(--surface-3);
+}
+.prob-seg {
+  display: grid; place-items: center;
+  font-size: .82rem; font-weight: 700; color: #fff;
+  min-width: 0; overflow: hidden;
+  transition: flex-grow .3s;
+}
+.prob-seg.home { background: var(--home); }
+.prob-seg.draw { background: var(--draw); }
+.prob-seg.away { background: var(--away); }
+
+.prob-legend {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: .5rem; margin-top: .5rem;
+  font-size: .72rem; color: var(--text-muted);
+}
+.prob-legend span { display: flex; align-items: center; gap: .3rem; }
+.prob-legend i { width: 8px; height: 8px; border-radius: 2px; flex-shrink: 0; }
+.prob-legend span:nth-child(2) { justify-content: center; }
+.prob-legend span:nth-child(3) { justify-content: flex-end; }
+
+.headline {
+  display: flex; align-items: center; gap: 1.1rem;
+  padding: .3rem 0;
+}
+.headline-score {
+  font-size: 2.1rem; font-weight: 750; letter-spacing: -.03em;
+  font-variant-numeric: tabular-nums; line-height: 1;
+}
+.headline-meta { font-size: .8rem; color: var(--text-muted); }
+.headline-meta b { color: var(--text); font-size: .95rem; }
+
+/* Takım karşılaştırması: değerler ortadan iki yana büyüyor. */
+.compare { display: flex; flex-direction: column; gap: .6rem; }
+.compare-row {
+  display: grid; grid-template-columns: 2.6rem 1fr auto 1fr 2.6rem;
+  align-items: center; gap: .5rem;
+  font-size: .82rem; font-variant-numeric: tabular-nums;
+}
+.compare-row .lbl {
+  grid-column: 3; text-align: center;
+  font-size: .68rem; color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: .04em;
+  white-space: nowrap;
+}
+.cmp-track { height: 7px; border-radius: 999px; background: var(--surface-3); overflow: hidden; display: flex; }
+.cmp-track.left { justify-content: flex-end; }
+.cmp-fill { height: 100%; background: var(--home); border-radius: 999px; }
+.cmp-track.right .cmp-fill { background: var(--away); }
+.compare-row .v { color: var(--text); font-weight: 620; }
+.compare-row .v.r { text-align: right; }
+
+.compare-head {
+  display: grid; grid-template-columns: 1fr auto 1fr;
+  align-items: center; gap: .5rem;
+  margin-bottom: .9rem; font-size: .85rem; font-weight: 650;
+}
+.compare-head .t { display: flex; align-items: center; gap: .4rem; min-width: 0; }
+.compare-head .t.r { justify-content: flex-end; }
+.compare-head .t span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 620px) {
+  .headline-score { font-size: 1.7rem; }
+  .compare-row { grid-template-columns: 2.2rem 1fr auto 1fr 2.2rem; gap: .35rem; font-size: .78rem; }
+  .day-btn { min-width: 3.5rem; }
 }

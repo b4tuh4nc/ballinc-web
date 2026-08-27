@@ -32,6 +32,26 @@ def upcoming(df: pd.DataFrame, now: pd.Timestamp | None = None,
     return df[mask].sort_values("datetime")
 
 
+# Maç sayfasında iki takımı yan yana kıyaslamak için taşınan form değerleri.
+# Modelin gerçekte baktığı sayılar bunlar; kullanıcı tahmini nereden geldiğini
+# görebilsin diye gösteriliyor.
+COMPARE_STATS = {
+    "xgf": "xgf_10",   # attığı gol beklentisi
+    "xga": "xga_10",   # yediği gol beklentisi
+    "gf": "gf_10",
+    "ga": "ga_10",
+    "pts": "pts_10",
+}
+
+
+def _team_stats(row: pd.Series, side: str) -> dict:
+    out = {}
+    for name, column in COMPARE_STATS.items():
+        value = row.get(f"{side}_{column}")
+        out[name] = round(float(value), 2) if pd.notna(value) else None
+    return out
+
+
 def predict(df: pd.DataFrame, model: GoalModel | None = None) -> list[dict]:
     """Verilen maçlar için market olasılıkları ve skor dağılımı."""
     if df.empty:
@@ -62,10 +82,12 @@ def predict(df: pd.DataFrame, model: GoalModel | None = None) -> list[dict]:
             "home": {
                 "id": row["home_id"], "name": row["home_team"],
                 "short": row["home_short"], "elo": round(float(row["home_elo"])),
+                "stats": _team_stats(row, "home"),
             },
             "away": {
                 "id": row["away_id"], "name": row["away_team"],
                 "short": row["away_short"], "elo": round(float(row["away_elo"])),
+                "stats": _team_stats(row, "away"),
             },
             "lambdas": [round(float(lam_home[pos]), 3), round(float(lam_away[pos]), 3)],
             "markets": {
