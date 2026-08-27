@@ -618,14 +618,20 @@ async function viewMatch(id) {
   return `
     ${backLink(data)}
 
-    <div class="match-hero">
+    <div class="match-hero"${liveKey(match) ? ` data-live="${liveKey(match)}"` : ""}>
       <div class="hero-names">
         <div class="hero-team">
           ${crest(match.home.id, "lg")}
           <strong>${esc(match.home.name)}</strong><span>Elo ${match.home.elo}</span>
         </div>
         <div class="hero-mid">
-          <strong>${timeIn(match.kickoff)}</strong>${esc(dayLabel(match.kickoff))}${week}
+          <!-- Canlı skor alanları applyLive() ile doluyor; maç başlamadıysa
+               gizli kalıyor ve yerinde başlama saati duruyor. -->
+          <strong class="hero-score">
+            <span class="live-h"></span><span class="dash">–</span><span class="live-a"></span>
+          </strong>
+          <strong class="clock">${timeIn(match.kickoff)}</strong>
+          ${esc(dayLabel(match.kickoff))}${week}
         </div>
         <div class="hero-team">
           ${crest(match.away.id, "lg")}

@@ -957,3 +957,23 @@ td.pts { font-weight: 700; }
   }
   .live-dot { animation: livePulse 1.6s ease-in-out infinite; }
 }
+
+/* ─── Maç sayfasında canlı skor ───────────────────────────────────────── */
+
+.hero-score { display: none; }
+.match-hero.is-live .hero-score,
+.match-hero.is-done .hero-score {
+  display: block;
+  font-size: 2rem; line-height: 1.1; letter-spacing: -.02em;
+  font-variant-numeric: tabular-nums;
+}
+.hero-score .dash { margin: 0 .35rem; color: var(--text-muted); font-weight: 400; }
+
+/* Maç başlayınca büyük skor öne çıkıyor, başlama saati küçülüp
+   dakika göstergesine dönüşüyor. */
+.match-hero.is-live .clock,
+.match-hero.is-done .clock {
+  display: block; font-size: .8rem; margin-top: .15rem;
+}
+.match-hero.is-live .clock { color: var(--accent); }
+.match-hero.is-live { border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
