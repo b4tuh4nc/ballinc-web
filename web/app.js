@@ -124,9 +124,7 @@ function matchRow(match, index = 0) {
       <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
       <div class="match-teams">
         <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span><span class="team-score live-h"></span></div>
-        <div class="scorers goals-h"></div>
         <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span><span class="team-score live-a"></span></div>
-        <div class="scorers goals-a"></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
       <div class="chev" aria-hidden="true">›</div>
@@ -1079,9 +1077,47 @@ const LIVE_URL = "https://www.fotmob.com/api/data/matches?date=";
 /* Golcü proxy'sinin adresi meta.json'dan geliyor (pipeline/config.py ->
    GOAL_PROXY_URL). Boşsa golcü gösterimi hiç denenmiyor. */
 let goalProxy = "";
-const LIVE_INTERVAL = 60_000;
+const LIVE_IDLE = 60_000;
+const LIVE_ACTIVE = 25_000;   // canlı maç varken daha sık bak
 let liveTimer = null;
+let liveInterval = 0;
 let liveData = new Map();
+
+/* Gol bildirimi skor değişiminden anlaşılıyor; golcü bilgisine gerek yok.
+   Sayfa ilk açıldığında bildirim çıkmıyor — o an zaten var olan skoru "yeni
+   gol" sanmamak için. */
+const previousScores = new Map();
+let firstLivePass = true;
+
+function detectGoals() {
+  const scored = [];
+  for (const [key, state] of liveData) {
+    const now = `${state.home ?? 0}-${state.away ?? 0}`;
+    const before = previousScores.get(key);
+    if (!firstLivePass && before !== undefined && before !== now) {
+      // Skor geri gidebilir (VAR iptali); yalnızca artışta kutlama.
+      const [bh, ba] = before.split("-").map(Number);
+      if ((state.home ?? 0) > bh || (state.away ?? 0) > ba) scored.push(key);
+    }
+    previousScores.set(key, now);
+  }
+  firstLivePass = false;
+  return scored;
+}
+
+function flashGoal(key) {
+  const node = document.querySelector(`[data-live="${CSS.escape(key)}"]`);
+  if (!node || node.querySelector(".goal-flash")) return;
+  const flash = document.createElement("div");
+  flash.className = "goal-flash";
+  flash.innerHTML = '<span>G<i>O</i>L!</span>';
+  node.appendChild(flash);
+  // Zaman aşımı yedeği şart: hareket azaltma modunda animasyon çalışmıyor,
+  // dolayısıyla animationend hiç tetiklenmiyor ve bildirim ekranda kalıyordu.
+  const remove = () => flash.remove();
+  flash.addEventListener("animationend", remove, { once: true });
+  setTimeout(remove, 4000);
+}
 
 /* Golcü bilgisi ayrı bir uçta ve FotMob oraya CORS izni VERMİYOR (liste ucuna
    veriyor, matchDetails'e vermiyor — ikisi de tarayıcıdan test edildi). Yani
@@ -1202,17 +1238,31 @@ async function refreshLive() {
   if (document.hidden) return;
   try {
     await fetchLive();
+    const scored = detectGoals();
     applyLive();
+    scored.forEach(flashGoal);
     await paintGoals();
+    retimeLive();
   } catch {
     /* canlı veri isteğe bağlı; sessizce geç */
   }
 }
 
+/** Canlı maç varken daha sık, yokken daha seyrek yoklama. */
+function retimeLive() {
+  const anyLive = [...liveData.values()].some((s) => s.ongoing);
+  const wanted = anyLive ? LIVE_ACTIVE : LIVE_IDLE;
+  if (wanted === liveInterval) return;
+  liveInterval = wanted;
+  clearInterval(liveTimer);
+  liveTimer = setInterval(refreshLive, wanted);
+}
+
 function startLive() {
   if (liveTimer) return;
+  liveInterval = LIVE_IDLE;
+  liveTimer = setInterval(refreshLive, liveInterval);
   refreshLive();
-  liveTimer = setInterval(refreshLive, LIVE_INTERVAL);
 }
 
 // Sekme arka plandayken boşuna istek atma.
