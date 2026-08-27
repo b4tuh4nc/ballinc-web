@@ -87,6 +87,24 @@ python -m pytest tests/ -q     # sızıntı ve takip testleri
 cd web && python -m http.server 8000   # siteyi lokalde aç
 ```
 
+## Süper Lig verisini tazeleme
+
+Understat kapsamındaki 5 lig her gece otomatik güncelleniyor. Süper Lig
+SofaScore'dan geliyor ve **SofaScore GitHub Actions runner'larını engelliyor**,
+yani bu veri CI'da yenilenemiyor. Bu yüzden TSL parquet dosyaları repoda
+tutuluyor ve gecelik akış onları kullanıyor.
+
+Yeni TSL sonuçlarını almak için haftada bir lokalde:
+
+```bash
+python -m pipeline.ingest --leagues TSL
+python -m pipeline.validate
+git add data/raw/TSL_*.parquet && git commit -m "TSL verisi güncellendi" && git push
+```
+
+Çekim başarısız olursa mevcut veri korunur ve akış durmaz; log'da
+`tazelenemedi, mevcut veri korundu` satırı görünür.
+
 ## Yeni sezona geçiş
 
 `pipeline/config.py` içinde iki satır:
