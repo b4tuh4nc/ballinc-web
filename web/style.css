@@ -342,7 +342,10 @@ table:not(.table-metrics) td:nth-child(2) { text-align: left; width: 100%; white
 tbody tr { border-top: 1px solid var(--border); }
 td.rank { color: var(--text-muted); font-variant-numeric: tabular-nums; }
 td.pts { font-weight: 700; }
-td.team-cell { display: flex; align-items: center; gap: .45rem; }
+/* Sınıf <td> değil içindeki <span>'de; `td.team-cell` yazıldığı için kural
+   hiç uygulanmıyordu ve arma yazının taban çizgisine oturup satırı yamultuyordu. */
+.team-cell { display: inline-flex; align-items: center; gap: .45rem; line-height: 1; }
+.team-cell .crest { width: 20px; height: 20px; }
 
 /* ─── Boş durum ───────────────────────────────────────────────────────── */
 
