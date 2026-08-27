@@ -319,12 +319,34 @@ async function viewHome() {
   start = clamp(start, 0, Math.max(0, dates.length - STRIP_DAYS));
 
   const list = all.filter((m) => dayKey(m.kickoff) === selected);
+
+  // Gün içindeki maçlar lig lig ayrılıyor: karışık bir listede hangi maçın
+  // hangi ligden olduğunu okumak zordu. Ligler o gün ilk maçı oynayandan
+  // başlayarak sıralanıyor.
+  const byLeague = new Map();
+  for (const m of list) {
+    if (!byLeague.has(m.league)) byLeague.set(m.league, []);
+    byLeague.get(m.league).push(m);
+  }
+  const names = Object.fromEntries(meta.leagues.map((l) => [l.code, l.name]));
+  const groups = [...byLeague.entries()]
+    .sort(([, a], [, b]) => a[0].kickoff.localeCompare(b[0].kickoff))
+    .map(([code, matches]) => `
+      <a class="league-head" href="#/lig/${encodeURIComponent(code)}">
+        ${leagueLogo(code)}
+        <span class="lh-name">${esc(names[code] ?? code)}</span>
+        <span class="lh-count">${matches.length} maç</span>
+        <span class="chev" aria-hidden="true">›</span>
+      </a>
+      <div class="match-list">${matches.map(matchRow).join("")}</div>`).join("");
+
   return `
     ${head}
     ${idleNote}
     ${dateStripHTML(dates, selected, start, counts)}
-    <div class="date-head">${esc(dayLabel(list[0].kickoff))} · ${list.length} maç</div>
-    <div class="match-list">${list.map(matchRow).join("")}</div>`;
+    <div class="date-head">${esc(dayLabel(list[0].kickoff))} · ${list.length} maç ·
+      ${byLeague.size} lig</div>
+    ${groups}`;
 }
 
 async function viewLeague(code, tab) {
