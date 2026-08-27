@@ -37,6 +37,17 @@ jobs:
       - name: Veriyi çek
         run: python -m pipeline.ingest
 
+      # Takım eşlemesi, logo ve hafta numarası için gerekli. --lenient:
+      # yeni bir takım eşleşmezse akış durmasın, sadece o takım logosuz kalsın.
+      - name: Takım eşlemesini tazele
+        run: python -m pipeline.crosswalk --lenient
+
+      - name: Hafta numaraları
+        run: python -m pipeline.rounds
+
+      - name: Logolar
+        run: python -m pipeline.logos
+
       # Bütünlük kontrolü bilerek bloklayıcı: bozuk veri asla siteye
       # ulaşmasın, site son çalışan JSON'la ayakta kalsın.
       - name: Doğrula
@@ -73,7 +84,8 @@ jobs:
         run: |
           git config user.name "ballinc-bot"
           git config user.email "actions@github.com"
-          git add web/data models/metrics.json data/predictions.sqlite
+          git add web/data web/assets models/metrics.json \
+                  data/predictions.sqlite data/team_crosswalk.json
           if git diff --staged --quiet; then
             echo "Değişiklik yok."
           else

@@ -1,0 +1,632 @@
+{
+  "us101": {
+    "fotmob_id": "10233",
+    "fotmob_name": "Genoa",
+    "understat_name": "Genoa"
+  },
+  "us104": {
+    "fotmob_id": "7943",
+    "fotmob_name": "Sassuolo",
+    "understat_name": "Sassuolo"
+  },
+  "us105": {
+    "fotmob_id": "9875",
+    "fotmob_name": "Napoli",
+    "understat_name": "Napoli"
+  },
+  "us106": {
+    "fotmob_id": "8636",
+    "fotmob_name": "Inter",
+    "understat_name": "Inter"
+  },
+  "us107": {
+    "fotmob_id": "8524",
+    "fotmob_name": "Atalanta",
+    "understat_name": "Atalanta"
+  },
+  "us108": {
+    "fotmob_id": "8534",
+    "fotmob_name": "Empoli",
+    "understat_name": "Empoli"
+  },
+  "us110": {
+    "fotmob_id": "8535",
+    "fotmob_name": "Fiorentina",
+    "understat_name": "Fiorentina"
+  },
+  "us111": {
+    "fotmob_id": "8564",
+    "fotmob_name": "Milan",
+    "understat_name": "AC Milan"
+  },
+  "us112": {
+    "fotmob_id": "9891",
+    "fotmob_name": "Frosinone",
+    "understat_name": "Frosinone"
+  },
+  "us113": {
+    "fotmob_id": "9804",
+    "fotmob_name": "Torino",
+    "understat_name": "Torino"
+  },
+  "us116": {
+    "fotmob_id": "8529",
+    "fotmob_name": "Cagliari",
+    "understat_name": "Cagliari"
+  },
+  "us117": {
+    "fotmob_id": "9823",
+    "fotmob_name": "Bayern München",
+    "understat_name": "Bayern Munich"
+  },
+  "us118": {
+    "fotmob_id": "9790",
+    "fotmob_name": "Hamburger SV",
+    "understat_name": "Hamburger SV"
+  },
+  "us119": {
+    "fotmob_id": "8178",
+    "fotmob_name": "Bayer Leverkusen",
+    "understat_name": "Bayer Leverkusen"
+  },
+  "us120": {
+    "fotmob_id": "8226",
+    "fotmob_name": "Hoffenheim",
+    "understat_name": "Hoffenheim"
+  },
+  "us121": {
+    "fotmob_id": "8406",
+    "fotmob_name": "Augsburg",
+    "understat_name": "Augsburg"
+  },
+  "us123": {
+    "fotmob_id": "8697",
+    "fotmob_name": "Werder Bremen",
+    "understat_name": "Werder Bremen"
+  },
+  "us125": {
+    "fotmob_id": "9905",
+    "fotmob_name": "Mainz 05",
+    "understat_name": "Mainz 05"
+  },
+  "us127": {
+    "fotmob_id": "8262",
+    "fotmob_name": "Darmstadt",
+    "understat_name": "Darmstadt"
+  },
+  "us129": {
+    "fotmob_id": "9789",
+    "fotmob_name": "Borussia Dortmund",
+    "understat_name": "Borussia Dortmund"
+  },
+  "us130": {
+    "fotmob_id": "9788",
+    "fotmob_name": "Borussia Mönchengladbach",
+    "understat_name": "Borussia M.Gladbach"
+  },
+  "us131": {
+    "fotmob_id": "8721",
+    "fotmob_name": "Wolfsburg",
+    "understat_name": "Wolfsburg"
+  },
+  "us132": {
+    "fotmob_id": "9810",
+    "fotmob_name": "Eintracht Frankfurt",
+    "understat_name": "Eintracht Frankfurt"
+  },
+  "us133": {
+    "fotmob_id": "10269",
+    "fotmob_name": "VfB Stuttgart",
+    "understat_name": "VfB Stuttgart"
+  },
+  "us134": {
+    "fotmob_id": "8722",
+    "fotmob_name": "1. FC Köln",
+    "understat_name": "FC Cologne"
+  },
+  "us135": {
+    "fotmob_id": "8358",
+    "fotmob_name": "Freiburg",
+    "understat_name": "Freiburg"
+  },
+  "us136": {
+    "fotmob_id": "178475",
+    "fotmob_name": "RB Leipzig",
+    "understat_name": "RasenBallsport Leipzig"
+  },
+  "us137": {
+    "fotmob_id": "9864",
+    "fotmob_name": "Málaga",
+    "understat_name": "Malaga"
+  },
+  "us138": {
+    "fotmob_id": "8302",
+    "fotmob_name": "Sevilla",
+    "understat_name": "Sevilla"
+  },
+  "us139": {
+    "fotmob_id": "9783",
+    "fotmob_name": "Deportivo A Coruña",
+    "understat_name": "Deportivo La Coruna"
+  },
+  "us140": {
+    "fotmob_id": "8560",
+    "fotmob_name": "Real Sociedad",
+    "understat_name": "Real Sociedad"
+  },
+  "us141": {
+    "fotmob_id": "8558",
+    "fotmob_name": "Espanyol",
+    "understat_name": "Espanyol"
+  },
+  "us142": {
+    "fotmob_id": "8305",
+    "fotmob_name": "Getafe",
+    "understat_name": "Getafe"
+  },
+  "us143": {
+    "fotmob_id": "9906",
+    "fotmob_name": "Atlético Madrid",
+    "understat_name": "Atletico Madrid"
+  },
+  "us144": {
+    "fotmob_id": "8306",
+    "fotmob_name": "Las Palmas",
+    "understat_name": "Las Palmas"
+  },
+  "us145": {
+    "fotmob_id": "8370",
+    "fotmob_name": "Rayo Vallecano",
+    "understat_name": "Rayo Vallecano"
+  },
+  "us146": {
+    "fotmob_id": "10267",
+    "fotmob_name": "Valencia",
+    "understat_name": "Valencia"
+  },
+  "us147": {
+    "fotmob_id": "8315",
+    "fotmob_name": "Athletic Club",
+    "understat_name": "Athletic Club"
+  },
+  "us148": {
+    "fotmob_id": "8634",
+    "fotmob_name": "Barcelona",
+    "understat_name": "Barcelona"
+  },
+  "us150": {
+    "fotmob_id": "8633",
+    "fotmob_name": "Real Madrid",
+    "understat_name": "Real Madrid"
+  },
+  "us151": {
+    "fotmob_id": "8581",
+    "fotmob_name": "Levante",
+    "understat_name": "Levante"
+  },
+  "us152": {
+    "fotmob_id": "9910",
+    "fotmob_name": "Celta Vigo",
+    "understat_name": "Celta Vigo"
+  },
+  "us153": {
+    "fotmob_id": "8603",
+    "fotmob_name": "Real Betis",
+    "understat_name": "Real Betis"
+  },
+  "us154": {
+    "fotmob_id": "10205",
+    "fotmob_name": "Villarreal",
+    "understat_name": "Villarreal"
+  },
+  "us155": {
+    "fotmob_id": "7878",
+    "fotmob_name": "Granada",
+    "understat_name": "Granada"
+  },
+  "us157": {
+    "fotmob_id": "8371",
+    "fotmob_name": "Osasuna",
+    "understat_name": "Osasuna"
+  },
+  "us158": {
+    "fotmob_id": "9866",
+    "fotmob_name": "Deportivo Alavés",
+    "understat_name": "Alaves"
+  },
+  "us159": {
+    "fotmob_id": "7854",
+    "fotmob_name": "Leganés",
+    "understat_name": "Leganes"
+  },
+  "us160": {
+    "fotmob_id": "8639",
+    "fotmob_name": "Lille",
+    "understat_name": "Lille"
+  },
+  "us161": {
+    "fotmob_id": "9847",
+    "fotmob_name": "Paris Saint-Germain",
+    "understat_name": "Paris Saint Germain"
+  },
+  "us163": {
+    "fotmob_id": "9851",
+    "fotmob_name": "Rennes",
+    "understat_name": "Rennes"
+  },
+  "us164": {
+    "fotmob_id": "8592",
+    "fotmob_name": "Marseille",
+    "understat_name": "Marseille"
+  },
+  "us166": {
+    "fotmob_id": "10249",
+    "fotmob_name": "Montpellier",
+    "understat_name": "Montpellier"
+  },
+  "us167": {
+    "fotmob_id": "8121",
+    "fotmob_name": "Angers",
+    "understat_name": "Angers"
+  },
+  "us168": {
+    "fotmob_id": "9830",
+    "fotmob_name": "Nantes",
+    "understat_name": "Nantes"
+  },
+  "us170": {
+    "fotmob_id": "9831",
+    "fotmob_name": "Nice",
+    "understat_name": "Nice"
+  },
+  "us171": {
+    "fotmob_id": "9829",
+    "fotmob_name": "Monaco",
+    "understat_name": "Monaco"
+  },
+  "us172": {
+    "fotmob_id": "10242",
+    "fotmob_name": "Troyes",
+    "understat_name": "Troyes"
+  },
+  "us174": {
+    "fotmob_id": "9941",
+    "fotmob_name": "Toulouse",
+    "understat_name": "Toulouse"
+  },
+  "us175": {
+    "fotmob_id": "9853",
+    "fotmob_name": "Saint-Étienne",
+    "understat_name": "Saint-Etienne"
+  },
+  "us177": {
+    "fotmob_id": "9837",
+    "fotmob_name": "Reims",
+    "understat_name": "Reims"
+  },
+  "us178": {
+    "fotmob_id": "9748",
+    "fotmob_name": "Lyon",
+    "understat_name": "Lyon"
+  },
+  "us179": {
+    "fotmob_id": "8689",
+    "fotmob_name": "Lorient",
+    "understat_name": "Lorient"
+  },
+  "us180": {
+    "fotmob_id": "8550",
+    "fotmob_name": "Metz",
+    "understat_name": "Metz"
+  },
+  "us207": {
+    "fotmob_id": "10268",
+    "fotmob_name": "Elche",
+    "understat_name": "Elche"
+  },
+  "us208": {
+    "fotmob_id": "9865",
+    "fotmob_name": "Almería",
+    "understat_name": "Almeria"
+  },
+  "us210": {
+    "fotmob_id": "8588",
+    "fotmob_name": "Lens",
+    "understat_name": "Lens"
+  },
+  "us220": {
+    "fotmob_id": "10204",
+    "fotmob_name": "Brighton & Hove Albion",
+    "understat_name": "Brighton"
+  },
+  "us223": {
+    "fotmob_id": "7732",
+    "fotmob_name": "Girona",
+    "understat_name": "Girona"
+  },
+  "us225": {
+    "fotmob_id": "9848",
+    "fotmob_name": "Strasbourg",
+    "understat_name": "Strasbourg"
+  },
+  "us228": {
+    "fotmob_id": "9879",
+    "fotmob_name": "Fulham",
+    "understat_name": "Fulham"
+  },
+  "us229": {
+    "fotmob_id": "8602",
+    "fotmob_name": "Wolverhampton Wanderers",
+    "understat_name": "Wolverhampton Wanderers"
+  },
+  "us230": {
+    "fotmob_id": "10167",
+    "fotmob_name": "Parma",
+    "understat_name": "Parma Calcio 1913"
+  },
+  "us231": {
+    "fotmob_id": "10281",
+    "fotmob_name": "Real Valladolid",
+    "understat_name": "Real Valladolid"
+  },
+  "us238": {
+    "fotmob_id": "8657",
+    "fotmob_name": "Sheffield United",
+    "understat_name": "Sheffield United"
+  },
+  "us239": {
+    "fotmob_id": "8661",
+    "fotmob_name": "Mallorca",
+    "understat_name": "Mallorca"
+  },
+  "us240": {
+    "fotmob_id": "8149",
+    "fotmob_name": "Union Berlin",
+    "understat_name": "Union Berlin"
+  },
+  "us241": {
+    "fotmob_id": "8521",
+    "fotmob_name": "Brest",
+    "understat_name": "Brest"
+  },
+  "us243": {
+    "fotmob_id": "9888",
+    "fotmob_name": "Lecce",
+    "understat_name": "Lecce"
+  },
+  "us244": {
+    "fotmob_id": "9937",
+    "fotmob_name": "Brentford",
+    "understat_name": "Brentford"
+  },
+  "us245": {
+    "fotmob_id": "8463",
+    "fotmob_name": "Leeds United",
+    "understat_name": "Leeds"
+  },
+  "us249": {
+    "fotmob_id": "10203",
+    "fotmob_name": "Nottingham Forest",
+    "understat_name": "Nottingham Forest"
+  },
+  "us256": {
+    "fotmob_id": "8346",
+    "fotmob_name": "Luton Town",
+    "understat_name": "Luton"
+  },
+  "us261": {
+    "fotmob_id": "8385",
+    "fotmob_name": "Cádiz",
+    "understat_name": "Cadiz"
+  },
+  "us264": {
+    "fotmob_id": "6480",
+    "fotmob_name": "Salernitana",
+    "understat_name": "Salernitana"
+  },
+  "us265": {
+    "fotmob_id": "7881",
+    "fotmob_name": "Venezia",
+    "understat_name": "Venezia"
+  },
+  "us268": {
+    "fotmob_id": "9911",
+    "fotmob_name": "Bochum",
+    "understat_name": "Bochum"
+  },
+  "us270": {
+    "fotmob_id": "8311",
+    "fotmob_name": "Clermont Foot",
+    "understat_name": "Clermont Foot"
+  },
+  "us271": {
+    "fotmob_id": "6504",
+    "fotmob_name": "Monza",
+    "understat_name": "Monza"
+  },
+  "us272": {
+    "fotmob_id": "7801",
+    "fotmob_name": "Cremonese",
+    "understat_name": "Cremonese"
+  },
+  "us275": {
+    "fotmob_id": "8583",
+    "fotmob_name": "Auxerre",
+    "understat_name": "Auxerre"
+  },
+  "us280": {
+    "fotmob_id": "94937",
+    "fotmob_name": "FC Heidenheim",
+    "understat_name": "FC Heidenheim"
+  },
+  "us282": {
+    "fotmob_id": "9746",
+    "fotmob_name": "Le Havre",
+    "understat_name": "Le Havre"
+  },
+  "us285": {
+    "fotmob_id": "9902",
+    "fotmob_name": "Ipswich Town",
+    "understat_name": "Ipswich"
+  },
+  "us286": {
+    "fotmob_id": "10171",
+    "fotmob_name": "Como",
+    "understat_name": "Como"
+  },
+  "us287": {
+    "fotmob_id": "8150",
+    "fotmob_name": "Holstein Kiel",
+    "understat_name": "Holstein Kiel"
+  },
+  "us288": {
+    "fotmob_id": "8152",
+    "fotmob_name": "St. Pauli",
+    "understat_name": "St. Pauli"
+  },
+  "us289": {
+    "fotmob_id": "8670",
+    "fotmob_name": "Real Oviedo",
+    "understat_name": "Real Oviedo"
+  },
+  "us290": {
+    "fotmob_id": "6379",
+    "fotmob_name": "Paris FC",
+    "understat_name": "Paris FC"
+  },
+  "us291": {
+    "fotmob_id": "6479",
+    "fotmob_name": "Pisa",
+    "understat_name": "Pisa"
+  },
+  "us293": {
+    "fotmob_id": "8696",
+    "fotmob_name": "Racing Santander",
+    "understat_name": "Racing Santander"
+  },
+  "us294": {
+    "fotmob_id": "8669",
+    "fotmob_name": "Coventry City",
+    "understat_name": "Coventry"
+  },
+  "us295": {
+    "fotmob_id": "8682",
+    "fotmob_name": "Le Mans",
+    "understat_name": "Le Mans"
+  },
+  "us71": {
+    "fotmob_id": "10252",
+    "fotmob_name": "Aston Villa",
+    "understat_name": "Aston Villa"
+  },
+  "us72": {
+    "fotmob_id": "8668",
+    "fotmob_name": "Everton",
+    "understat_name": "Everton"
+  },
+  "us73": {
+    "fotmob_id": "8678",
+    "fotmob_name": "AFC Bournemouth",
+    "understat_name": "Bournemouth"
+  },
+  "us74": {
+    "fotmob_id": "8466",
+    "fotmob_name": "Southampton",
+    "understat_name": "Southampton"
+  },
+  "us75": {
+    "fotmob_id": "8197",
+    "fotmob_name": "Leicester City",
+    "understat_name": "Leicester"
+  },
+  "us77": {
+    "fotmob_id": "8472",
+    "fotmob_name": "Sunderland",
+    "understat_name": "Sunderland"
+  },
+  "us78": {
+    "fotmob_id": "9826",
+    "fotmob_name": "Crystal Palace",
+    "understat_name": "Crystal Palace"
+  },
+  "us80": {
+    "fotmob_id": "8455",
+    "fotmob_name": "Chelsea",
+    "understat_name": "Chelsea"
+  },
+  "us81": {
+    "fotmob_id": "8654",
+    "fotmob_name": "West Ham United",
+    "understat_name": "West Ham"
+  },
+  "us82": {
+    "fotmob_id": "8586",
+    "fotmob_name": "Tottenham Hotspur",
+    "understat_name": "Tottenham"
+  },
+  "us83": {
+    "fotmob_id": "9825",
+    "fotmob_name": "Arsenal",
+    "understat_name": "Arsenal"
+  },
+  "us86": {
+    "fotmob_id": "10261",
+    "fotmob_name": "Newcastle United",
+    "understat_name": "Newcastle United"
+  },
+  "us87": {
+    "fotmob_id": "8650",
+    "fotmob_name": "Liverpool",
+    "understat_name": "Liverpool"
+  },
+  "us88": {
+    "fotmob_id": "8456",
+    "fotmob_name": "Manchester City",
+    "understat_name": "Manchester City"
+  },
+  "us89": {
+    "fotmob_id": "10260",
+    "fotmob_name": "Manchester United",
+    "understat_name": "Manchester United"
+  },
+  "us91": {
+    "fotmob_id": "8667",
+    "fotmob_name": "Hull City",
+    "understat_name": "Hull"
+  },
+  "us92": {
+    "fotmob_id": "8191",
+    "fotmob_name": "Burnley",
+    "understat_name": "Burnley"
+  },
+  "us94": {
+    "fotmob_id": "9876",
+    "fotmob_name": "Hellas Verona",
+    "understat_name": "Verona"
+  },
+  "us95": {
+    "fotmob_id": "8686",
+    "fotmob_name": "Roma",
+    "understat_name": "Roma"
+  },
+  "us96": {
+    "fotmob_id": "8543",
+    "fotmob_name": "Lazio",
+    "understat_name": "Lazio"
+  },
+  "us97": {
+    "fotmob_id": "9857",
+    "fotmob_name": "Bologna",
+    "understat_name": "Bologna"
+  },
+  "us98": {
+    "fotmob_id": "9885",
+    "fotmob_name": "Juventus",
+    "understat_name": "Juventus"
+  },
+  "us99": {
+    "fotmob_id": "8600",
+    "fotmob_name": "Udinese",
+    "understat_name": "Udinese"
+  }
+}

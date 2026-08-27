@@ -36,26 +36,31 @@ LEAGUES = {
         "name": "Premier Lig",
         "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
         "understat": "EPL",
+        "fotmob": 47,
     },
     "La_Liga": {
         "name": "La Liga",
         "flag": "🇪🇸",
         "understat": "La_liga",
+        "fotmob": 87,
     },
     "Serie_A": {
         "name": "Serie A",
         "flag": "🇮🇹",
         "understat": "Serie_A",
+        "fotmob": 55,
     },
     "Bundesliga": {
         "name": "Bundesliga",
         "flag": "🇩🇪",
         "understat": "Bundesliga",
+        "fotmob": 54,
     },
     "Ligue_1": {
         "name": "Ligue 1",
         "flag": "🇫🇷",
         "understat": "Ligue_1",
+        "fotmob": 53,
     },
     "TSL": {
         "name": "Süper Lig",
@@ -68,8 +73,14 @@ LEAGUES = {
 # Bir ligin takım sayısı bu aralığın dışındaysa veri şüphelidir.
 TEAM_COUNT_RANGE = (16, 22)
 
+# Birincil kaynak: Understat varsa o (xG için). FotMob her ligde tanımlı ama
+# yalnızca Understat'ın kapsamadığı liglerde birincil kaynak olarak kullanılıyor;
+# diğerlerinde logo ve hafta numarası için ikincil kaynak.
 UNDERSTAT_LEAGUES = [k for k, v in LEAGUES.items() if v.get("understat")]
 FOTMOB_LEAGUES = [k for k, v in LEAGUES.items() if v.get("fotmob")]
+FOTMOB_PRIMARY_LEAGUES = [
+    k for k, v in LEAGUES.items() if v.get("fotmob") and not v.get("understat")
+]
 
 # ─── Sızıntı kara listesi ────────────────────────────────────────────────────
 # Understat'ın "forecast" alanı maçın KENDİ xG'sinden hesaplanıyor, yani

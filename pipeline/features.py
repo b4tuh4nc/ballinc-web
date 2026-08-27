@@ -222,6 +222,9 @@ def feature_columns(df: pd.DataFrame) -> list[str]:
         "home_id", "away_id", "home_team", "away_team", "home_short", "away_short",
         "home_goals", "away_goals", "home_xg", "away_xg",
         "is_result", "has_xg", "result", "over_2_5", "btts",
+        # Hafta numarası maç öncesi bilinir ama tahmin gücü yok; sitede
+        # gruplama için taşınıyor, modele girmesi sadece gürültü ekler.
+        "round",
     }
     return [
         c for c in df.columns

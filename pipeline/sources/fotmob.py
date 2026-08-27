@@ -110,28 +110,64 @@ def drop_non_league(df: pd.DataFrame) -> pd.DataFrame:
     return df[df["home_id"].isin(roster) & df["away_id"].isin(roster)]
 
 
-def fetch_league_season(league: str, season: str) -> pd.DataFrame:
-    """Bir lig-sezonu Understat ile aynı şemada döndürür."""
-    cfg = LEAGUES[league]
-    league_id = cfg.get("fotmob")
-    if not league_id:
+def league_id(league: str) -> int:
+    league_id_value = LEAGUES[league].get("fotmob")
+    if not league_id_value:
         raise ValueError(f"{league} FotMob kapsamında değil")
+    return league_id_value
 
+
+def fetch_matches(league: str, season: str) -> list[dict]:
+    """Ham maç listesi. Sezon FotMob'da yoksa boş liste."""
     wanted = _season_param(season)
-    payload = _get(BASE_URL, {"id": league_id, "season": wanted})
+    payload = _get(BASE_URL, {"id": league_id(league), "season": wanted})
 
     available = payload.get("allAvailableSeasons") or []
     if not available:
-        raise FotmobError(f"lig {league_id} için sezon listesi boş — erişim engellenmiş olabilir")
+        raise FotmobError(
+            f"lig {league_id(league)} için sezon listesi boş — erişim engellenmiş olabilir"
+        )
     if wanted not in available:
-        return pd.DataFrame(columns=COLUMNS)
+        return []
 
     returned = (payload.get("details") or {}).get("selectedSeason")
     if returned and returned != wanted:
         raise FotmobError(f"{wanted} istendi ama {returned} döndü")
 
-    matches = (payload.get("fixtures") or {}).get("allMatches") or []
+    return (payload.get("fixtures") or {}).get("allMatches") or []
+
+
+def teams_and_rounds(matches: list[dict]) -> tuple[dict[str, str], dict[tuple[str, str], int]]:
+    """Ham maç listesinden takım adları ve (ev, deplasman) → hafta eşlemesi.
+
+    Hafta numarası FotMob'un kendi `roundName` alanından geliyor; tarihten
+    tahmin etmeye çalışmak ertelenen maçlarda yanlış sonuç verir.
+    """
+    teams: dict[str, str] = {}
+    rounds: dict[tuple[str, str], int] = {}
+    for match in matches:
+        home, away = match.get("home") or {}, match.get("away") or {}
+        if not home.get("id") or not away.get("id"):
+            continue
+        teams[str(home["id"])] = home.get("name")
+        teams[str(away["id"])] = away.get("name")
+        round_no = match.get("roundName")
+        if isinstance(round_no, int):
+            rounds[(str(home["id"]), str(away["id"]))] = round_no
+    return teams, rounds
+
+
+def fetch_league_season(league: str, season: str) -> pd.DataFrame:
+    """Bir lig-sezonu Understat ile aynı şemada döndürür."""
+    matches = fetch_matches(league, season)
+    if not matches:
+        return pd.DataFrame(columns=COLUMNS)
+
+    _, rounds = teams_and_rounds(matches)
     rows = [r for r in (_row(m, league, season) for m in matches) if r]
+    for row in rows:
+        key = (row["home_id"].removeprefix("fm"), row["away_id"].removeprefix("fm"))
+        row["round"] = rounds.get(key)
     if not rows:
         return pd.DataFrame(columns=COLUMNS)
 

@@ -13,7 +13,7 @@ import time
 import pandas as pd
 
 from pipeline.config import (
-    FOTMOB_LEAGUES,
+    FOTMOB_PRIMARY_LEAGUES,
     RAW_DIR,
     SEASONS,
     UNDERSTAT_LEAGUES,
@@ -101,7 +101,7 @@ def main() -> int:
 
     wanted = set(args.leagues) if args.leagues else None
     us = [l for l in UNDERSTAT_LEAGUES if wanted is None or l in wanted]
-    fm = [l for l in FOTMOB_LEAGUES if wanted is None or l in wanted]
+    fm = [l for l in FOTMOB_PRIMARY_LEAGUES if wanted is None or l in wanted]
 
     failures = 0
     if us:

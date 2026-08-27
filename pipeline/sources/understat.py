@@ -27,10 +27,12 @@ HEADERS = {
     "X-Requested-With": "XMLHttpRequest",
 }
 
+# Bütün kaynaklar bu şemayı üretir.
+# `round` (hafta) Understat'ta yok; FotMob'dan tamamlanıyor (bkz. rounds.py).
 COLUMNS = [
     "match_id", "datetime", "league", "season",
     "home_id", "away_id", "home_team", "away_team", "home_short", "away_short",
-    "home_goals", "away_goals", "home_xg", "away_xg", "is_result",
+    "home_goals", "away_goals", "home_xg", "away_xg", "is_result", "round",
 ]
 
 
@@ -82,6 +84,7 @@ def _row(match: dict, league: str, season: str) -> dict:
         "home_xg": _num(xg.get("h")),
         "away_xg": _num(xg.get("a")),
         "is_result": match.get("isResult") in (True, "true", 1, "1"),
+        "round": None,  # Understat hafta bilgisi vermiyor
     }
 
 

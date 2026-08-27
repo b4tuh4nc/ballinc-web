@@ -24,7 +24,6 @@ from pipeline.config import (
 )
 from pipeline.model import GoalModel
 
-RECENT_RESULTS = 20
 FORM_LENGTH = 5
 
 
@@ -84,13 +83,20 @@ def build_standings(season_df: pd.DataFrame) -> list[dict]:
 
 
 def build_results(season_df: pd.DataFrame) -> list[dict]:
-    """Son oynanan maçlar — sitede 'sonuçlar' sekmesi ve isabet takibi için."""
+    """Sezonun oynanmış BÜTÜN maçları, hafta numarasıyla.
+
+    Eskiden yalnızca son 20 maç veriliyordu; sezonun ilk haftaları siteden
+    görünmüyordu. Tam sezon 380 maçta ~80 KB tutuyor, bu boyut için sayfalama
+    yapmaya değmez.
+    """
     played = season_df[season_df["is_result"]].sort_values("datetime", ascending=False)
     out = []
-    for row in played.head(RECENT_RESULTS).itertuples():
+    for row in played.itertuples():
+        round_no = getattr(row, "round", None)
         out.append({
             "id": row.match_id,
             "kickoff": row.datetime.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "round": int(round_no) if pd.notna(round_no) else None,
             "home": {"id": row.home_id, "name": row.home_team, "short": row.home_short},
             "away": {"id": row.away_id, "name": row.away_team, "short": row.away_short},
             "score": [int(row.home_goals), int(row.away_goals)],

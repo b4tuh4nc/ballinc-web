@@ -50,10 +50,12 @@ def predict(df: pd.DataFrame, model: GoalModel | None = None) -> list[dict]:
     now = pd.Timestamp.utcnow().tz_localize(None)
     out = []
     for pos, (_, row) in enumerate(df.iterrows()):
+        round_no = row.get("round")
         out.append({
             "id": row["match_id"],
             "league": row["league"],
             "kickoff": row["datetime"].strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "round": int(round_no) if pd.notna(round_no) else None,
             "time_confirmed": bool(
                 (row["datetime"] - now) <= pd.Timedelta(days=TIME_CONFIRMED_DAYS)
             ),
