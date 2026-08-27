@@ -335,8 +335,54 @@ async function viewMatch(id) {
     </section>`;
 }
 
+/** Yayına girdikten sonra gerçekten tutan tahminler — geriye dönük ölçümden
+    farklı olarak bunlar sitede gösterildikten SONRA doğrulanmış tahminler. */
+async function liveRecordHTML() {
+  let data;
+  try {
+    data = await getJSON("accuracy.json");
+  } catch {
+    return "";
+  }
+  const markets = Object.values(data.markets ?? {});
+  if (!markets.length) {
+    return `<section class="card">
+      <h2>Yayındaki isabet</h2>
+      <p class="muted" style="margin:0">
+        Henüz sonuçlanmış tahmin yok. Site yayınlandıktan sonra her tahmin
+        kaydediliyor ve maç bitince sonucuyla eşleştiriliyor; bu tablo
+        maçlar oynandıkça kendiliğinden dolacak.
+      </p>
+    </section>`;
+  }
+  const rows = markets.map((m) => `
+    <tr>
+      <td>${esc(m.label)}</td>
+      <td>${m.n}</td>
+      <td>%${(m.accuracy * 100).toFixed(1)}</td>
+      <td>%${(m.baseline_accuracy * 100).toFixed(1)}</td>
+      <td>${m.logloss.toFixed(4)}</td>
+      <td>${esc(m.since)}</td>
+    </tr>`).join("");
+
+  return `<section class="card">
+    <h2>Yayındaki isabet <span class="badge">${data.total} tahmin doğrulandı</span></h2>
+    <div class="table-scroll"><table class="table-metrics">
+      <thead><tr>
+        <th>Market</th><th>Tahmin</th><th>İsabet</th>
+        <th>Baseline</th><th>Logloss</th><th>Başlangıç</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <p class="muted" style="margin:.75rem 0 0;font-size:.8rem">
+      Bu tahminler maç oynanmadan önce kaydedildi ve sonradan değiştirilmedi.
+    </p>
+  </section>`;
+}
+
 async function viewModel() {
   const meta = await getJSON("meta.json");
+  const live = await liveRecordHTML();
   const rows = Object.entries(meta.metrics ?? {}).map(([, m]) => `
     <tr>
       <td>${esc(m.label)}</td>
@@ -356,6 +402,7 @@ async function viewModel() {
       <h1>Model ne kadar iyi?</h1>
       <p>Walk-forward ölçüm: her sezon, yalnızca kendisinden önce oynanmış maçlarla eğitilen modelle tahmin edildi.</p>
     </div>
+    ${live}
     <section class="card">
       <div class="table-scroll"><table class="table-metrics">
         <thead><tr>

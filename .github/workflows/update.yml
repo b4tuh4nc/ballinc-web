@@ -1,0 +1,96 @@
+name: Veriyi güncelle ve yayınla
+
+on:
+  schedule:
+    - cron: "0 1 * * *"      # her gün 01:00 UTC = 04:00 Türkiye
+  workflow_dispatch:
+    inputs:
+      backtest:
+        description: "Backtest'i bu çalıştırmada da yap"
+        type: boolean
+        default: false
+
+concurrency:
+  group: ballinc-update
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - run: pip install -r requirements.txt
+
+      # Ham veri repoda tutulmuyor (her gece değiştiği için); her çalıştırmada
+      # kaynaktan yeniden çekiliyor.
+      - name: Veriyi çek
+        run: python -m pipeline.ingest
+
+      # Bütünlük kontrolü bilerek bloklayıcı: bozuk veri asla siteye
+      # ulaşmasın, site son çalışan JSON'la ayakta kalsın.
+      - name: Doğrula
+        run: python -m pipeline.validate
+
+      - name: Feature'ları üret
+        run: python -m pipeline.features
+
+      - name: Sızıntı testleri
+        run: python -m pytest tests/ -q
+
+      - name: Modeli eğit
+        run: python -m pipeline.train
+
+      # Backtest dakikalar sürüyor ve sonucu günlük olarak anlamlı
+      # değişmiyor; pazartesileri ve elle tetiklendiğinde çalışıyor.
+      - name: Backtest
+        env:
+          FORCE: ${{ github.event.inputs.backtest }}
+        run: |
+          if [ "$(date -u +%u)" = "1" ] || [ "$FORCE" = "true" ]; then
+            python -m pipeline.backtest
+          else
+            echo "Backtest atlandı (pazartesi değil, elle tetiklenmedi)."
+          fi
+
+      - name: Siteyi üret
+        run: python -m pipeline.export
+
+      - name: Tahminleri kaydet ve sonuçlandır
+        run: python -m pipeline.track
+
+      - name: Değişiklikleri işle
+        run: |
+          git config user.name "ballinc-bot"
+          git config user.email "actions@github.com"
+          git add web/data models/metrics.json data/predictions.sqlite
+          if git diff --staged --quiet; then
+            echo "Değişiklik yok."
+          else
+            git commit -m "Otomatik güncelleme: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            git push
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - id: deploy
+        uses: actions/deploy-pages@v4

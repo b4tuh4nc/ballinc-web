@@ -6,5 +6,20 @@ venv/
 .vscode/
 .idea/
 *.log
-data/raw/*.parquet.tmp
-models/*.tmp
+.pytest_cache/
+
+# Yeniden üretilebilir çıktılar — her gece değiştikleri için commit edilmiyor,
+# yoksa repo geçmişi binary parquet farklarıyla şişer. Pipeline bunları
+# `ingest` ve `train` adımlarında sıfırdan üretir.
+data/raw/
+data/processed/
+models/
+*.tmp
+
+# İSTİSNALAR — bunlar kalıcı durum:
+#   predictions.sqlite : doğrulanmış isabet kaydı, silinirse geri gelmez
+#   metrics.json       : backtest çıktısı; küçük ama üretmesi dakikalar sürüyor
+!data/predictions.sqlite
+!models/
+models/*
+!models/metrics.json
