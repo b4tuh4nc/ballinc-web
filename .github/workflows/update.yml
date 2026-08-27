@@ -93,6 +93,9 @@ jobs:
             git push
           fi
 
+      - name: Varlıklara sürüm damgası bas
+        run: python -m pipeline.stamp
+
       - uses: actions/upload-pages-artifact@v3
         with:
           path: web
