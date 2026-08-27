@@ -6,3 +6,4 @@ scikit-learn>=1.5
 xgboost>=2.1
 scipy>=1.13
 selenium>=4.20
+pytest>=8.0
