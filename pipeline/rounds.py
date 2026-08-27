@@ -35,15 +35,26 @@ def fill_rounds(league: str, season: str, mapping: dict) -> tuple[int, int]:
         return 0, len(df)
     _, rounds = fotmob.teams_and_rounds(matches)
 
-    def lookup(row) -> float:
-        home = mapping.get(row.home_id)
-        away = mapping.get(row.away_id)
+    def to_fotmob(team_id: str) -> str | None:
+        # Yedek kaynaktan gelen ve Understat'ta hiç görünmemiş takımlar
+        # (yeni çıkanlar) zaten FotMob kimliğini taşıyor; crosswalk'ta
+        # bulunmamaları normal, kimliği doğrudan kullanmak gerekiyor.
+        if str(team_id).startswith("fm"):
+            return str(team_id).removeprefix("fm")
+        return mapping.get(team_id)
+
+    def lookup(row):
+        home, away = to_fotmob(row.home_id), to_fotmob(row.away_id)
         if home is None or away is None:
             return pd.NA
         return rounds.get((home, away), pd.NA)
 
-    df["round"] = [lookup(row) for row in df.itertuples(index=False)]
-    df["round"] = pd.to_numeric(df["round"], errors="coerce").astype("Int64")
+    resolved = [lookup(row) for row in df.itertuples(index=False)]
+    resolved = pd.to_numeric(pd.Series(resolved, index=df.index), errors="coerce")
+    # Yeni değer bulunamayan satırlarda mevcut hafta korunuyor: kaynak zaten
+    # doğru haftayı vermişse onu silmenin anlamı yok.
+    existing = pd.to_numeric(df.get("round"), errors="coerce")
+    df["round"] = resolved.fillna(existing).astype("Int64")
 
     tmp = path.with_suffix(".parquet.tmp")
     df.to_parquet(tmp, index=False)

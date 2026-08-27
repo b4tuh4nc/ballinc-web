@@ -41,6 +41,14 @@ def load_raw() -> pd.DataFrame:
                 frames.append(pd.read_parquet(path))
     if not frames:
         raise FileNotFoundError("data/raw boş. Önce `python -m pipeline.ingest`.")
+    # Dosyalar farklı kaynaklardan geliyor; birleştirmeden önce tipleri
+    # sabitlemezsek tamamen boş xG sütunları concat sırasında tip uyarısı
+    # üretiyor ve ileride sessizce object'e düşebilir.
+    for frame in frames:
+        for col in ("home_goals", "away_goals", "home_xg", "away_xg"):
+            frame[col] = pd.to_numeric(frame[col], errors="coerce").astype("float64")
+        frame["round"] = pd.to_numeric(frame.get("round"), errors="coerce").astype("Int64")
+
     df = pd.concat(frames, ignore_index=True)
     df["datetime"] = pd.to_datetime(df["datetime"])
     return df.sort_values(["datetime", "match_id"]).reset_index(drop=True)

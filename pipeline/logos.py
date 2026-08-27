@@ -18,7 +18,6 @@ import requests
 from pipeline import crosswalk
 from pipeline.config import (
     FOTMOB_LEAGUES,
-    FOTMOB_PRIMARY_LEAGUES,
     LEAGUES,
     SEASONS,
     WEB_DIR,
@@ -65,8 +64,11 @@ def canonical_team_ids() -> dict[str, str]:
         understat_id: entry["fotmob_id"]
         for understat_id, entry in crosswalk.load().items()
     }
-    # FotMob'un birincil kaynak olduğu liglerde kimlik zaten FotMob id'si.
-    for league in FOTMOB_PRIMARY_LEAGUES:
+    # `fm` önekli her kimlik zaten FotMob id'sidir: hem FotMob'un birincil
+    # kaynak olduğu ligler, hem de yedek kaynaktan gelip Understat'ta hiç
+    # görünmemiş yeni çıkan takımlar. İkisini de taramak gerekiyor, yoksa
+    # ligden çıkıp çıkan takımlar logosuz kalıyor.
+    for league in LEAGUES:
         for season in SEASONS:
             path = raw_path(league, season)
             if not path.exists():
@@ -74,7 +76,8 @@ def canonical_team_ids() -> dict[str, str]:
             raw = pd.read_parquet(path)
             for column in ("home_id", "away_id"):
                 for team_id in raw[column].unique():
-                    mapping[team_id] = str(team_id).removeprefix("fm")
+                    if str(team_id).startswith("fm"):
+                        mapping[team_id] = str(team_id).removeprefix("fm")
     return mapping
 
 

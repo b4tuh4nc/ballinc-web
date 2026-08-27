@@ -12,8 +12,10 @@ import time
 
 import pandas as pd
 
+from pipeline import crosswalk
 from pipeline.config import (
     FOTMOB_PRIMARY_LEAGUES,
+    LEAGUES,
     RAW_DIR,
     SEASONS,
     UNDERSTAT_LEAGUES,
@@ -30,6 +32,48 @@ def _write_atomic(df: pd.DataFrame, path) -> None:
     tmp.replace(path)
 
 
+def canonicalise(df: pd.DataFrame, league: str) -> pd.DataFrame:
+    """Takım ve maç kimliklerini kaynaktan bağımsız hale getirir.
+
+    İki sorunu birden çözüyor:
+
+    1. Bir lig-sezon yedek kaynaktan gelirse (Understat henüz yayınlamamışsa
+       FotMob'dan) takımlar `fm...` kimliğiyle gelir ve aynı takımın önceki
+       sezonlardaki `us...` geçmişinden kopar. Elo ve form sıfırlanmış olur.
+       Crosswalk ile kanonik kimliğe çevriliyor.
+
+    2. Maç kimliği kaynağın kendi id'siydi; kaynak değişince aynı maçın
+       kimliği de değişiyordu. Artık (lig, sezon, ev, deplasman) üçlüsünden
+       türetiliyor — bir fikstürü tek anlamlı şekilde tanımlayan şey zaten bu.
+       Böylece kaydedilmiş bir tahmin, maç başka bir kaynaktan gelse de
+       sonucuyla eşleşebiliyor.
+    """
+    if df.empty:
+        return df
+
+    if LEAGUES[league].get("understat"):
+        entries = crosswalk.load()
+        by_fotmob = {e["fotmob_id"]: (us_id, e["understat_name"])
+                     for us_id, e in entries.items()}
+        for side in ("home", "away"):
+            ids, names = [], []
+            for team_id, name in zip(df[f"{side}_id"], df[f"{side}_team"]):
+                found = by_fotmob.get(str(team_id).removeprefix("fm"))
+                if str(team_id).startswith("fm") and found:
+                    ids.append(found[0])
+                    names.append(found[1])
+                else:
+                    ids.append(team_id)
+                    names.append(name)
+            df[f"{side}_id"] = ids
+            df[f"{side}_team"] = names
+
+    df["match_id"] = (
+        df["league"] + "-" + df["season"] + "-" + df["home_id"] + "-" + df["away_id"]
+    )
+    return df
+
+
 def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
     failures = 0
     for league in leagues:
@@ -42,16 +86,31 @@ def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
                 failures += 1
                 continue
 
+            source = "Understat"
             if df.empty:
-                print(f"  · {label:24s} fikstür henüz yayınlanmamış, atlandı")
-                continue
+                # Understat sezon başında fikstürü geç yayınlayabiliyor
+                # (Bundesliga 26/27 böyleydi). Oynanmamış maçlarda xG zaten
+                # yok, dolayısıyla FotMob'dan gelen fikstür hiçbir şey
+                # kaybettirmiyor; Understat yayınlayınca devralıyor.
+                try:
+                    df = fotmob.fetch_league_season(league, season)
+                    source = "FotMob (yedek)"
+                except Exception as exc:
+                    print(f"  · {label:24s} fikstür yok, yedek kaynak da "
+                          f"başarısız ({type(exc).__name__})")
+                    continue
+                if df.empty:
+                    print(f"  · {label:24s} fikstür henüz yayınlanmamış, atlandı")
+                    continue
 
+            df = canonicalise(df, league)
             played = int(df["is_result"].sum())
             with_xg = int(df["has_xg"].sum())
             _write_atomic(df, raw_path(league, season))
             print(
                 f"  ✓ {label:24s} {len(df):3d} maç  "
                 f"({played:3d} oynanmış, {with_xg:3d} xG'li)"
+                + ("" if source == "Understat" else f"  [{source}]")
             )
     return failures
 
@@ -83,6 +142,7 @@ def ingest_fotmob(leagues: list[str], seasons: list[str]) -> int:
                 print(f"  · {label:24s} sezon henüz açılmamış, atlandı")
                 continue
 
+            df = canonicalise(df, league)
             teams = len(set(df["home_id"]) | set(df["away_id"]))
             played = int(df["is_result"].sum())
             _write_atomic(df, path)
