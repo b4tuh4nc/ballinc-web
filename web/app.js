@@ -494,6 +494,18 @@ async function viewMatch(id) {
 
   const tbd = match.time_confirmed === false
     ? `<p class="note">Başlama saati henüz kesinleşmedi, değişebilir.</p>` : "";
+
+  // Beraberlik futbolda neredeyse hiçbir zaman TEK BAŞINA en olası sonuç
+  // olmuyor: olasılığı ~%33'ü aşmazken favori rahatça aşıyor. Ölçümde
+  // 4152 maçın yalnızca 1'inde beraberlik en yüksek çıktı. Sadece en
+  // yükseği vurgulamak "model hiç beraberlik demiyor" izlenimi veriyordu.
+  const topProb = Math.max(ph, pd, pa);
+  const balanced = topProb - pd <= 0.08;
+  const drawNote = balanced
+    ? `<p class="note">Dengeli maç: beraberlik ihtimali (%${pct(pd)}) en olası
+        sonuca çok yakın. Beraberlik futbolda nadiren tek başına en yüksek
+        olasılıktır — bu yüzden yukarıda vurgulanmasa da göz ardı edilmemeli.</p>`
+    : "";
   const week = match.round ? ` · ${match.round}. Hafta` : "";
   const info = reliability(meta.metrics, "result");
 
@@ -527,7 +539,7 @@ async function viewMatch(id) {
         <span><i style="background:var(--away)"></i>Deplasman kazanır</span>
       </div>
     </div>
-    ${tbd}
+    ${tbd}${drawNote}
 
     <section class="card">
       <h2>En olası skor ${info?.reliable
@@ -636,10 +648,17 @@ async function viewModel() {
         maçta atması beklenen gol sayısı. Bu iki sayıdan bir skor olasılık matrisi
         kuruluyor ve bütün marketler aynı matristen okunuyor — bu yüzden tahminler
         birbiriyle çelişemiyor.</p>
-      <p style="margin:0">Girdiler: Elo gücü, son 5 ve 10 maçın gol ve xG
+      <p style="margin:0 0 .6rem">Girdiler: Elo gücü, son 5 ve 10 maçın gol ve xG
         ortalamaları, ev/deplasman formu ve dinlenme süresi. Her maçın girdileri
         yalnızca o maç başlamadan önce biten maçlardan hesaplanıyor; bu bir testle
         zorunlu kılınıyor.</p>
+      <p style="margin:0"><strong>Neden neredeyse hiç "beraberlik" yazmıyor?</strong>
+        Çünkü beraberlik futbolda tek başına nadiren en olası sonuçtur: olasılığı
+        pratikte %33'ü aşmazken favorininki rahatça aşar. Ölçümde 4152 maçın
+        yalnızca birinde beraberlik en yüksek olasılık çıktı — ama beraberlik
+        olasılıkları doğru: model ortalama %24.6 dedi, gerçekte %25.4 oldu.
+        Yani model beraberliği eksik tahmin etmiyor, beraberlik sadece nadiren
+        <em>kazanan</em> seçenek oluyor. Bahis oranları da aynı sebeple böyledir.</p>
     </section>`;
 }
 
