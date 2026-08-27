@@ -1062,6 +1062,8 @@ async function paintNav() {
       <span class="d-count">${count}</span></a>`;
   }).join("");
 
+  goalProxy = meta.goal_proxy || "";
+
   el("generated-at").textContent = `Son güncelleme: ${new Date(meta.generated_at)
     .toLocaleString("tr-TR", { timeZone: TZ, dateStyle: "medium", timeStyle: "short" })}`;
 }
@@ -1074,7 +1076,9 @@ async function paintNav() {
    olmadan tam çalışıyor. */
 
 const LIVE_URL = "https://www.fotmob.com/api/data/matches?date=";
-const DETAILS_URL = "https://www.fotmob.com/api/data/matchDetails?matchId=";
+/* Golcü proxy'sinin adresi meta.json'dan geliyor (pipeline/config.py ->
+   GOAL_PROXY_URL). Boşsa golcü gösterimi hiç denenmiyor. */
+let goalProxy = "";
 const LIVE_INTERVAL = 60_000;
 let liveTimer = null;
 let liveData = new Map();
@@ -1084,37 +1088,30 @@ let liveData = new Map();
    canlı golcü bilgisi tarayıcıdan doğrudan alınamıyor; küçük bir proxy
    gerekiyor.
 
-   Kod yerinde bırakıldı ama ilk başarısızlıkta kendini kapatıyor: dakikada
-   bir boşuna istek atmasın. Bir proxy eklenirse DETAILS_URL'i ona çevirmek
-   yeterli, gerisi çalışır. */
+   worker/ altındaki Cloudflare Worker bu çağrıyı sunucu tarafında yapıyor ve
+   yalnızca gol olaylarını döndürüyor. Adres ayarlı değilse golcü gösterimi
+   sessizce atlanıyor; ilk başarısızlıkta da kendini kapatıyor ki dakikada bir
+   boşuna istek atmasın. */
 const goalCache = new Map();
 let goalsUnavailable = false;
 
 async function fetchGoals(matchId, scoreKey) {
-  if (goalsUnavailable) throw new Error("golcü kaynağı erişilebilir değil");
+  if (goalsUnavailable || !goalProxy) throw new Error("golcü kaynağı yok");
   const cached = goalCache.get(matchId);
   if (cached && cached.scoreKey === scoreKey) return cached.goals;
 
   let response;
   try {
-    response = await fetch(DETAILS_URL + matchId, { cache: "no-store" });
+    response = await fetch(`${goalProxy}?matchId=${encodeURIComponent(matchId)}`,
+                           { cache: "no-store" });
   } catch (error) {
-    goalsUnavailable = true;   // CORS engeli: bir daha denemenin anlamı yok
+    goalsUnavailable = true;   // erişilemiyor: bir daha denemenin anlamı yok
     throw error;
   }
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
-  const payload = await response.json();
-  const events = payload?.content?.matchFacts?.events?.events ?? [];
 
-  const goals = events
-    .filter((e) => e.type === "Goal")
-    .map((e) => ({
-      name: e.nameStr ?? e.player?.name ?? "",
-      minute: e.timeStr ?? e.time,
-      home: !!e.isHome,
-      own: !!e.ownGoal,
-      penalty: /penalty/i.test(e.goalDescription ?? ""),
-    }))
+  const payload = await response.json();
+  const goals = (payload.goals ?? []).slice()
     .sort((a, b) => a.minute - b.minute);
 
   goalCache.set(matchId, { scoreKey, goals });
@@ -1128,7 +1125,7 @@ function goalLabel(goal) {
 }
 
 async function paintGoals() {
-  if (goalsUnavailable) return;
+  if (goalsUnavailable || !goalProxy) return;
   for (const node of document.querySelectorAll("[data-live]")) {
     const state = liveData.get(node.dataset.live);
     if (!state?.matchId) continue;

@@ -92,6 +92,12 @@ LEAK_FIELDS = frozenset({"forecast"})
 # Understat datetime'ları UTC kabul ediliyor; validate.py bunu doğruluyor.
 DISPLAY_TZ = "Europe/Istanbul"
 
+# ─── Canlı golcü proxy'si ────────────────────────────────────────────────────
+# FotMob tarayıcıya yalnızca maç listesi ucunda CORS izni veriyor; golcü
+# bilgisini taşıyan uç kapalı. worker/ altındaki Cloudflare Worker o çağrıyı
+# sunucu tarafında yapıyor. Adres boşken site golcü göstermeye çalışmıyor.
+GOAL_PROXY_URL = ""
+
 # ─── Tahmin penceresi ────────────────────────────────────────────────────────
 # Bundan uzaktaki fikstürlerde saatler placeholder ve form verisi anlamsız.
 PREDICT_WINDOW_DAYS = 14

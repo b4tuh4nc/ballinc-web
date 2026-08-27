@@ -17,6 +17,7 @@ import pandas as pd
 from pipeline import crosswalk, features, market, predict as predict_mod
 from pipeline.config import (
     CURRENT_SEASON,
+    GOAL_PROXY_URL,
     LEAGUES,
     MODELS_DIR,
     WEB_DATA_DIR,
@@ -225,6 +226,7 @@ def main() -> int:
         "leagues": league_meta,
         "metrics": metrics.get("markets", {}),
         "window_days": predict_mod.PREDICT_WINDOW_DAYS,
+        "goal_proxy": GOAL_PROXY_URL,
     }
     _write(WEB_DATA_DIR / "meta.json", meta)
     print(f"\n{len(predictions)} tahmin → {WEB_DATA_DIR}")

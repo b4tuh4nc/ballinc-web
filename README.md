@@ -182,6 +182,16 @@ site canlı veri olmadan tam çalışmaya devam eder.
 `predict.upcoming` penceresi 3.5 saat geriye de açık: aksi halde bir maç
 başlar başlamaz fikstürden düşüyor ve canlı skoru gösterilemiyordu.
 
+### Golcüler
+
+FotMob tarayıcıya yalnızca maç listesi ucunda CORS izni veriyor; golcü
+bilgisini taşıyan `matchDetails` ucu kapalı. `worker/` altındaki Cloudflare
+Worker o çağrıyı sunucu tarafında yapıp yalnızca gol olaylarını döndürüyor.
+
+Kurulumu `worker/README.md` içinde. Deploy sonrası adresi
+`pipeline/config.py` → `GOAL_PROXY_URL` alanına yazmak yeterli; adres boşken
+site golcü göstermeye hiç çalışmıyor.
+
 ## Model ve bahis piyasası
 
 Maç sayfalarında model olasılıkları, bahis piyasasının fiyatladığı olasılıkların
