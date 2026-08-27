@@ -121,6 +121,18 @@ function matchRow(match) {
     </a>`;
 }
 
+const PICK_LABEL = ["1", "X", "2"];
+
+/** Oynanmış maçta modelin maç öncesi ne dediği ve tutup tutmadığı. */
+function forecastChip(result) {
+  const f = result.forecast;
+  if (!f) return "";
+  const cls = f.hit ? "hit" : "miss";
+  return `<span class="pred-chip ${cls}" title="Model maç öncesi bu sonucu bekliyordu">
+    <span class="mark">${f.hit ? "✓" : "✗"}</span>
+    ${PICK_LABEL[f.pick]} <b>%${pct(f.probs[f.pick])}</b></span>`;
+}
+
 function resultRow(result) {
   const [hg, ag] = result.score;
   return `
@@ -137,7 +149,8 @@ function resultRow(result) {
         </div>
       </div>
       <div class="match-markets">
-        ${result.xg ? `<div class="extra"><span class="extra-chip">xG <b>${result.xg[0]} - ${result.xg[1]}</b></span></div>` : ""}
+        ${forecastChip(result)}
+        ${result.xg ? `<span class="extra-chip">xG <b>${result.xg[0]} - ${result.xg[1]}</b></span>` : ""}
       </div>
       <div class="chev"></div>
     </div>`;
@@ -461,7 +474,7 @@ async function viewMatch(id) {
     if (found) { match = found; data = candidate; break; }
   }
   if (!match) {
-    return `<a class="back" href="#/">← Maçlar</a>
+    return `<a class="back" href="#/"><span class="arrow">←</span>Maçlar</a>
       <div class="empty">Bu maç artık tahmin listesinde değil. Oynanmış olabilir.</div>`;
   }
 
@@ -477,7 +490,7 @@ async function viewMatch(id) {
   const info = reliability(meta.metrics, "result");
 
   return `
-    <a class="back" href="#/lig/${encodeURIComponent(data.league)}">← ${esc(data.name)}</a>
+    <a class="back" href="#/lig/${encodeURIComponent(data.league)}"><span class="arrow">←</span>${esc(data.name)}</a>
 
     <div class="match-hero">
       <div class="hero-names">
@@ -592,7 +605,7 @@ async function viewModel() {
                        : '<span class="badge weak">edge yok</span>'}</td></tr>`).join("");
 
   return `
-    <a class="back" href="#/">← Maçlar</a>
+    <a class="back" href="#/"><span class="arrow">←</span>Maçlar</a>
     <div class="page-head">
       <div class="page-title"><h1>Model ne kadar iyi?</h1></div>
       <p class="sub">Walk-forward ölçüm: her sezon, yalnızca kendisinden önce
@@ -653,6 +666,8 @@ async function route() {
 
 /** Seçili hafta/gün şeridin görünmeyen kısmındaysa kendiliğinden ortalansın. */
 function scrollSelectedIntoView() {
+  const track = document.querySelector(".weeks");
+  if (track) track.classList.toggle("scrollable", track.scrollWidth > track.clientWidth + 4);
   const active = document.querySelector('.weeks .week-chip[aria-pressed="true"]');
   if (active) active.scrollIntoView({ block: "nearest", inline: "center" });
 }

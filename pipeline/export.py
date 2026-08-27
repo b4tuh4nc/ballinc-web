@@ -82,7 +82,39 @@ def build_standings(season_df: pd.DataFrame) -> list[dict]:
     return table
 
 
-def build_results(season_df: pd.DataFrame) -> list[dict]:
+def _past_predictions(season_df: pd.DataFrame, model: GoalModel) -> dict[str, dict]:
+    """Oynanmış maçlar için modelin maç ÖNCESİ ne diyeceğini hesaplar.
+
+    Bu geriye dönük bir yeniden hesaplama, canlı kaydedilmiş tahmin değil —
+    ve sitede öyle etiketleniyor. Dürüst olmasının sebebi feature katmanının
+    her maçın girdilerini yalnızca o maç başlamadan önce biten maçlardan
+    üretmesi; bu `tests/test_features.py` ile zorunlu kılınıyor.
+
+    Yayında kaydedilmiş gerçek tahmin geçmişi ayrı tutuluyor
+    (data/predictions.sqlite, "Yayındaki isabet" tablosu).
+    """
+    played = season_df[season_df["result"].notna()]
+    if played.empty:
+        return {}
+
+    missing = [c for c in model.features if c not in played.columns]
+    if missing:
+        return {}
+
+    probs, _ = model.predict_markets(played[model.features])
+    out = {}
+    for pos, row in enumerate(played.itertuples(index=False)):
+        result = probs["result"][pos]
+        pick = int(result.argmax())
+        out[row.match_id] = {
+            "probs": [round(float(v), 4) for v in result],
+            "pick": pick,
+            "hit": bool(pick == int(row.result)),
+        }
+    return out
+
+
+def build_results(season_df: pd.DataFrame, predictions: dict | None = None) -> list[dict]:
     """Sezonun oynanmış BÜTÜN maçları, hafta numarasıyla.
 
     Eskiden yalnızca son 20 maç veriliyordu; sezonun ilk haftaları siteden
@@ -93,7 +125,9 @@ def build_results(season_df: pd.DataFrame) -> list[dict]:
     out = []
     for row in played.itertuples():
         round_no = getattr(row, "round", None)
+        forecast = (predictions or {}).get(row.match_id)
         out.append({
+            "forecast": forecast,
             "id": row.match_id,
             "kickoff": row.datetime.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "round": int(round_no) if pd.notna(round_no) else None,
@@ -144,7 +178,7 @@ def main() -> int:
             # kalitesi hakkında varsayım yapmak yerine rakamı gösteriyoruz.
             "metrics": league_metrics.get(code, {}),
             "matches": matches,
-            "results": build_results(season_df),
+            "results": build_results(season_df, _past_predictions(season_df, model)),
             "standings": build_standings(season_df),
         }
         size = _write(WEB_DATA_DIR / f"{code}.json", payload)
