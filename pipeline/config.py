@@ -23,50 +23,53 @@ SEASONS = ["2023_2024", "2024_2025", "2025_2026", "2026_2027"]
 # ─── Ligler ──────────────────────────────────────────────────────────────────
 # understat: getLeagueData slug'ı. La Liga'nınki küçük "l" ile "La_liga" —
 #            eski sistemde "La_Liga" denendiği için lig hiç çekilemiyordu.
-# sofascore: unique-tournament id (sadece Understat kapsamı dışındaki ligler)
-# teams:     sezondaki takım sayısı; validate.py bunu zorunlu kılar
+# fotmob:    lig id'si (Understat kapsamı dışındaki ligler)
+#
+# Takım sayısı BİLEREK yazılmıyor. Sabit bir sayı yanlış olduğunda hem veriyi
+# kırpıyor hem de doğrulamayı kandırıyor: Süper Lig 2023/24'te 20, 2024/25'te
+# 19, sonra 18 takımlıydı; config'de "18" yazdığı için ingest gerçek lig
+# maçlarını atıyor, validate de aynı yanlış sabiti kullandığı için "geçti"
+# diyordu. Artık takım sayısı veriden türetiliyor ve validate.py yapısal
+# tutarlılığı kontrol ediyor: maç sayısı == takım × (takım − 1).
 LEAGUES = {
     "EPL": {
         "name": "Premier Lig",
         "flag": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
         "understat": "EPL",
-        "teams": 20,
     },
     "La_Liga": {
         "name": "La Liga",
         "flag": "🇪🇸",
         "understat": "La_liga",
-        "teams": 20,
     },
     "Serie_A": {
         "name": "Serie A",
         "flag": "🇮🇹",
         "understat": "Serie_A",
-        "teams": 20,
     },
     "Bundesliga": {
         "name": "Bundesliga",
         "flag": "🇩🇪",
         "understat": "Bundesliga",
-        "teams": 18,
     },
     "Ligue_1": {
         "name": "Ligue 1",
         "flag": "🇫🇷",
         "understat": "Ligue_1",
-        "teams": 18,
     },
     "TSL": {
         "name": "Süper Lig",
         "flag": "🇹🇷",
-        "sofascore": 52,
-        "teams": 18,
-        "has_xg": False,  # SofaScore event listesinde xG yok
+        "fotmob": 71,
+        "has_xg": False,  # FotMob lig fikstür ucunda xG yok
     },
 }
 
+# Bir ligin takım sayısı bu aralığın dışındaysa veri şüphelidir.
+TEAM_COUNT_RANGE = (16, 22)
+
 UNDERSTAT_LEAGUES = [k for k, v in LEAGUES.items() if v.get("understat")]
-SOFASCORE_LEAGUES = [k for k, v in LEAGUES.items() if v.get("sofascore")]
+FOTMOB_LEAGUES = [k for k, v in LEAGUES.items() if v.get("fotmob")]
 
 # ─── Sızıntı kara listesi ────────────────────────────────────────────────────
 # Understat'ın "forecast" alanı maçın KENDİ xG'sinden hesaplanıyor, yani

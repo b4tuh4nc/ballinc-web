@@ -11,6 +11,8 @@ ARKA PLAN (GitHub Actions, her gece 04:00 TR)
                 ↓ bozuksa DURUR             ↓
                                      web/data/*.json  →  commit
 
+  Kaynaklar: Understat (5 Avrupa ligi, xG'li) · FotMob (Süper Lig)
+
 SİTE (GitHub Pages, sunucu yok)
   index.html + app.js  →  JSON'u okur, ekrana basar
 ```
@@ -42,13 +44,13 @@ ve xG ortalamaları, ev/deplasman formu, dinlenme süresi, lig.
 ## Ölçüm
 
 Walk-forward: her sezon, yalnızca kendisinden önce oynanmış maçlarla eğitilen
-modelle tahmin edildi. 4179 maç:
+modelle tahmin edildi. 4217 maç:
 
 | Market | Logloss | Baseline | Kazanç | İsabet | Baseline isabet |
 |---|---|---|---|---|---|
-| 1X2 | 0.9947 | 1.0746 | **+%7.4** | %51.7 | %43.2 |
-| 2.5 Alt/Üst | 0.6849 | 0.6912 | +%0.9 | %54.9 | %53.2 |
-| KG Var/Yok | 0.6896 | 0.6892 | −%0.1 | %54.3 | %54.5 |
+| 1X2 | 0.9926 | 1.0743 | **+%7.6** | %52.1 | %43.4 |
+| 2.5 Alt/Üst | 0.6858 | 0.6911 | +%0.8 | %54.9 | %53.3 |
+| KG Var/Yok | 0.6897 | 0.6892 | −%0.1 | %54.2 | %54.5 |
 
 Yalnızca 1X2'de gerçek bir avantaj var. Diğer iki market taban oranı söylemekten
 daha iyi değil ve sitede bu açıkça yazıyor. Çıplak isabet oranı yanıltıcıdır:
@@ -58,12 +60,12 @@ Lig bazında 1X2 kazancı:
 
 | Lig | Maç | Kazanç | İsabet | Baseline |
 |---|---|---|---|---|
-| Serie A | 760 | +%8.8 | %52.1 | %39.3 |
-| Bundesliga | 612 | +%8.3 | %52.1 | %41.2 |
-| Süper Lig | 610 | +%8.2 | %51.1 | %44.8 |
-| La Liga | 760 | +%7.1 | %51.7 | %46.7 |
-| Ligue 1 | 612 | +%7.0 | %52.8 | %46.4 |
-| Premier Lig | 760 | +%5.5 | %50.8 | %41.7 |
+| Serie A | 760 | +%8.8 | %52.2 | %39.3 |
+| Süper Lig | 648 | +%8.7 | %53.5 | %45.5 |
+| Bundesliga | 612 | +%8.3 | %52.5 | %41.2 |
+| La Liga | 760 | +%7.2 | %52.1 | %46.7 |
+| Ligue 1 | 612 | +%7.1 | %52.1 | %46.4 |
+| Premier Lig | 760 | +%5.7 | %50.7 | %41.7 |
 
 Süper Lig'de xG verisi olmamasına rağmen model burada Premier Lig'den daha iyi
 çalışıyor — Elo ve gol formu yeterli sinyali taşıyor. Sitedeki not bu yüzden
@@ -87,23 +89,16 @@ python -m pytest tests/ -q     # sızıntı ve takip testleri
 cd web && python -m http.server 8000   # siteyi lokalde aç
 ```
 
-## Süper Lig verisini tazeleme
+## Veri kaynakları
 
-Understat kapsamındaki 5 lig her gece otomatik güncelleniyor. Süper Lig
-SofaScore'dan geliyor ve **SofaScore GitHub Actions runner'larını engelliyor**,
-yani bu veri CI'da yenilenemiyor. Bu yüzden TSL parquet dosyaları repoda
-tutuluyor ve gecelik akış onları kullanıyor.
+| Lig | Kaynak | xG |
+|---|---|---|
+| Premier Lig, La Liga, Serie A, Bundesliga, Ligue 1 | Understat | ✓ |
+| Süper Lig | FotMob | ✗ |
 
-Yeni TSL sonuçlarını almak için haftada bir lokalde:
-
-```bash
-python -m pipeline.ingest --leagues TSL
-python -m pipeline.validate
-git add data/raw/TSL_*.parquet && git commit -m "TSL verisi güncellendi" && git push
-```
-
-Çekim başarısız olursa mevcut veri korunur ve akış durmaz; log'da
-`tazelenemedi, mevcut veri korundu` satırı görünür.
+İkisi de düz `requests` ile erişilebiliyor; tarayıcı otomasyonu gerekmiyor.
+Bir kaynak geçici olarak erişilemezse diskteki mevcut veri korunur ve akış
+durmaz — log'da `tazelenemedi, mevcut veri korundu` satırı görünür.
 
 ## Yeni sezona geçiş
 
@@ -121,7 +116,10 @@ Başka hiçbir yerde sezon bilgisi yok.
 `pipeline/validate.py` her çalıştırmada şunları zorunlu kılar ve başarısız
 olursa pipeline durur:
 
-- lig başına doğru takım ve maç sayısı
+- yapısal tutarlılık: maç sayısı == takım × (takım − 1), her takım eşit
+  sayıda ev maçı. Takım sayısı **veriden türetilir**, config'e yazılmaz —
+  sabit bir sayı yanlış olduğunda hem veriyi kırpar hem de doğrulamayı
+  kandırır (Süper Lig 2023/24'te 20, 2024/25'te 19, sonra 18 takımlıydı)
 - takım kimliği ↔ isim eşleşmesi 1:1
 - kopya maç veya kopya fikstür yok
 - oynanmış maçta skor var, oynanmamışta yok
@@ -138,7 +136,7 @@ veriyle yeniden üretip birebir karşılaştırır.
 ```
 pipeline/
   config.py     sezonlar, ligler, yollar — tek doğruluk kaynağı
-  sources/      understat.py, sofascore.py (TSL)
+  sources/      understat.py, fotmob.py (TSL)
   ingest.py     ham veri → data/raw/
   validate.py   bütünlük kontrolleri
   features.py   Elo + rolling; eğitim ve tahmin ortak kullanır

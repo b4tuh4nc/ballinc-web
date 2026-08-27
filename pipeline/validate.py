@@ -14,10 +14,11 @@ from dataclasses import dataclass, field
 import pandas as pd
 
 from pipeline.config import (
-    LEAGUES,
-    SEASONS,
     CURRENT_SEASON,
+    LEAGUES,
     LEAK_FIELDS,
+    SEASONS,
+    TEAM_COUNT_RANGE,
     raw_path,
     season_label,
 )
@@ -54,21 +55,24 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
     if leaked:
         rep.error(f"{tag}: sızıntılı alan veride: {sorted(leaked)}")
 
-    # 2. Maç sayısı
-    want = expected_matches(cfg["teams"])
+    # 2. Takım sayısı veriden türetiliyor, config'den değil.
+    #    Sabit bir sayı yanlış olduğunda hem ingest veriyi kırpıyor hem de
+    #    bu kontrol aynı yanlış sabitle "geçti" diyordu.
+    teams = set(df["home_id"]) | set(df["away_id"])
+    lo, hi = TEAM_COUNT_RANGE
+    if not (lo <= len(teams) <= hi):
+        rep.error(f"{tag}: {len(teams)} takım — beklenen aralık {lo}-{hi} dışında")
+
+    # 3. Yapısal tutarlılık: çift devreli ligde maç sayısı takım sayısından
+    #    tek başına belirlenir. Fazla maç = lig dışı maç sızmış; eksik maç =
+    #    çekim yarım kalmış.
+    want = expected_matches(len(teams))
     if len(df) != want:
-        msg = f"{tag}: {len(df)} maç var, {want} bekleniyordu"
-        # Güncel sezonda fikstür kısmi yayınlanmış olabilir; eksik uyarı,
-        # fazla ise kesin hata (lig dışı maç sızmış demektir).
+        msg = f"{tag}: {len(teams)} takım için {want} maç olmalı, {len(df)} var"
         if is_current and len(df) < want:
             rep.warn(msg + " (fikstür henüz tamamlanmamış olabilir)")
         else:
             rep.error(msg)
-
-    # 3. Takım sayısı — eski sistemi bitiren hata buydu
-    teams = set(df["home_id"]) | set(df["away_id"])
-    if len(teams) != cfg["teams"]:
-        rep.error(f"{tag}: {len(teams)} takım var, {cfg['teams']} bekleniyordu")
 
     # 4. Takım kimliği ↔ isim 1:1 olmalı
     pairs = pd.concat([
@@ -91,11 +95,17 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
 
     # 6. Her takım eşit sayıda ev/deplasman maçı oynamalı
     counts = df["home_id"].value_counts()
-    if len(counts) and counts.nunique() > 1 and not is_current:
-        rep.error(
-            f"{tag}: takımların ev maçı sayıları eşit değil "
-            f"({counts.min()}–{counts.max()})"
-        )
+    if len(counts) and not is_current:
+        if counts.nunique() > 1:
+            rep.error(
+                f"{tag}: takımların ev maçı sayıları eşit değil "
+                f"({counts.min()}–{counts.max()})"
+            )
+        elif len(teams) and counts.iat[0] != len(teams) - 1:
+            rep.error(
+                f"{tag}: her takım {len(teams) - 1} ev maçı oynamalı, "
+                f"{counts.iat[0]} oynamış"
+            )
 
     # 7. Skor tutarlılığı
     played = df[df["is_result"]]
@@ -113,9 +123,9 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
 
     # 9. Tarih aralığı sezonla uyumlu mu
     start_year = int(season.split("_")[0])
-    lo = pd.Timestamp(f"{start_year}-06-01")
-    hi = pd.Timestamp(f"{start_year + 1}-08-31")
-    out = df[(df["datetime"] < lo) | (df["datetime"] > hi)]
+    earliest = pd.Timestamp(f"{start_year}-06-01")
+    latest = pd.Timestamp(f"{start_year + 1}-08-31")
+    out = df[(df["datetime"] < earliest) | (df["datetime"] > latest)]
     if len(out):
         rep.error(f"{tag}: {len(out)} maç sezon tarih aralığı dışında")
 
