@@ -1154,6 +1154,23 @@ async function fetchGoals(matchId, scoreKey) {
   return goals;
 }
 
+/** Canlı dakika. Uzatmada "46" yerine "45+1" gösteriliyor: FotMob ham
+    dakikayı veriyor (`short`) ve devre sonunu ayrı alanda (`maxTime`).
+    `addedTime` alanına güvenilmiyor — canlı maçlarda hep 0 geliyor. */
+function liveMinute(state) {
+  const raw = (state.minute ?? "").trim();
+  if (!raw) return "canlı";
+  if (raw === "HT") return "İY";      // devre arası
+  if (raw === "FT") return "MS";      // maç sonu
+
+  const minute = Number.parseInt(raw, 10);
+  const end = Number(state.maxTime);
+  if (Number.isFinite(minute) && Number.isFinite(end) && minute > end) {
+    return `${end}+${minute - end}'`;
+  }
+  return Number.isFinite(minute) ? `${minute}'` : raw;
+}
+
 /** "Aspas 14'" — kendi kalesine ve penaltı işaretleriyle. */
 function goalLabel(goal) {
   const marks = `${goal.penalty ? " (P)" : ""}${goal.own ? " (KK)" : ""}`;
@@ -1203,8 +1220,12 @@ async function fetchLive() {
         matchId: match.id,
         home: match.home?.score,
         away: match.away?.score,
-        // FotMob dakikayı görünmez yön işaretleriyle gönderiyor.
-        minute: (status.liveTime?.short ?? "").replace(/[‎‏]/g, ""),
+        // FotMob dakikayı görünmez yön işaretleri ve kesme işaretiyle
+        // gönderiyor ("92‎’‎"); ham sayıyı saklayıp biçimi biz veriyoruz.
+        minute: (status.liveTime?.short ?? "")
+          .replace(/[‎‏’'’]/g, "").trim(),
+        // Devrenin bitiş dakikası: ilk yarıda 45, ikincide 90.
+        maxTime: status.liveTime?.maxTime,
         finished: !!status.finished,
         ongoing: !!status.ongoing,
       });
@@ -1227,7 +1248,7 @@ function applyLive() {
     node.classList.toggle("is-done", state.finished);
 
     if (state.ongoing) {
-      clock.innerHTML = `<span class="live-dot"></span>${esc(state.minute || "canlı")}`;
+      clock.innerHTML = `<span class="live-dot"></span>${esc(liveMinute(state))}`;
     } else if (state.finished) {
       clock.textContent = "BİTTİ";
     }
