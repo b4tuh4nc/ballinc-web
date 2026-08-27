@@ -740,3 +740,14 @@ td.pts { font-weight: 700; }
   a.match:hover .crest { transform: scale(1.08); }
   .brand:hover .brand-mark { transform: rotate(-12deg); }
 }
+
+/* Ay değişiminde yalnızca gün ızgarası, gidilen yönden kayarak geliyor.
+   Kutunun tamamını yeniden çizmek açılış animasyonunu tekrarlatıyordu. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes calSlide {
+    from { opacity: 0; transform: translateX(calc(var(--dir, 1) * 16px)); }
+    to   { opacity: 1; transform: none; }
+  }
+  .cal-slide { animation: calSlide .2s cubic-bezier(.22, .68, .36, 1) both; }
+  .cal-head strong { transition: none; }
+}

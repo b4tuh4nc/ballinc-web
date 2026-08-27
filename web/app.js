@@ -223,7 +223,7 @@ const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
 const CAL_DOW = ["Pt", "Sa", "Ça", "Pe", "Cu", "Ct", "Pa"];
 
 /** Ay takvimi. Maçı olan günler noktalı ve tıklanabilir, diğerleri devre dışı. */
-function calendarHTML(dates, selected, counts) {
+function calendarInner(dates, selected, counts) {
   const first = dates[0], last = dates[dates.length - 1];
   const month = state.calMonth ?? selected.slice(0, 7);
   const [year, mon] = month.split("-").map(Number);
@@ -253,7 +253,6 @@ function calendarHTML(dates, selected, counts) {
   const todayUsable = counts.has(todayKey());
 
   return `
-    <div class="cal" role="dialog" aria-label="Tarih seç">
       <div class="cal-head">
         <button class="cal-nav" type="button" data-calmonth="${prevMonth}"
                 ${canPrev ? "" : "disabled"} aria-label="Önceki ay">‹</button>
@@ -266,9 +265,13 @@ function calendarHTML(dates, selected, counts) {
       <div class="cal-foot">
         <button class="cal-today-btn" type="button" data-day="${todayKey()}"
                 ${todayUsable ? "" : "disabled"}>Bugün</button>
-      </div>
-    </div>`;
+      </div>`;
 }
+
+const calendarHTML = (dates, selected, counts) =>
+  `<div class="cal" role="dialog" aria-label="Tarih seç">
+     ${calendarInner(dates, selected, counts)}
+   </div>`;
 
 // ─── Görünümler ────────────────────────────────────────────────────────────
 
@@ -764,19 +767,36 @@ const state = {
     sayfanın geri kalanını ilgilendirmiyor; route() çağırmak listeyi ve bütün
     giriş animasyonlarını baştan oynatıyor, bu da sayfa yenileniyormuş gibi
     hissettiriyordu. */
-function renderCalendar() {
+function renderCalendar(direction = 0) {
   const wrap = document.querySelector(".cal-wrap");
   const ctx = state.calCtx;
   if (!wrap || !ctx) return route();
 
-  const existing = wrap.querySelector(".cal");
-  if (existing) existing.remove();
   const button = wrap.querySelector("[data-cal]");
   if (button) button.setAttribute("aria-expanded", String(state.calOpen));
-  if (state.calOpen) {
-    wrap.insertAdjacentHTML("beforeend",
-      calendarHTML(ctx.dates, ctx.selected, ctx.counts));
+
+  const existing = wrap.querySelector(".cal");
+  if (!state.calOpen) {
+    if (existing) existing.remove();
+    return;
   }
+
+  // Ay değişiminde kutu yerinde kalıp yalnızca içeriği yenileniyor. Kutuyu
+  // silip yeniden eklemek açılış animasyonunu baştan oynatıyor ve takvim
+  // kapanıp açılıyormuş gibi görünüyordu.
+  if (existing && direction) {
+    existing.innerHTML = calendarInner(ctx.dates, ctx.selected, ctx.counts);
+    const grid = existing.querySelectorAll(".cal-grid")[1];
+    if (grid) {
+      grid.style.setProperty("--dir", String(direction));
+      grid.classList.add("cal-slide");
+    }
+    return;
+  }
+
+  if (existing) existing.remove();
+  wrap.insertAdjacentHTML("beforeend",
+    calendarHTML(ctx.dates, ctx.selected, ctx.counts));
 }
 
 async function route() {
@@ -844,8 +864,10 @@ el("view").addEventListener("click", (event) => {
   const calMonth = event.target.closest("[data-calmonth]");
   if (calMonth) {
     event.insideCalendar = true;
-    state.calMonth = calMonth.dataset.calmonth;
-    return renderCalendar();
+    const target = calMonth.dataset.calmonth;
+    const current = state.calMonth ?? state.calCtx?.selected?.slice(0, 7) ?? target;
+    state.calMonth = target;
+    return renderCalendar(target > current ? 1 : -1);
   }
 
   const strip = event.target.closest("[data-strip]");
