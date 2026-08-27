@@ -197,10 +197,17 @@ async function viewLeague(code, tab) {
     body = matchListHTML(data.matches);
   }
 
+  // xG yokluğu bir uyarı sebebi ama kalite iddiası değil: ölçümde bu ligin
+  // 1X2 performansı xG'li liglerin arasında çıkıyor. Varsayım yerine rakam.
+  const lgResult = data.metrics?.result;
+  const measured = lgResult
+    ? ` Geriye dönük ölçümde bu ligde 1X2 tahminleri baseline'dan
+        %${(lgResult.skill * 100).toFixed(1)} daha iyi (${lgResult.n} maç).`
+    : "";
   const xgNote = data.has_xg === false ? `
     <p class="note">
-      Bu lig için xG verisi bulunmuyor; tahminler yalnızca gol ve form
-      verisine dayanıyor ve diğer liglere göre daha zayıf.
+      Bu lig için xG verisi bulunmuyor; tahminler yalnızca gol, form ve Elo
+      verisine dayanıyor.${measured}
     </p>` : "";
 
   return `

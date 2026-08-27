@@ -42,17 +42,32 @@ ve xG ortalamaları, ev/deplasman formu, dinlenme süresi, lig.
 ## Ölçüm
 
 Walk-forward: her sezon, yalnızca kendisinden önce oynanmış maçlarla eğitilen
-modelle tahmin edildi. 3504 maç:
+modelle tahmin edildi. 4179 maç:
 
 | Market | Logloss | Baseline | Kazanç | İsabet | Baseline isabet |
 |---|---|---|---|---|---|
-| 1X2 | 0.9975 | 1.0753 | **+%7.2** | %51.8 | %43.0 |
-| 2.5 Alt/Üst | 0.6871 | 0.6914 | +%0.6 | %55.5 | %53.2 |
-| KG Var/Yok | 0.6897 | 0.6891 | −%0.1 | %54.0 | %54.6 |
+| 1X2 | 0.9947 | 1.0746 | **+%7.4** | %51.7 | %43.2 |
+| 2.5 Alt/Üst | 0.6849 | 0.6912 | +%0.9 | %54.9 | %53.2 |
+| KG Var/Yok | 0.6896 | 0.6892 | −%0.1 | %54.3 | %54.5 |
 
 Yalnızca 1X2'de gerçek bir avantaj var. Diğer iki market taban oranı söylemekten
 daha iyi değil ve sitede bu açıkça yazıyor. Çıplak isabet oranı yanıltıcıdır:
 "her maça üst de" demek %53 verir.
+
+Lig bazında 1X2 kazancı:
+
+| Lig | Maç | Kazanç | İsabet | Baseline |
+|---|---|---|---|---|
+| Serie A | 760 | +%8.8 | %52.1 | %39.3 |
+| Bundesliga | 612 | +%8.3 | %52.1 | %41.2 |
+| Süper Lig | 610 | +%8.2 | %51.1 | %44.8 |
+| La Liga | 760 | +%7.1 | %51.7 | %46.7 |
+| Ligue 1 | 612 | +%7.0 | %52.8 | %46.4 |
+| Premier Lig | 760 | +%5.5 | %50.8 | %41.7 |
+
+Süper Lig'de xG verisi olmamasına rağmen model burada Premier Lig'den daha iyi
+çalışıyor — Elo ve gol formu yeterli sinyali taşıyor. Sitedeki not bu yüzden
+"xG yok" der ama kalite iddiasında bulunmaz.
 
 ## Kurulum
 

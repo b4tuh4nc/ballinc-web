@@ -1,122 +1,319 @@
 {
-  "generated_at": "2026-08-27T10:19:19+00:00",
+  "generated_at": "2026-08-27T10:43:22+00:00",
   "method": "walk-forward: her sezon, kendisinden önceki maçlarla eğitildi",
   "markets": {
     "result": {
       "label": "1X2",
-      "n": 3504,
-      "logloss": 0.9975,
-      "baseline_logloss": 1.0753,
-      "skill": 0.0723,
-      "brier": 0.5958,
-      "baseline_brier": 0.6509,
-      "accuracy": 0.5177,
-      "baseline_accuracy": 0.4301,
+      "n": 4179,
+      "logloss": 0.9947,
+      "baseline_logloss": 1.0746,
+      "skill": 0.0743,
+      "brier": 0.5937,
+      "baseline_brier": 0.6504,
+      "accuracy": 0.5166,
+      "baseline_accuracy": 0.4324,
       "reliable": true
     },
     "over_2_5": {
       "label": "2.5 Alt/Üst",
-      "n": 3504,
-      "logloss": 0.6871,
-      "baseline_logloss": 0.6914,
-      "skill": 0.0062,
-      "brier": 0.4936,
-      "baseline_brier": 0.4982,
-      "accuracy": 0.5545,
-      "baseline_accuracy": 0.5322,
+      "n": 4179,
+      "logloss": 0.6849,
+      "baseline_logloss": 0.6912,
+      "skill": 0.0092,
+      "brier": 0.4916,
+      "baseline_brier": 0.4981,
+      "accuracy": 0.5487,
+      "baseline_accuracy": 0.5324,
       "reliable": false
     },
     "btts": {
       "label": "KG Var/Yok",
-      "n": 3504,
-      "logloss": 0.6897,
-      "baseline_logloss": 0.6891,
-      "skill": -0.0009,
-      "brier": 0.4965,
-      "baseline_brier": 0.4959,
-      "accuracy": 0.5402,
-      "baseline_accuracy": 0.5459,
+      "n": 4179,
+      "logloss": 0.6896,
+      "baseline_logloss": 0.6892,
+      "skill": -0.0006,
+      "brier": 0.4964,
+      "baseline_brier": 0.4961,
+      "accuracy": 0.543,
+      "baseline_accuracy": 0.5449,
       "reliable": false
+    }
+  },
+  "leagues": {
+    "Serie_A": {
+      "result": {
+        "n": 760,
+        "logloss": 0.9946,
+        "baseline_logloss": 1.0902,
+        "skill": 0.0877,
+        "accuracy": 0.5211,
+        "reliable": true
+      },
+      "over_2_5": {
+        "n": 760,
+        "logloss": 0.7003,
+        "baseline_logloss": 0.7021,
+        "skill": 0.0026,
+        "accuracy": 0.4882,
+        "reliable": false
+      },
+      "btts": {
+        "n": 760,
+        "logloss": 0.6965,
+        "baseline_logloss": 0.7025,
+        "skill": 0.0083,
+        "accuracy": 0.5145,
+        "reliable": false
+      }
+    },
+    "Bundesliga": {
+      "result": {
+        "n": 612,
+        "logloss": 0.9915,
+        "baseline_logloss": 1.0808,
+        "skill": 0.0827,
+        "accuracy": 0.5212,
+        "reliable": true
+      },
+      "over_2_5": {
+        "n": 612,
+        "logloss": 0.662,
+        "baseline_logloss": 0.6766,
+        "skill": 0.0216,
+        "accuracy": 0.598,
+        "reliable": true
+      },
+      "btts": {
+        "n": 612,
+        "logloss": 0.6724,
+        "baseline_logloss": 0.6784,
+        "skill": 0.0088,
+        "accuracy": 0.5948,
+        "reliable": false
+      }
+    },
+    "TSL": {
+      "result": {
+        "n": 610,
+        "logloss": 0.9832,
+        "baseline_logloss": 1.0713,
+        "skill": 0.0823,
+        "accuracy": 0.5115,
+        "reliable": true
+      },
+      "over_2_5": {
+        "n": 610,
+        "logloss": 0.6832,
+        "baseline_logloss": 0.6897,
+        "skill": 0.0094,
+        "accuracy": 0.5328,
+        "reliable": false
+      },
+      "btts": {
+        "n": 610,
+        "logloss": 0.691,
+        "baseline_logloss": 0.6873,
+        "skill": -0.0054,
+        "accuracy": 0.5557,
+        "reliable": false
+      }
+    },
+    "La_Liga": {
+      "result": {
+        "n": 760,
+        "logloss": 0.9866,
+        "baseline_logloss": 1.0624,
+        "skill": 0.0713,
+        "accuracy": 0.5171,
+        "reliable": true
+      },
+      "over_2_5": {
+        "n": 760,
+        "logloss": 0.6839,
+        "baseline_logloss": 0.6982,
+        "skill": 0.0205,
+        "accuracy": 0.55,
+        "reliable": true
+      },
+      "btts": {
+        "n": 760,
+        "logloss": 0.6922,
+        "baseline_logloss": 0.6873,
+        "skill": -0.0071,
+        "accuracy": 0.5382,
+        "reliable": false
+      }
+    },
+    "Ligue_1": {
+      "result": {
+        "n": 612,
+        "logloss": 0.9846,
+        "baseline_logloss": 1.0589,
+        "skill": 0.0701,
+        "accuracy": 0.5278,
+        "reliable": true
+      },
+      "over_2_5": {
+        "n": 612,
+        "logloss": 0.6773,
+        "baseline_logloss": 0.6897,
+        "skill": 0.0179,
+        "accuracy": 0.5997,
+        "reliable": false
+      },
+      "btts": {
+        "n": 612,
+        "logloss": 0.6901,
+        "baseline_logloss": 0.6909,
+        "skill": 0.0011,
+        "accuracy": 0.5425,
+        "reliable": false
+      }
+    },
+    "EPL": {
+      "result": {
+        "n": 760,
+        "logloss": 1.0214,
+        "baseline_logloss": 1.081,
+        "skill": 0.0551,
+        "accuracy": 0.5079,
+        "reliable": true
+      },
+      "over_2_5": {
+        "n": 760,
+        "logloss": 0.6979,
+        "baseline_logloss": 0.6868,
+        "skill": -0.0162,
+        "accuracy": 0.5368,
+        "reliable": false
+      },
+      "btts": {
+        "n": 760,
+        "logloss": 0.6916,
+        "baseline_logloss": 0.6845,
+        "skill": -0.0104,
+        "accuracy": 0.5316,
+        "reliable": false
+      }
     }
   },
   "folds": [
     {
       "sezon": "24/25",
       "market": "1X2",
-      "n": 1752,
-      "logloss": 0.9941146009,
-      "baseline_ll": 1.0782977989,
-      "kazanç": 0.0780704533,
-      "brier": 0.5939822626,
-      "baseline_brier": 0.6531354903,
-      "acc": 0.5256849315,
-      "baseline_acc": 0.4200913242,
+      "n": 2056,
+      "logloss": 0.9891768086,
+      "baseline_ll": 1.074975085,
+      "kazanç": 0.0798142,
+      "brier": 0.5901323275,
+      "baseline_brier": 0.6508174802,
+      "acc": 0.5252918288,
+      "baseline_acc": 0.4280155642,
       "rho": -0.095
     },
     {
       "sezon": "24/25",
       "market": "2.5 Alt/Üst",
-      "n": 1752,
-      "logloss": 0.6884191248,
-      "baseline_ll": 0.6912100817,
-      "kazanç": 0.0040377838,
-      "brier": 0.4947177334,
-      "baseline_brier": 0.4980615761,
-      "acc": 0.5587899543,
-      "baseline_acc": 0.5342465753,
+      "n": 2056,
+      "logloss": 0.685461731,
+      "baseline_ll": 0.6905662957,
+      "kazanç": 0.0073918532,
+      "brier": 0.4921576255,
+      "baseline_brier": 0.4974204757,
+      "acc": 0.5505836576,
+      "baseline_acc": 0.5369649805,
       "rho": -0.095
     },
     {
       "sezon": "24/25",
       "market": "KG Var/Yok",
-      "n": 1752,
-      "logloss": 0.6921704284,
-      "baseline_ll": 0.6875248561,
-      "kazanç": -0.0067569518,
-      "brier": 0.4988001403,
-      "baseline_brier": 0.4943880184,
-      "acc": 0.5428082192,
-      "baseline_acc": 0.5530821918,
+      "n": 2056,
+      "logloss": 0.6911942349,
+      "baseline_ll": 0.6872008742,
+      "kazanç": -0.005811053,
+      "brier": 0.4978848264,
+      "baseline_brier": 0.4940654855,
+      "acc": 0.5442607004,
+      "baseline_acc": 0.5544747082,
       "rho": -0.095
     },
     {
       "sezon": "25/26",
       "market": "1X2",
-      "n": 1752,
-      "logloss": 1.0009181509,
-      "baseline_ll": 1.0722420111,
-      "kazanç": 0.0665184346,
-      "brier": 0.5975319127,
-      "baseline_brier": 0.6486499122,
-      "acc": 0.5097031963,
-      "baseline_acc": 0.4400684932,
-      "rho": -0.07
+      "n": 2058,
+      "logloss": 0.9997072295,
+      "baseline_ll": 1.0740283809,
+      "kazanç": 0.0691984986,
+      "brier": 0.5969883025,
+      "baseline_brier": 0.6497667917,
+      "acc": 0.509718173,
+      "baseline_acc": 0.4373177843,
+      "rho": -0.065
     },
     {
       "sezon": "25/26",
       "market": "2.5 Alt/Üst",
-      "n": 1752,
-      "logloss": 0.6857656734,
-      "baseline_ll": 0.6915649806,
-      "kazanç": 0.0083857734,
-      "brier": 0.4925023021,
-      "baseline_brier": 0.4984174968,
-      "acc": 0.5502283105,
-      "baseline_acc": 0.5302511416,
-      "rho": -0.07
+      "n": 2058,
+      "logloss": 0.6849016227,
+      "baseline_ll": 0.6915839276,
+      "kazanç": 0.0096623195,
+      "brier": 0.4917376511,
+      "baseline_brier": 0.4984364085,
+      "acc": 0.545675413,
+      "baseline_acc": 0.5301263362,
+      "rho": -0.065
     },
     {
       "sezon": "25/26",
       "market": "KG Var/Yok",
-      "n": 1752,
-      "logloss": 0.6872841437,
-      "baseline_ll": 0.6906471947,
-      "kazanç": 0.0048694197,
-      "brier": 0.4941304928,
-      "baseline_brier": 0.4974979671,
-      "acc": 0.5376712329,
-      "baseline_acc": 0.5388127854,
-      "rho": -0.07
+      "n": 2058,
+      "logloss": 0.6876938097,
+      "baseline_ll": 0.6903867205,
+      "kazanç": 0.0039005832,
+      "brier": 0.4945168862,
+      "baseline_brier": 0.4972388022,
+      "acc": 0.5442176871,
+      "baseline_acc": 0.5398445092,
+      "rho": -0.065
+    },
+    {
+      "sezon": "26/27",
+      "market": "1X2",
+      "n": 65,
+      "logloss": 1.0136968777,
+      "baseline_ll": 1.0813759794,
+      "kazanç": 0.0625860968,
+      "brier": 0.605510887,
+      "baseline_brier": 0.6551491516,
+      "acc": 0.4615384615,
+      "baseline_acc": 0.4153846154,
+      "rho": -0.065
+    },
+    {
+      "sezon": "26/27",
+      "market": "2.5 Alt/Üst",
+      "n": 65,
+      "logloss": 0.6652166998,
+      "baseline_ll": 0.701778679,
+      "kazanç": 0.0520990169,
+      "brier": 0.4727988819,
+      "baseline_brier": 0.5086125299,
+      "acc": 0.5846153846,
+      "baseline_acc": 0.4615384615,
+      "rho": -0.065
+    },
+    {
+      "sezon": "26/27",
+      "market": "KG Var/Yok",
+      "n": 65,
+      "logloss": 0.7023502832,
+      "baseline_ll": 0.7178963127,
+      "kazanç": 0.021654979,
+      "brier": 0.5091970551,
+      "baseline_brier": 0.524660287,
+      "acc": 0.4615384615,
+      "baseline_acc": 0.4,
+      "rho": -0.065
     }
   ]
 }

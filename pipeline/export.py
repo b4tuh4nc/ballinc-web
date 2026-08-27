@@ -122,6 +122,7 @@ def main() -> int:
     for p in predictions:
         by_league.setdefault(p["league"], []).append(p)
 
+    league_metrics = metrics.get("leagues", {})
     league_meta = []
     for code, cfg in LEAGUES.items():
         season_df = df[(df["league"] == code) & (df["season"] == CURRENT_SEASON)]
@@ -133,6 +134,9 @@ def main() -> int:
             "flag": cfg["flag"],
             "season": season_label(CURRENT_SEASON),
             "has_xg": cfg.get("has_xg", True),
+            # Bu ligde modelin geriye dönük ölçülmüş performansı. Lig
+            # kalitesi hakkında varsayım yapmak yerine rakamı gösteriyoruz.
+            "metrics": league_metrics.get(code, {}),
             "matches": matches,
             "results": build_results(season_df),
             "standings": build_standings(season_df),

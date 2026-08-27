@@ -56,10 +56,11 @@ def prior_baseline(y_train: np.ndarray, n_test: int, n_classes: int) -> np.ndarr
     return np.tile(counts / counts.sum(), (n_test, 1))
 
 
-def run(df: pd.DataFrame, test_seasons: list[str]) -> pd.DataFrame:
+def run(df: pd.DataFrame, test_seasons: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
     cols = features.feature_columns(df)
     played = df[df["result"].notna()].copy()
-    rows = []
+    rows: list[dict] = []
+    per_league: list[dict] = []
 
     for season in test_seasons:
         start = played.loc[played["season"] == season, "datetime"].min()
@@ -97,10 +98,49 @@ def run(df: pd.DataFrame, test_seasons: list[str]) -> pd.DataFrame:
                 "baseline_acc": base_stats["acc"],
                 "rho": model.rho,
             })
+
+            # Lig kırılımı: xG'si olmayan ligler (TSL) gerçekten daha mı
+            # zayıf tahmin ediliyor? Site bu rakamı gösteriyor.
+            for league, idx in test.groupby("league").groups.items():
+                pos = test.index.get_indexer(idx)
+                y_lg = y_test[pos]
+                if len(y_lg) < 30:
+                    continue
+                lg_stats = evaluate(y_lg, probs[target][pos], n_classes)
+                lg_base = evaluate(
+                    y_lg, prior_baseline(y_train, len(y_lg), n_classes), n_classes
+                )
+                per_league.append({
+                    "league": league, "market": label, "n": lg_stats["n"],
+                    "logloss": lg_stats["logloss"],
+                    "baseline_ll": lg_base["logloss"],
+                    "kazanç": 1 - lg_stats["logloss"] / lg_base["logloss"],
+                    "acc": lg_stats["acc"], "baseline_acc": lg_base["acc"],
+                })
         print(f"  ✓ {season}: {len(train)} maç ile eğitildi, {len(test)} maç test edildi "
               f"(rho={model.rho:+.3f})")
 
-    return pd.DataFrame(rows)
+    return pd.DataFrame(rows), pd.DataFrame(per_league)
+
+
+def summarise_leagues(per_league: pd.DataFrame) -> pd.DataFrame:
+    """Lig × market kırılımını sezonlar boyunca ağırlıklı birleştirir."""
+    if per_league.empty:
+        return per_league
+    out = []
+    for (league, market), group in per_league.groupby(["league", "market"], sort=False):
+        w = group["n"].to_numpy()
+        out.append({
+            "lig": league,
+            "market": market,
+            "n": int(w.sum()),
+            "logloss": float(np.average(group["logloss"], weights=w)),
+            "baseline_ll": float(np.average(group["baseline_ll"], weights=w)),
+            "kazanç": float(np.average(group["kazanç"], weights=w)),
+            "acc": float(np.average(group["acc"], weights=w)),
+            "baseline_acc": float(np.average(group["baseline_acc"], weights=w)),
+        })
+    return pd.DataFrame(out).sort_values(["market", "kazanç"], ascending=[True, False])
 
 
 def summarise(results: pd.DataFrame) -> pd.DataFrame:
@@ -137,7 +177,8 @@ def _fmt(df: pd.DataFrame) -> str:
     return show.to_string(index=False)
 
 
-def write_metrics(results: pd.DataFrame, summary: pd.DataFrame) -> None:
+def write_metrics(results: pd.DataFrame, summary: pd.DataFrame,
+                  leagues: pd.DataFrame) -> None:
     """Ölçümü models/metrics.json'a yazar; site bunu okuyup gösterir.
 
     Eski projedeki accuracy.json sadece çıplak doğruluk oranı tutuyordu ve
@@ -148,8 +189,19 @@ def write_metrics(results: pd.DataFrame, summary: pd.DataFrame) -> None:
         "generated_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "method": "walk-forward: her sezon, kendisinden önceki maçlarla eğitildi",
         "markets": {},
+        "leagues": {},
         "folds": json.loads(results.to_json(orient="records")),
     }
+    for row in leagues.itertuples(index=False) if not leagues.empty else []:
+        target = next(t for label, (t, _, _) in MARKETS.items() if label == row.market)
+        payload["leagues"].setdefault(row.lig, {})[target] = {
+            "n": int(row.n),
+            "logloss": round(float(row.logloss), 4),
+            "baseline_logloss": round(float(row.baseline_ll), 4),
+            "skill": round(float(row.kazanç), 4),
+            "accuracy": round(float(row.acc), 4),
+            "reliable": bool(row.kazanç >= SKILL_THRESHOLD),
+        }
     for label, (target, _, _) in MARKETS.items():
         row = summary[summary["market"] == label]
         if row.empty:
@@ -183,22 +235,27 @@ def main() -> int:
     df = pd.read_parquet(path) if path.exists() else features.build()
 
     print("Walk-forward backtest (her sezon, kendisinden önceki maçlarla eğitilir)\n")
-    results = run(df, args.seasons)
+    results, per_league = run(df, args.seasons)
     if results.empty:
         print("Değerlendirilecek sezon yok.")
         return 1
 
     summary = summarise(results)
+    leagues = summarise_leagues(per_league)
+
     print("\n─── Sezon bazında ───")
     print(_fmt(results))
     print("\n─── Toplam (maç sayısına göre ağırlıklı) ───")
     print(_fmt(summary))
+    if not leagues.empty:
+        print("\n─── Lig bazında (1X2) ───")
+        print(_fmt(leagues[leagues["market"] == "1X2"].drop(columns=["market"])))
     print(
         "\nlogloss düşük = iyi. 'kazanç' = baseline'a göre logloss iyileşmesi;\n"
         f"%{SKILL_THRESHOLD * 100:.0f} altındaysa market güvenilir sayılmıyor."
     )
 
-    write_metrics(results, summary)
+    write_metrics(results, summary, leagues)
     return 0
 
 
