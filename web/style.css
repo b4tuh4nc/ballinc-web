@@ -397,7 +397,12 @@ td.pts { font-weight: 700; }
 
 /* ─── Tarih şeridi (ana sayfa) ────────────────────────────────────────── */
 
+/* position+z-index zorunlu: #view > * üzerindeki opaklık animasyonu bu
+   öğeye kendi yığınlama bağlamını veriyor (fill-mode `both` yüzünden kalıcı
+   olarak). O bağlam olmadan takvimin z-index'i kök seviyede geçerli olmuyor
+   ve DOM'da sonra gelen maç listesi takvimin üstüne biniyor. */
 .datestrip {
+  position: relative; z-index: 40;
   display: flex; align-items: center; gap: .5rem;
   margin: 1rem 0 .4rem;
   padding: .55rem .6rem;
