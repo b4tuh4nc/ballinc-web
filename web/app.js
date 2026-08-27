@@ -300,7 +300,7 @@ async function viewHome() {
   lastList = { href: "#/", label: "Tüm maçlar" };
 
   const head = `
-    <div class="page-head">
+    <div class="page-head${state.filterOpen ? " filter-open" : ""}">
       <div class="page-title"><h1>Yaklaşan maçlar</h1></div>
       <p class="sub">Önümüzdeki ${meta.window_days} günün maçları · ${all.length} tahmin ·
         <a href="#/model">model ne kadar isabetli?</a></p>

@@ -858,7 +858,14 @@ td.pts { font-weight: 700; }
 
 /* ─── Lig filtresi ────────────────────────────────────────────────────── */
 
-.filter-wrap { position: relative; z-index: 45; display: inline-block; margin-top: .7rem; }
+.filter-wrap { position: relative; display: inline-block; margin-top: .7rem; }
+
+/* .page-head, #view > * üzerindeki opaklık animasyonu yüzünden kendi
+   yığınlama bağlamını yaratıyor; filtre paneli oraya hapsolup DOM'da sonra
+   gelen tarih şeridinin altında kalıyordu. Yükseltme yalnızca panel açıkken
+   uygulanıyor: kalıcı olsaydı mobilde takvim modalının bulanık katmanının
+   üstünde kalır, başlık ve filtre düğmesi net görünürdü. */
+.page-head.filter-open { position: relative; z-index: 50; }
 
 .filter-btn {
   display: inline-flex; align-items: center; gap: .4rem;
