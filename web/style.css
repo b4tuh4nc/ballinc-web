@@ -280,6 +280,7 @@ a.match:hover { background: var(--surface-2); }
 }
 .back:hover { background: var(--surface-2); color: var(--text); }
 .back .arrow { font-size: 1rem; line-height: 1; }
+.back img { width: 16px; height: 16px; object-fit: contain; }
 
 /* Üç sütunlu düzen artık içteki .hero-names'te; hero'nun kendisi dikey
    akıyor ki olasılık çubuğu tam genişlikte alta gelsin. */

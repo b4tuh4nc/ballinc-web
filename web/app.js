@@ -573,7 +573,7 @@ async function viewMatch(id) {
   const info = reliability(meta.metrics, "result");
 
   return `
-    <a class="back" href="#/lig/${encodeURIComponent(data.league)}"><span class="arrow">←</span>${esc(data.name)}</a>
+    <a class="back" href="#/lig/${encodeURIComponent(data.league)}"><span class="arrow">←</span>${leagueLogo(data.league)}${esc(data.name)}</a>
 
     <div class="match-hero">
       <div class="hero-names">
