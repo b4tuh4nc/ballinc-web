@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="tr" data-theme="auto">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ballinc — Futbol Tahmin</title>
+<meta name="description" content="Beş Avrupa ligi ve Süper Lig için xG tabanlı maç tahminleri.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚽</text></svg>">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="wrap topbar-inner">
+    <a class="brand" href="#/">
+      <span class="brand-mark">⚽</span>
+      <span class="brand-text">Ballinc</span>
+    </a>
+    <nav class="leagues" id="league-nav" aria-label="Ligler"></nav>
+    <button id="theme-toggle" class="icon-btn" type="button" aria-label="Temayı değiştir">
+      <span aria-hidden="true">◐</span>
+    </button>
+  </div>
+</header>
+
+<main id="view" class="wrap" aria-live="polite">
+  <div class="loading">Yükleniyor…</div>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>
+      Tahminler xG tabanlı bir gol beklentisi modelinden üretilir ve
+      <a href="#/model">geriye dönük ölçümü açıkça yayınlanır</a>.
+      Maç saatleri Türkiye saatidir.
+    </p>
+    <p class="muted" id="generated-at"></p>
+    <p class="muted">Bilgi amaçlıdır, bahis tavsiyesi değildir. 18+</p>
+  </div>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
