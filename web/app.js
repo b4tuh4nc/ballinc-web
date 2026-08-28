@@ -753,7 +753,7 @@ function fixtureRow(match, index = 0) {
 /** Tek takımın sayfası: yaklaşan maçları, sonuçları ve puan durumundaki yeri.
     Ek veri gerekmiyor — lig JSON'u zaten hepsini taşıyor, takıma göre
     süzüyoruz. */
-async function viewTeam(id) {
+async function viewTeam(id, tab) {
   const teams = await loadTeams();
   const team = teams.find((t) => t.id === id);
   if (!team) {
@@ -791,18 +791,23 @@ async function viewTeam(id) {
         <div class="match-list">${day.map(matchRow).join("")}</div>`).join("")
     : `<div class="empty">Tahmin penceresinde maçı yok.</div>`;
 
+  const base = `#/takim/${encodeURIComponent(id)}`;
+  const tabs = [["", "Maçlar"], ["fikstur", "Fikstür"], ["puan", "Puan Durumu"]]
+    .map(([slug, label]) => {
+      const href = slug ? `${base}/${slug}` : base;
+      const current = (tab ?? "") === slug ? ' aria-current="page"' : "";
+      return `<a class="tab" href="${href}"${current}>${label}</a>`;
+    }).join("");
+
   // Sonuçlar gün gün: sezon ilerledikçe yalnızca saat göstermek hangi maçın
   // ne zaman oynandığını belirsiz bırakıyor.
   const fixtureHTML = fixtures.length ? `
-    <div class="date-head">Fikstür · ${fixtures.length} maç</div>
+    <div class="date-head">Sezonun kalanı · ${fixtures.length} maç</div>
     <div class="match-list">${fixtures.map(fixtureRow).join("")}</div>` : "";
 
   // Puan tablosu takım sayfasında da var: takımın ligde nerede olduğunu
   // görmek için başka sayfaya gitmek gerekmesin. Takımın satırı vurgulu.
-  const tableHTML = data.standings.length
-    ? `<div class="date-head">${esc(leagueName)} puan durumu</div>
-       ${standingsHTML(data, id)}`
-    : "";
+  const tableHTML = standingsHTML(data, id);
 
   const playedHTML = played.length
     ? groupByDay(played).reverse().map(([, day]) => `
@@ -828,10 +833,11 @@ async function viewTeam(id) {
               aria-label="${fav ? "Favorilerden çıkar" : "Favorilere ekle"}">★</button>
     </div>
 
-    ${upcomingHTML}
-    ${fixtureHTML}
-    ${playedHTML}
-    ${tableHTML}`;
+    <nav class="tabs team-tabs">${tabs}</nav>
+    ${tab === "puan" ? tableHTML
+      : tab === "fikstur"
+        ? (fixtureHTML || `<div class="empty">Kalan fikstür yok.</div>`)
+        : `${upcomingHTML}${playedHTML}`}`;
 }
 
 async function liveRecordHTML() {
@@ -1049,7 +1055,7 @@ async function route() {
     } else if (parts[0] === "mac" && parts[1]) {
       html = await viewMatch(decodeURIComponent(parts[1]));
     } else if (parts[0] === "takim" && parts[1]) {
-      html = await viewTeam(decodeURIComponent(parts[1]));
+      html = await viewTeam(decodeURIComponent(parts[1]), parts[2]);
     } else if (parts[0] === "model") {
       html = await viewModel();
     } else {

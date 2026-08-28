@@ -1213,3 +1213,5 @@ tbody tr.me {
 }
 tbody tr.me td { font-weight: 640; }
 tbody tr.me td.rank, tbody tr.me .team-cell { color: var(--accent); }
+
+.team-tabs { margin-top: 1rem; }
