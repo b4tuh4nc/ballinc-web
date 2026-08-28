@@ -678,7 +678,7 @@ async function viewMatch(id) {
       </div>
       <div class="prob-legend">
         <span><i style="background:var(--home)"></i>Ev sahibi kazanır</span>
-        <span><i style="background:var(--draw)"></i>Beraberlik</span>
+        <span><i style="background:var(--draw-1x2)"></i>Beraberlik</span>
         <span><i style="background:var(--away)"></i>Deplasman kazanır</span>
       </div>
     </div>
