@@ -17,7 +17,7 @@
      karşılıklı gol çubuklarının "olumsuz" tarafı gri kalmalı. */
   --draw-1x2: #e0a01a;
   --draw-1x2-text: #17120a;
-  --away: #e2603a;
+  --away: #d92d20;
   --warn: #a96700;
   --warn-soft: #fdf3e2;
   --crest-bg: #f2f4f7;
@@ -41,7 +41,7 @@
     --draw: #78818f;
     --draw-1x2: #f0be3c;
     --draw-1x2-text: #17120a;
-    --away: #f0805c;
+    --away: #f04438;
     --warn: #e0a24a;
     --warn-soft: #2a2113;
     --crest-bg: #232932;
@@ -64,7 +64,7 @@
   --draw: #78818f;
   --draw-1x2: #f0be3c;
   --draw-1x2-text: #17120a;
-  --away: #f0805c;
+  --away: #f04438;
   --warn: #e0a24a;
   --warn-soft: #2a2113;
   --crest-bg: #232932;
