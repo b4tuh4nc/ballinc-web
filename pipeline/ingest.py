@@ -14,6 +14,7 @@ import pandas as pd
 
 from pipeline import crosswalk
 from pipeline.config import (
+    ARCHIVE_SEASONS,
     FOTMOB_PRIMARY_LEAGUES,
     LEAGUES,
     RAW_DIR,
@@ -74,10 +75,23 @@ def canonicalise(df: pd.DataFrame, league: str) -> pd.DataFrame:
     return df
 
 
+def _skip_archived(league: str, season: str) -> bool:
+    """Biten sezonlar bir daha değişmiyor; dosyası varsa yeniden çekilmiyor.
+
+    Bu olmadan her koşuda 13 sezon × 6 lig indirilirdi: hem yavaş hem
+    kaynağa gereksiz yük.
+    """
+    return season in ARCHIVE_SEASONS and raw_path(league, season).exists()
+
+
 def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
     failures = 0
+    archived = 0
     for league in leagues:
         for season in seasons:
+            if _skip_archived(league, season):
+                archived += 1
+                continue
             label = f"{league} {season_label(season)}"
             try:
                 df = understat.fetch_league_season(league, season)
@@ -112,6 +126,8 @@ def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
                 f"({played:3d} oynanmış, {with_xg:3d} xG'li)"
                 + ("" if source == "Understat" else f"  [{source}]")
             )
+    if archived:
+        print(f"  · {archived} arşiv sezonu yerinde, yeniden çekilmedi")
     return failures
 
 
@@ -123,8 +139,12 @@ def ingest_fotmob(leagues: list[str], seasons: list[str]) -> int:
     gecelik akışı durdurmamalı.
     """
     failures = 0
+    archived = 0
     for league in leagues:
         for season in seasons:
+            if _skip_archived(league, season):
+                archived += 1
+                continue
             label = f"{league} {season_label(season)}"
             path = raw_path(league, season)
             try:
@@ -149,6 +169,8 @@ def ingest_fotmob(leagues: list[str], seasons: list[str]) -> int:
             print(f"  ✓ {label:24s} {len(df):3d} maç, {teams:2d} takım  "
                   f"({played:3d} oynanmış, xG yok)")
             time.sleep(1.0)
+    if archived:
+        print(f"  · {archived} arşiv sezonu yerinde, yeniden çekilmedi")
     return failures
 
 

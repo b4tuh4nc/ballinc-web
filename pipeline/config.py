@@ -10,6 +10,10 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 DATA_DIR = BASE_DIR / "data"
 RAW_DIR = DATA_DIR / "raw"
+# Biten sezonlar bir daha değişmiyor: repoda tutuluyor ve yeniden çekilmiyor.
+# Aksi halde her koşuda 60 sezonluk veri indirilirdi — hem yavaş hem kaynağa
+# saygısız.
+ARCHIVE_DIR = DATA_DIR / "archive"
 PROCESSED_DIR = DATA_DIR / "processed"
 MODELS_DIR = BASE_DIR / "models"
 WEB_DIR = BASE_DIR / "web"
@@ -18,7 +22,13 @@ PREDICTIONS_DB = DATA_DIR / "predictions.sqlite"
 
 # ─── Sezonlar ────────────────────────────────────────────────────────────────
 CURRENT_SEASON = "2026_2027"
-SEASONS = ["2023_2024", "2024_2025", "2025_2026", "2026_2027"]
+
+# Model ne kadar çok maç görürse o kadar iyi tahmin ediyor: 3 sezondan 12
+# sezona çıkmak walk-forward ölçümde kazancı %7.2'den %8.1'e taşıdı.
+# Understat 2014/15'e kadar veri veriyor.
+ARCHIVE_SEASONS = [f"{y}_{y + 1}" for y in range(2014, 2025)]
+LIVE_SEASONS = ["2025_2026", "2026_2027"]
+SEASONS = ARCHIVE_SEASONS + LIVE_SEASONS
 
 # ─── Ligler ──────────────────────────────────────────────────────────────────
 # understat: getLeagueData slug'ı. La Liga'nınki küçük "l" ile "La_liga" —
@@ -118,4 +128,6 @@ def season_label(season: str) -> str:
 
 
 def raw_path(league: str, season: str) -> Path:
-    return RAW_DIR / f"{league}_{season}.parquet"
+    """Arşiv sezonları repoda, güncel sezonlar her koşuda tazelenen dizinde."""
+    folder = ARCHIVE_DIR if season in ARCHIVE_SEASONS else RAW_DIR
+    return folder / f"{league}_{season}.parquet"

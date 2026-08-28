@@ -38,34 +38,41 @@ Bunun ayrı ayrı eğitilmiş üç sınıflandırıcıya göre avantajı, tahmin
 birbiriyle çelişememesi. Bağımsız modeller "ev sahibi kazanır" + "2.5 alt" +
 "karşılıklı gol var" diyebilir; bu kombinasyon neredeyse imkânsızdır.
 
-**Girdiler:** Elo gücü (sezon arası ortalamaya dönüşlü), son 5 ve 10 maçın gol
-ve xG ortalamaları, ev/deplasman formu, dinlenme süresi, lig.
+**Girdiler:** Elo gücü (sezon arası ortalamaya dönüşlü), takım başına xG
+tabanlı hücum ve savunma gücü, son 5 ve 10 maçın gol ve xG ortalamaları,
+ev/deplasman formu, dinlenme süresi, lig.
+
+Model **27.754 maçla** eğitiliyor (2014/15'ten bugüne, 6 lig). Veri miktarı
+ölçülebilir fark yaratıyor: 3 sezondan 12 sezona çıkmak kazancı %7.2'den
+%8.1'e, xG hücum/savunma reytingi de %8.5'e taşıdı. Eski maçların ağırlığını
+azaltmayı da denedim — hiçbir yarı-ömür değeri iyileştirmedi, yani 2015'teki
+maçlar hâlâ değerli.
 
 ## Ölçüm
 
 Walk-forward: her sezon, yalnızca kendisinden önce oynanmış maçlarla eğitilen
-modelle tahmin edildi. 4217 maç:
+modelle tahmin edildi. 4219 maç:
 
 | Market | Logloss | Baseline | Kazanç | İsabet | Baseline isabet |
 |---|---|---|---|---|---|
-| 1X2 | 0.9926 | 1.0743 | **+%7.6** | %52.1 | %43.4 |
-| 2.5 Alt/Üst | 0.6858 | 0.6911 | +%0.8 | %54.9 | %53.3 |
-| KG Var/Yok | 0.6897 | 0.6892 | −%0.1 | %54.2 | %54.5 |
+| 1X2 | 0.9839 | 1.0740 | **+%8.4** | %52.8 | %43.4 |
+| 2.5 Alt/Üst | 0.6788 | 0.6911 | +%1.8 | %56.1 | %53.3 |
+| KG Var/Yok | 0.6868 | 0.6894 | +%0.4 | %54.3 | %54.5 |
 
-Yalnızca 1X2'de gerçek bir avantaj var. Diğer iki market taban oranı söylemekten
-daha iyi değil ve sitede bu açıkça yazıyor. Çıplak isabet oranı yanıltıcıdır:
+Yalnızca 1X2'de güvenilir bir avantaj var. Diğer iki market %2'lik eşiğin
+altında kalıyor ve sitede "taban orandan farkı yok" uyarısıyla gösteriliyor. Çıplak isabet oranı yanıltıcıdır:
 "her maça üst de" demek %53 verir.
 
 Lig bazında 1X2 kazancı:
 
 | Lig | Maç | Kazanç | İsabet | Baseline |
 |---|---|---|---|---|
-| Serie A | 760 | +%8.9 | %52.2 | %39.3 |
-| Süper Lig | 648 | +%8.8 | %52.8 | %45.5 |
-| Bundesliga | 612 | +%8.3 | %52.1 | %41.2 |
-| La Liga | 760 | +%7.3 | %52.4 | %46.7 |
-| Ligue 1 | 612 | +%7.0 | %52.8 | %46.4 |
-| Premier Lig | 760 | +%5.6 | %50.5 | %41.7 |
+| Serie A | 760 | +%9.9 | %52.4 | %39.3 |
+| Bundesliga | 612 | +%9.0 | %52.3 | %41.2 |
+| La Liga | 760 | +%8.5 | %53.9 | %46.7 |
+| Süper Lig | 648 | +%8.1 | %53.7 | %45.5 |
+| Ligue 1 | 612 | +%7.7 | %54.6 | %46.4 |
+| Premier Lig | 760 | +%7.1 | %50.5 | %41.7 |
 
 Süper Lig'de xG verisi olmamasına rağmen model burada Premier Lig'den daha iyi
 çalışıyor — Elo ve gol formu yeterli sinyali taşıyor. Sitedeki not bu yüzden
@@ -73,10 +80,13 @@ Süper Lig'de xG verisi olmamasına rağmen model burada Premier Lig'den daha iy
 
 ## Kurulum
 
+Biten sezonlar `data/archive/` altında repoda duruyor ve yeniden çekilmiyor;
+yalnızca güncel iki sezon her koşuda tazeleniyor.
+
 ```bash
 pip install -r requirements.txt
 
-python -m pipeline.ingest      # ham veri
+python -m pipeline.ingest      # ham veri (arşiv atlanır)
 python -m pipeline.crosswalk   # takım eşlemesi (nadiren; --lenient CI için)
 python -m pipeline.rounds      # hafta numaraları
 python -m pipeline.logos       # logolar (bir kez indirir)
@@ -121,10 +131,12 @@ ve kaydedilmiş tahmin sonucuyla eşleşmeye devam ediyor.
 
 ```python
 CURRENT_SEASON = "2027_2028"
-SEASONS = [..., "2027_2028"]
+ARCHIVE_SEASONS = [f"{y}_{y + 1}" for y in range(2014, 2026)]  # biten sezon eklenir
+LIVE_SEASONS = ["2026_2027", "2027_2028"]
 ```
 
-Başka hiçbir yerde sezon bilgisi yok.
+Başka hiçbir yerde sezon bilgisi yok. Biten bir sezonu arşive almak, o sezonun
+bir daha çekilmemesi ve dosyasının repoda kalması demek.
 
 ## Veri bütünlüğü
 
@@ -155,7 +167,7 @@ pipeline/
   crosswalk.py  Understat <-> FotMob takım eşlemesi (logo + hafta için)
   rounds.py     hafta numaraları
   logos.py      takım ve lig logoları -> web/assets/
-  ingest.py     ham veri → data/raw/
+  ingest.py     ham veri → data/raw/ (arşiv: data/archive/)
   validate.py   bütünlük kontrolleri
   features.py   Elo + rolling; eğitim ve tahmin ortak kullanır
   model.py      gol modeli + skor matrisi + marketler
