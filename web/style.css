@@ -1038,6 +1038,38 @@ td.pts { font-weight: 700; }
 }
 .goal-flash i { font-style: normal; animation: goalBounce .5s ease 3 alternate; }
 
+/* Gol dışındaki olaylar aynı bandı ve aynı süpürmeyi kullanıyor; yalnızca
+   renk ve yazı değişiyor. Üç sınıflı seçici, iki sınıflı `.from-*` kuralının
+   arka planını geçiyor ama animasyonuna dokunmuyor. */
+.goal-flash.kind-iptal.from-home {
+  background: linear-gradient(100deg, #2b303a 0%, #454c5a 45%, #5d6575 100%);
+}
+.goal-flash.kind-iptal.from-away {
+  background: linear-gradient(260deg, #2b303a 0%, #454c5a 45%, #5d6575 100%);
+}
+.goal-flash.kind-kirmizi.from-home {
+  background: linear-gradient(100deg,
+    color-mix(in srgb, var(--away) 88%, #000) 0%,
+    var(--away) 45%,
+    color-mix(in srgb, var(--away) 80%, #fff) 100%);
+}
+.goal-flash.kind-kirmizi.from-away {
+  background: linear-gradient(260deg,
+    color-mix(in srgb, var(--away) 88%, #000) 0%,
+    var(--away) 45%,
+    color-mix(in srgb, var(--away) 80%, #fff) 100%);
+}
+/* "İPTAL" ve "KIRMIZI" gol yazısından uzun: dar satırlarda taşmasınlar. */
+.goal-flash.kind-iptal span,
+.goal-flash.kind-kirmizi span { font-size: 1.15rem; letter-spacing: .13em; }
+/* Yazının yanındaki kart. Zemin zaten kırmızı olduğu için kart beyaz. */
+.goal-flash .rc {
+  display: inline-block; width: 11px; height: 15px;
+  margin-right: .45rem; vertical-align: -2px;
+  border-radius: 2px; background: #fff;
+  transform: rotate(-8deg);
+}
+
 .match { position: relative; }
 
 @keyframes goalSweep {

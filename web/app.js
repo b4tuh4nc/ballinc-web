@@ -1370,39 +1370,58 @@ function noteLiveDays(matches) {
 const previousScores = new Map();
 let firstLivePass = true;
 
-function detectGoals() {
-  const scored = [];
+/* Bant üç olayda birden çıkıyor. Yazı ve renk dışında hepsi aynı; olayın
+   ilgili taraftan süpürmesi, hangi takımı ilgilendirdiğini tek başına
+   anlatıyor. */
+const FLASH_TEXT = {
+  gol: "G<i>O</i>L!",
+  iptal: "İPTAL",
+  kirmizi: '<b class="rc"></b>KIRMIZI',
+};
+
+function detectEvents() {
+  const events = [];
   for (const [key, state] of liveData) {
-    const now = `${state.home ?? 0}-${state.away ?? 0}`;
+    const home = state.home ?? 0, away = state.away ?? 0;
+    const now = `${home}-${away}`;
     const before = previousScores.get(key);
     if (!firstLivePass && before !== undefined && before !== now) {
-      // Skor geri gidebilir (VAR iptali); yalnızca artışta kutlama.
       // Hangi tarafın attığı skor farkından belli oluyor, ayrı bir veriye
       // gerek yok.
       const [bh, ba] = before.split("-").map(Number);
-      if ((state.home ?? 0) > bh) scored.push({ key, side: "home" });
-      if ((state.away ?? 0) > ba) scored.push({ key, side: "away" });
+      if (home > bh) events.push({ key, side: "home", kind: "gol" });
+      if (away > ba) events.push({ key, side: "away", kind: "gol" });
+      // Skor geri gittiyse VAR golü iptal etmiş.
+      if (home < bh) events.push({ key, side: "home", kind: "iptal" });
+      if (away < ba) events.push({ key, side: "away", kind: "iptal" });
     }
     previousScores.set(key, now);
   }
   firstLivePass = false;
-  return scored;
+  return events;
 }
 
-/** Bant golü atan taraftan süpürüyor: ev sahibi soldan sağa, deplasman
-    sağdan sola. Yön, satırdaki takım sırasıyla aynı olduğu için kimin
-    attığı bakmadan anlaşılıyor. */
-function flashGoal(key, side = "home") {
+/** Bant ilgili taraftan süpürüyor: ev sahibi soldan sağa, deplasman sağdan
+    sola. Yön satırdaki takım sırasıyla aynı olduğu için kimin olayı olduğunu
+    ayrıca yazmaya gerek kalmıyor.
+
+    İptal tek istisna: kutlamanın geri alınması olduğu için bant golün geldiği
+    yönün tersine gidiyor. */
+function flashEvent(key, { kind = "gol", side = "home" } = {}) {
   const node = document.querySelector(`[data-live="${CSS.escape(key)}"]`);
   if (!node || node.querySelector(".goal-flash")) return;
+  const sweep = kind === "iptal" ? (side === "home" ? "away" : "home") : side;
   const flash = document.createElement("div");
-  flash.className = `goal-flash from-${side === "away" ? "away" : "home"}`;
-  flash.innerHTML = '<span>G<i>O</i>L!</span>';
+  flash.className = `goal-flash kind-${kind} from-${sweep === "away" ? "away" : "home"}`;
+  flash.innerHTML = `<span>${FLASH_TEXT[kind] ?? ""}</span>`;
   node.appendChild(flash);
   // Zaman aşımı yedeği şart: hareket azaltma modunda animasyon çalışmıyor,
   // dolayısıyla animationend hiç tetiklenmiyor ve bildirim ekranda kalıyordu.
   const remove = () => flash.remove();
-  flash.addEventListener("animationend", remove, { once: true });
+  // Hedef kontrolü de şart: animationend baloncuklanıyor ve "GOL!" içindeki
+  // zıplama 1.5 saniyede bitiyor — bant 3.4 saniyelik süpürmesini
+  // tamamlayamadan kalkıyordu.
+  flash.addEventListener("animationend", (e) => { if (e.target === flash) remove(); });
   setTimeout(remove, 4000);
 }
 
@@ -1416,6 +1435,7 @@ function flashGoal(key, side = "home") {
    sessizce atlanıyor; ilk başarısızlıkta da kendini kapatıyor ki dakikada bir
    boşuna istek atmasın. */
 const goalCache = new Map();
+const previousCards = new Map();
 let goalsUnavailable = false;
 
 async function fetchGoals(matchId, scoreKey) {
@@ -1497,8 +1517,23 @@ async function paintGoals() {
 
     put(".goals-h", goals.filter((g) => g.home).map(goalLabel).join(", "));
     put(".goals-a", goals.filter((g) => !g.home).map(goalLabel).join(", "));
-    put(".cards-h", redCardBadge(redCards.filter((c) => c.home)));
-    put(".cards-a", redCardBadge(redCards.filter((c) => !c.home)));
+    const homeCards = redCards.filter((c) => c.home);
+    const awayCards = redCards.filter((c) => !c.home);
+    put(".cards-h", redCardBadge(homeCards));
+    put(".cards-a", redCardBadge(awayCards));
+
+    // Kart skoru değiştirmediği için canlı skordan anlaşılmıyor; sayı
+    // burada, kartlar çizilirken karşılaştırılıyor. Bir maçı ilk görüşte
+    // bildirim çıkmıyor: o an zaten ekranda olan kart "yeni" sayılmamalı.
+    const key = node.dataset.live;
+    const seenCards = previousCards.get(key);
+    const nowCards = `${homeCards.length}-${awayCards.length}`;
+    if (seenCards !== undefined && seenCards !== nowCards) {
+      const [ph, pa] = seenCards.split("-").map(Number);
+      if (homeCards.length > ph) flashEvent(key, { kind: "kirmizi", side: "home" });
+      else if (awayCards.length > pa) flashEvent(key, { kind: "kirmizi", side: "away" });
+    }
+    previousCards.set(key, nowCards);
   }
 }
 
@@ -1616,9 +1651,9 @@ async function refreshLive() {
   if (document.hidden) return;
   try {
     await fetchLive();
-    const scored = detectGoals();
+    const events = detectEvents();
     applyLive();
-    scored.forEach((g) => flashGoal(g.key, g.side));
+    events.forEach((e) => flashEvent(e.key, e));
     await paintGoals();
     retimeLive();
 
