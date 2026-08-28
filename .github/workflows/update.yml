@@ -2,7 +2,11 @@ name: Veriyi güncelle ve yayınla
 
 on:
   schedule:
-    - cron: "0 1 * * *"      # her gün 01:00 UTC = 04:00 Türkiye
+    # Üç saatte bir. Gecede tek çalıştırmada, bugün oynanan maçlar ertesi
+    # güne kadar puan durumuna ve sonuçlara girmiyordu; kullanıcı maç biter
+    # bitmez bakıyor. (Zamanlanmış işler yoğun saatlerde gecikebiliyor,
+    # dolayısıyla pratikte gecikme 3 saatten biraz fazla olabilir.)
+    - cron: "0 */3 * * *"
   workflow_dispatch:
     inputs:
       backtest:
@@ -68,18 +72,32 @@ jobs:
         env:
           FORCE: ${{ github.event.inputs.backtest }}
         run: |
-          if [ "$(date -u +%u)" = "1" ] || [ "$FORCE" = "true" ]; then
+          # Haftada bir yeter: dakikalar sürüyor ve sonucu gün içinde
+          # anlamlı değişmiyor. Pazartesi 01:00 UTC koşusunda çalışıyor.
+          if { [ "$(date -u +%u)" = "1" ] && [ "$(date -u +%H)" = "01" ]; }              || [ "$FORCE" = "true" ]; then
             python -m pipeline.backtest
           else
-            echo "Backtest atlandı (pazartesi değil, elle tetiklenmedi)."
+            echo "Backtest atlandı (haftalık koşu değil)."
           fi
 
       # Oranlar ayrı adımda: servis çökerse ya da kota biterse site son
       # bilinen oranlarla çalışmaya devam eder.
+      #
+      # Günde iki kez çekiliyor. Ücretsiz kota ayda 500 istek ve her çekim
+      # 6 lig = 6 kredi harcıyor; üç saatte bir çekseydik ayda ~1440 istekle
+      # kota 11 günde biterdi. İki çekim ayda ~372 istek yapıyor ve akşam
+      # maçlarından önceki oranları yakalıyor. Atlanan koşularda diskteki
+      # son oranlar kullanılmaya devam ediyor.
       - name: Bahis oranları
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: python -m pipeline.market
+        run: |
+          HOUR=$(date -u +%H)
+          if [ "$HOUR" = "10" ] || [ "$HOUR" = "16" ]; then
+            python -m pipeline.market
+          else
+            echo "Oran çekimi atlandı (saat $HOUR UTC); mevcut oranlar korunuyor."
+          fi
 
       - name: Siteyi üret
         run: python -m pipeline.export
@@ -98,6 +116,8 @@ jobs:
             echo "Değişiklik yok."
           else
             git commit -m "Otomatik güncelleme: $(date -u +'%Y-%m-%d %H:%M UTC')"
+            # Günde sekiz koşu var; arada elle push yapılmış olabilir.
+            git pull --rebase --autostash origin main
             git push
           fi
 
