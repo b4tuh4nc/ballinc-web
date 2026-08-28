@@ -124,8 +124,8 @@ function matchRow(match, index = 0) {
        href="#/mac/${encodeURIComponent(match.id)}">
       <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
       <div class="match-teams">
-        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span><span class="cards-h"></span><span class="team-score live-h"></span></div>
-        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span><span class="cards-a"></span><span class="team-score live-a"></span></div>
+        <div class="team-line">${crest(match.home.id)}<span class="team-name" data-team="${esc(match.home.id)}">${esc(match.home.name)}</span><span class="cards-h"></span><span class="team-score live-h"></span></div>
+        <div class="team-line">${crest(match.away.id)}<span class="team-name" data-team="${esc(match.away.id)}">${esc(match.away.name)}</span><span class="cards-a"></span><span class="team-score live-a"></span></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
       <div class="chev" aria-hidden="true">›</div>
@@ -151,11 +151,11 @@ function resultRow(result, index = 0) {
       <div class="match-time">${timeIn(result.kickoff)}</div>
       <div class="match-teams">
         <div class="team-line${hg < ag ? " dim" : ""}">
-          ${crest(result.home.id)}<span class="team-name">${esc(result.home.name)}</span>
+          ${crest(result.home.id)}<span class="team-name" data-team="${esc(result.home.id)}">${esc(result.home.name)}</span>
           <span class="team-score">${hg}</span>
         </div>
         <div class="team-line${ag < hg ? " dim" : ""}">
-          ${crest(result.away.id)}<span class="team-name">${esc(result.away.name)}</span>
+          ${crest(result.away.id)}<span class="team-name" data-team="${esc(result.away.id)}">${esc(result.away.name)}</span>
           <span class="team-score">${ag}</span>
         </div>
       </div>
@@ -649,7 +649,7 @@ async function viewMatch(id) {
       <div class="hero-names">
         <div class="hero-team">
           ${crest(match.home.id, "lg")}
-          <strong>${esc(match.home.name)}<span class="cards-h"></span></strong>
+          <strong><span class="team-name" data-team="${esc(match.home.id)}">${esc(match.home.name)}</span><span class="cards-h"></span></strong>
           <span>Elo ${match.home.elo}</span>
           <span class="scorers goals-h"></span>
         </div>
@@ -664,7 +664,7 @@ async function viewMatch(id) {
         </div>
         <div class="hero-team">
           ${crest(match.away.id, "lg")}
-          <strong>${esc(match.away.name)}<span class="cards-a"></span></strong>
+          <strong><span class="team-name" data-team="${esc(match.away.id)}">${esc(match.away.name)}</span><span class="cards-a"></span></strong>
           <span>Elo ${match.away.elo}</span>
           <span class="scorers goals-a"></span>
         </div>
@@ -742,8 +742,8 @@ function fixtureRow(match, index = 0) {
         ${match.round ? `<span class="fx-round">${match.round}. hf</span>` : ""}
       </div>
       <div class="match-teams">
-        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span></div>
-        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span></div>
+        <div class="team-line">${crest(match.home.id)}<span class="team-name" data-team="${esc(match.home.id)}">${esc(match.home.name)}</span></div>
+        <div class="team-line">${crest(match.away.id)}<span class="team-name" data-team="${esc(match.away.id)}">${esc(match.away.name)}</span></div>
       </div>
       <div class="match-markets"></div>
       <div class="chev"></div>
@@ -1078,6 +1078,18 @@ function scrollSelectedIntoView() {
 }
 
 el("view").addEventListener("click", (event) => {
+  // Yalnızca takım ADINA basıldığında takım sayfasına gidiliyor. Satırın
+  // kalanı maça gitmeye devam ediyor. Satır zaten bir <a> olduğu için isim
+  // içine ikinci bir <a> konulamıyor (geçersiz HTML); bu yüzden tıklama
+  // burada yakalanıp varsayılan gezinme iptal ediliyor.
+  const teamName = event.target.closest("[data-team]");
+  if (teamName) {
+    event.preventDefault();
+    event.stopPropagation();
+    location.hash = `#/takim/${encodeURIComponent(teamName.dataset.team)}`;
+    return;
+  }
+
   const star = event.target.closest("[data-fav]");
   if (star) {
     toggleFavourite(star.dataset.fav);

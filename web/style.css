@@ -1188,3 +1188,7 @@ body.search-open { overflow: hidden; }
 .match.fixture { background: var(--surface); }
 .fx-date { display: block; font-size: .78rem; color: var(--text); font-weight: 600; }
 .fx-round { display: block; font-size: .64rem; color: var(--text-muted); }
+
+/* Takım adı tıklanabilir: satırın kalanı maça, isim takıma gidiyor. */
+.team-name[data-team] { cursor: pointer; }
+.team-name[data-team]:hover { text-decoration: underline; text-underline-offset: 2px; }
