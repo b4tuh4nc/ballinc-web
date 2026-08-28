@@ -292,6 +292,7 @@ async function viewHome() {
     const data = await getJSON(`${league.code}.json`);
     all.push(...data.matches);
   }
+  noteLiveDays(all);
   all.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   const shown = active.length - active.filter((l) => hidden.has(l.code)).length;
 
@@ -409,6 +410,7 @@ async function viewHome() {
 
 async function viewLeague(code, tab) {
   const data = await getJSON(`${code}.json`);
+  noteLiveDays(data.matches);
   const base = `#/lig/${encodeURIComponent(code)}`;
   lastList = { href: base, label: data.name, league: code };
   const tabs = [["", "Maçlar"], ["puan", "Puan Durumu"], ["sonuclar", "Sonuçlar"]]
@@ -442,10 +444,84 @@ async function viewLeague(code, tab) {
     ${body}`;
 }
 
+/* ── Canlı tamamlama ───────────────────────────────────────────────────
+   Pipeline üç saatte bir çalışıyor; o aralıkta biten maçlar statik veriye
+   girmemiş oluyor ve puan durumu ile sonuçlar geride kalıyordu. Canlı skor
+   zaten elimizde olduğu için eksik maçları istemci tarafında tamamlıyoruz.
+   Kaynak veri değişmiyor, yalnızca gösterim tamamlanıyor. */
+
+/** Statik veriye henüz girmemiş, bitmiş maçlar. */
+function freshResults(data) {
+  const known = new Set(data.results.map((r) => r.id));
+  const out = [];
+  for (const m of data.matches ?? []) {
+    if (known.has(m.id)) continue;
+    const state = liveData.get(liveKey(m) ?? "");
+    if (!state?.finished || state.home == null || state.away == null) continue;
+    out.push({
+      id: m.id, kickoff: m.kickoff, round: m.round,
+      home: m.home, away: m.away,
+      score: [state.home, state.away],
+      xg: null,
+      // Maç öncesi tahmin elimizde; isabetini burada hesaplayabiliyoruz.
+      forecast: forecastFor(m, state),
+      fresh: true,
+    });
+  }
+  return out.sort((a, b) => b.kickoff.localeCompare(a.kickoff));
+}
+
+function forecastFor(match, state) {
+  const probs = match.markets?.result;
+  if (!probs) return null;
+  const outcome = state.home > state.away ? 0 : (state.home === state.away ? 1 : 2);
+  const pick = probs.indexOf(Math.max(...probs));
+  return { probs, pick, hit: pick === outcome };
+}
+
+/** Puan durumuna, statik veriye girmemiş biten maçları uygular. */
+function standingsWithFresh(data) {
+  const fresh = freshResults(data);
+  if (!fresh.length) return { rows: data.standings, added: 0 };
+
+  const rows = new Map(data.standings.map((r) => [r.team_id, { ...r, form: [...r.form] }]));
+  const blank = (team) => ({
+    team_id: team.id, team: team.name, short: team.short ?? null,
+    played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, points: 0,
+    xgf: null, xga: null, form: [],
+  });
+
+  for (const match of fresh) {
+    const [hg, ag] = match.score;
+    for (const [team, own, other] of [[match.home, hg, ag], [match.away, ag, hg]]) {
+      if (!rows.has(team.id)) rows.set(team.id, blank(team));
+      const row = rows.get(team.id);
+      row.played += 1;
+      row.gf += own;
+      row.ga += other;
+      row.gd = row.gf - row.ga;
+      if (own > other) { row.w += 1; row.points += 3; row.form.push("G"); }
+      else if (own === other) { row.d += 1; row.points += 1; row.form.push("B"); }
+      else { row.l += 1; row.form.push("M"); }
+      row.form = row.form.slice(-5);
+    }
+  }
+
+  const table = [...rows.values()]
+    .sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
+  table.forEach((row, i) => { row.rank = i + 1; });
+  return { rows: table, added: fresh.length };
+}
+
 function standingsHTML(data, highlight = null) {
-  if (!data.standings.length) return `<div class="empty">Bu sezon henüz maç oynanmadı.</div>`;
-  const hasXG = data.standings.some((r) => r.xgf !== null);
-  const rows = data.standings.map((r) => `
+  const { rows: table, added } = standingsWithFresh(data);
+  if (!table.length) return `<div class="empty">Bu sezon henüz maç oynanmadı.</div>`;
+  const hasXG = table.some((r) => r.xgf !== null);
+  const note = added
+    ? `<p class="muted" style="margin:.6rem 0 0;font-size:.78rem">
+         ${added} yeni biten maç canlı skorlardan eklendi; xG değerleri bir
+         sonraki güncellemede gelecek.</p>` : "";
+  const rows = table.map((r) => `
     <tr${r.team_id === highlight ? ' class="me"' : ""}>
       <td class="rank">${r.rank}</td>
       <td><span class="team-cell" data-team="${esc(r.team_id)}">${crest(r.team_id)}${esc(r.team)}</span></td>
@@ -460,15 +536,19 @@ function standingsHTML(data, highlight = null) {
       <th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th>
       <th>A:Y</th><th>Av</th>${hasXG ? "<th>xG</th><th>xGA</th>" : ""}<th>Form</th><th>P</th>
     </tr></thead><tbody>${rows}</tbody>
-  </table></div></section>`;
+  </table></div>${note}</section>`;
 }
 
 /** Sonuçlar hafta hafta; haftalar oklarla kaydırılabilen bir şeritte. */
 function resultsHTML(data) {
-  if (!data.results.length) return `<div class="empty">Bu sezon henüz maç oynanmadı.</div>`;
+  // Statik veriye henüz girmemiş biten maçlar canlı skorlardan ekleniyor:
+  // pipeline üç saatte bir çalıştığı için o aralıkta biten hafta sonuçlarda
+  // hiç görünmüyordu.
+  const all = [...freshResults(data), ...data.results];
+  if (!all.length) return `<div class="empty">Bu sezon henüz maç oynanmadı.</div>`;
 
   const weeks = new Map();
-  for (const r of data.results) {
+  for (const r of all) {
     const key = r.round ?? 0;
     if (!weeks.has(key)) weeks.set(key, []);
     weeks.get(key).push(r);
@@ -762,6 +842,7 @@ async function viewTeam(id, tab) {
   }
 
   const data = await getJSON(`${team.league}.json`);
+  noteLiveDays(data.matches);
   const meta = await getJSON("meta.json");
   const leagueName = meta.leagues.find((l) => l.code === team.league)?.name ?? team.league;
   const involves = (m) => m.home.id === id || m.away.id === id;
@@ -777,7 +858,7 @@ async function viewTeam(id, tab) {
     const shown = new Set(upcoming.map((m) => m.id));
     fixtures = (all.fixtures ?? []).filter((m) => involves(m) && !shown.has(m.id));
   } catch { /* fikstür dosyası yoksa sadece tahminli maçlar gösterilir */ }
-  const played = data.results.filter(involves);
+  const played = [...freshResults(data), ...data.results].filter(involves);
   const row = data.standings.find((r) => r.team_id === id);
   const fav = favourites().has(id);
 
@@ -1065,7 +1146,10 @@ async function route() {
     view.dataset.painted = "1";
     document.body.classList.toggle("cal-open", state.calOpen);
     document.body.classList.toggle("filter-open", state.filterOpen);
-    if (document.querySelector("[data-live]")) { applyLive(); startLive(); }
+    // Canlı yoklama her görünümde çalışıyor: puan durumu ve sonuçlar da
+    // biten maçlarla tamamlanıyor, orada canlı satır olmasa bile.
+    applyLive();
+    startLive();
     // Gerçek gezinmede sayfa başına dön. Gün/hafta seçimi gibi yerinde
     // durum değişikliklerinde kaydırma korunuyor, yoksa listede aşağıdayken
     // gün değiştirmek kullanıcıyı yukarı fırlatırdı.
@@ -1270,6 +1354,15 @@ const LIVE_ACTIVE = 25_000;   // canlı maç varken daha sık bak
 let liveTimer = null;
 let liveInterval = 0;
 let liveData = new Map();
+
+/* Puan durumu ve sonuçlar sekmelerinde ekranda canlı maç satırı yok; o
+   yüzden hangi günlerin çekilmesi gerektiğini görünüm ayrıca bildiriyor.
+   Aksi halde canlı tamamlama o sekmelerde hiç çalışmıyordu. */
+let extraLiveDays = new Set();
+
+function noteLiveDays(matches) {
+  extraLiveDays = new Set((matches ?? []).map((m) => fotmobDay(m.kickoff)));
+}
 
 /* Gol bildirimi skor değişiminden anlaşılıyor; golcü bilgisine gerek yok.
    Sayfa ilk açıldığında bildirim çıkmıyor — o an zaten var olan skoru "yeni
@@ -1505,6 +1598,20 @@ function revealCarry() {
   section.hidden = visible === 0;
 }
 
+/** Biten maçların imzası. Değiştiğinde puan durumu ve sonuçlar yeniden
+    çizilmeli, yoksa canlı tamamlama ilk yüklemede boş kalıyor. */
+function finishedSignature() {
+  return [...liveData.entries()]
+    .filter(([, s]) => s.finished)
+    .map(([k, s]) => `${k}:${s.home}-${s.away}`)
+    .sort().join("|");
+}
+
+// Boş dize ile başlıyor, null ile değil: ilk çizim canlı veri gelmeden
+// yapıldığı için ilk yoklamanın da yeniden çizimi tetiklemesi gerekiyor.
+// null olsaydı puan durumu ilk yüklemede tamamlanmadan kalıyordu.
+let lastFinishedSig = "";
+
 async function refreshLive() {
   if (document.hidden) return;
   try {
@@ -1514,6 +1621,17 @@ async function refreshLive() {
     scored.forEach((g) => flashGoal(g.key, g.side));
     await paintGoals();
     retimeLive();
+
+    const sig = finishedSignature();
+    if (sig !== lastFinishedSig) {
+      // Yalnızca tabloyu etkileyen görünümlerde; maç listesi zaten
+      // applyLive() ile yerinde güncelleniyor.
+      const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
+      const affected = (parts[0] === "lig" && (parts[2] === "puan" || parts[2] === "sonuclar"))
+        || parts[0] === "takim";
+      if (affected) route();
+    }
+    lastFinishedSig = sig;
   } catch {
     /* canlı veri isteğe bağlı; sessizce geç */
   }

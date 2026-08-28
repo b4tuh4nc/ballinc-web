@@ -409,9 +409,12 @@ td.pts { font-weight: 700; }
 /* position+z-index zorunlu: #view > * üzerindeki opaklık animasyonu bu
    öğeye kendi yığınlama bağlamını veriyor (fill-mode `both` yüzünden kalıcı
    olarak). O bağlam olmadan takvimin z-index'i kök seviyede geçerli olmuyor
-   ve DOM'da sonra gelen maç listesi takvimin üstüne biniyor. */
+   ve DOM'da sonra gelen maç listesi takvimin üstüne biniyor.
+   Değer üst barın (20) ALTINDA: 40 verildiğinde şerit kaydırırken üst barın
+   üzerinden geçiyordu. Takvim açıkken aşağıdaki kural şeridi geçici olarak
+   üste alıyor. */
 .datestrip {
-  position: relative; z-index: 40;
+  position: relative; z-index: 10;
   display: flex; align-items: center; gap: .5rem;
   margin: 1rem 0 .4rem;
   padding: .55rem .6rem;
@@ -1235,3 +1238,8 @@ tbody tr.me td { font-weight: 640; }
 tbody tr.me td.rank, tbody tr.me .team-cell { color: var(--accent); }
 
 .team-tabs { margin-top: 1rem; }
+
+
+/* Takvim açıkken şerit geçici olarak üst barın üstüne çıkıyor: modal ve
+   bulanık katman şeridin yığınlama bağlamında yaşıyor. */
+body.cal-open .datestrip { z-index: 60; }
