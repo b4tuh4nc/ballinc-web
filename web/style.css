@@ -1197,6 +1197,9 @@ body.search-open { overflow: hidden; }
 .fx-date { display: block; font-size: .78rem; color: var(--text); font-weight: 600; }
 .fx-round { display: block; font-size: .64rem; color: var(--text-muted); }
 
-/* Takım adı tıklanabilir: satırın kalanı maça, isim takıma gidiyor. */
-.team-name[data-team] { cursor: pointer; }
-.team-name[data-team]:hover { text-decoration: underline; text-underline-offset: 2px; }
+/* Takım adı tıklanabilir: satırın kalanı maça, isim takıma gidiyor.
+   Alt çizgi yoğun listede gürültü yapıyordu; yerine üzerine gelince hafif
+   renk değişimi var. Dokunmatik cihazlarda hover zaten yok, orada tek
+   ipucu satırın kendisi. */
+.team-name[data-team] { cursor: pointer; transition: color .12s; }
+.team-name[data-team]:hover { color: var(--accent); }
