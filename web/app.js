@@ -729,6 +729,27 @@ async function viewMatch(id) {
     </section>`;
 }
 
+/** Tahmin penceresi dışındaki maç: sade fikstür satırı. Tahmin yok, çünkü
+    o kadar ileri tarihte form verisi anlamsız ve saatler de kesin değil. */
+function fixtureRow(match, index = 0) {
+  const day = new Date(match.kickoff).toLocaleDateString("tr-TR", {
+    timeZone: TZ, day: "numeric", month: "short",
+  });
+  return `
+    <div class="match fixture" style="--i:${index}">
+      <div class="match-time">
+        <span class="fx-date">${esc(day)}</span>
+        ${match.round ? `<span class="fx-round">${match.round}. hf</span>` : ""}
+      </div>
+      <div class="match-teams">
+        <div class="team-line">${crest(match.home.id)}<span class="team-name">${esc(match.home.name)}</span></div>
+        <div class="team-line">${crest(match.away.id)}<span class="team-name">${esc(match.away.name)}</span></div>
+      </div>
+      <div class="match-markets"></div>
+      <div class="chev"></div>
+    </div>`;
+}
+
 /** Tek takımın sayfası: yaklaşan maçları, sonuçları ve puan durumundaki yeri.
     Ek veri gerekmiyor — lig JSON'u zaten hepsini taşıyor, takıma göre
     süzüyoruz. */
@@ -746,6 +767,16 @@ async function viewTeam(id) {
   const involves = (m) => m.home.id === id || m.away.id === id;
 
   const upcoming = data.matches.filter(involves);
+
+  // Tam sezon fikstürü ayrı dosyada; yalnızca burada isteniyor. Tahmin
+  // penceresindeki maçlar zaten `upcoming` içinde tahminleriyle var, onları
+  // tekrar göstermiyoruz.
+  let fixtures = [];
+  try {
+    const all = await getJSON(`${team.league}-fixtures.json`);
+    const shown = new Set(upcoming.map((m) => m.id));
+    fixtures = (all.fixtures ?? []).filter((m) => involves(m) && !shown.has(m.id));
+  } catch { /* fikstür dosyası yoksa sadece tahminli maçlar gösterilir */ }
   const played = data.results.filter(involves);
   const row = data.standings.find((r) => r.team_id === id);
   const fav = favourites().has(id);
@@ -762,6 +793,10 @@ async function viewTeam(id) {
 
   // Sonuçlar gün gün: sezon ilerledikçe yalnızca saat göstermek hangi maçın
   // ne zaman oynandığını belirsiz bırakıyor.
+  const fixtureHTML = fixtures.length ? `
+    <div class="date-head">Fikstür · ${fixtures.length} maç</div>
+    <div class="match-list">${fixtures.map(fixtureRow).join("")}</div>` : "";
+
   const playedHTML = played.length
     ? groupByDay(played).reverse().map(([, day]) => `
         <div class="date-head">${esc(dayLabel(day[0].kickoff))}</div>
@@ -787,6 +822,7 @@ async function viewTeam(id) {
     </div>
 
     ${upcomingHTML}
+    ${fixtureHTML}
     ${playedHTML}`;
 }
 
@@ -898,6 +934,15 @@ const state = {
 };
 
 let lastHash = null;
+
+/* Tarayıcının kendi kaydırma geri yüklemesi kapatılıyor. Açık kaldığında
+   bizim scrollTo(0,0) çağrımızdan SONRA çalışıp onu eziyor ve sayfa aşağı
+   kaydırılmış açılıyordu. İçerik zaten fetch sonrası çizildiği için tarayıcı
+   konumu yanlış anda geri yüklüyor.
+   Konumu kendimiz saklıyoruz: yeni bir görünüm en üstten başlıyor, geri
+   dönüldüğünde kaldığın yere dönüyorsun. */
+if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+const scrollMemory = new Map();
 
 /** Kullanıcının ana sayfada görmek istediği ligler. Boş küme "hepsi"
     demek — filtre kurulmamışken hiçbir şey gizlenmemeli. localStorage'da
@@ -1011,7 +1056,9 @@ async function route() {
     // durum değişikliklerinde kaydırma korunuyor, yoksa listede aşağıdayken
     // gün değiştirmek kullanıcıyı yukarı fırlatırdı.
     if (location.hash !== lastHash) {
-      window.scrollTo(0, 0);
+      // Görünüm değişti: daha önce burada kaldığımız yer varsa oraya,
+      // yoksa en üste.
+      window.scrollTo(0, scrollMemory.get(location.hash) ?? 0);
       lastHash = location.hash;
     }
     scrollSelectedIntoView();
@@ -1606,7 +1653,10 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !el("drawer").hidden) setDrawer(false);
 });
 
-window.addEventListener("hashchange", () => {
+window.addEventListener("hashchange", (event) => {
+  // Ayrıldığımız görünümün konumu saklanıyor.
+  const from = new URL(event.oldURL).hash;
+  scrollMemory.set(from, window.scrollY);
   setDrawer(false);
   state.day = null; state.stripStart = null; state.week = null;
   state.calOpen = false; state.calMonth = null;

@@ -1183,3 +1183,8 @@ body.search-open { overflow: hidden; }
   .team-hero { gap: .7rem; padding: .9rem; }
   .team-hero h1 { font-size: 1.1rem; }
 }
+
+/* Tahmin penceresi dışındaki fikstür satırları */
+.match.fixture { background: var(--surface); }
+.fx-date { display: block; font-size: .78rem; color: var(--text); font-weight: 600; }
+.fx-round { display: block; font-size: .64rem; color: var(--text-muted); }

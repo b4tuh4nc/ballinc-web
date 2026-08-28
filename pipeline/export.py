@@ -197,6 +197,32 @@ def build_teams(df) -> list[dict]:
     return sorted(teams.values(), key=lambda t: t["name"])
 
 
+def build_fixtures(season_df) -> list[dict]:
+    """Sezonun oynanmamış BÜTÜN maçları — tahminsiz, sade fikstür.
+
+    Ayrı dosyada tutuluyor: lig JSON'una eklenseydi ana sayfa altı ligin
+    tamamını yüklediği için birkaç yüz KB fazladan iniyordu. Bu dosya yalnızca
+    takım sayfasında isteniyor.
+    """
+    # Tarihi geçmiş bir maç, sonucu henüz kaynağa yansımamış olsa bile
+    # fikstür değildir; is_result bayrağına tek başına güvenilmiyor.
+    now = pd.Timestamp.utcnow().tz_localize(None)
+    upcoming = season_df[
+        (~season_df["is_result"]) & (season_df["datetime"] > now)
+    ].sort_values("datetime")
+    out = []
+    for row in upcoming.itertuples():
+        round_no = getattr(row, "round", None)
+        out.append({
+            "id": row.match_id,
+            "kickoff": row.datetime.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "round": int(round_no) if pd.notna(round_no) else None,
+            "home": {"id": row.home_id, "name": row.home_team},
+            "away": {"id": row.away_id, "name": row.away_team},
+        })
+    return out
+
+
 def _write(path, payload) -> int:
     path.parent.mkdir(parents=True, exist_ok=True)
     text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
@@ -239,6 +265,9 @@ def main() -> int:
             "standings": build_standings(season_df),
         }
         size = _write(WEB_DATA_DIR / f"{code}.json", payload)
+        fixtures = build_fixtures(season_df)
+        if fixtures:
+            _write(WEB_DATA_DIR / f"{code}-fixtures.json", {"fixtures": fixtures})
 
         league_meta.append({
             "code": code,
