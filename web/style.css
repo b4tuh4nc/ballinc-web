@@ -169,10 +169,11 @@ img { max-width: 100%; }
 
 /* ─── Maç listesi ─────────────────────────────────────────────────────── */
 
+/* Yapışkan değil. Yapışkanken maç kartının üstünü kesiyordu: başlığın
+   arkası sayfa zemini, kartınki yüzey rengi olduğu için kartın içine şerit
+   gibi giriyordu. Nerede olduğunu zaten lig başlıkları söylüyor. */
 .date-head {
-  position: sticky; top: 54px; z-index: 5;
   padding: .85rem .3rem .4rem;
-  background: var(--bg);
   font-size: .78rem; font-weight: 680;
   color: var(--text-muted);
   text-transform: capitalize; letter-spacing: .03em;
