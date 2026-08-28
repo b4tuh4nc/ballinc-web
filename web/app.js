@@ -442,11 +442,11 @@ async function viewLeague(code, tab) {
     ${body}`;
 }
 
-function standingsHTML(data) {
+function standingsHTML(data, highlight = null) {
   if (!data.standings.length) return `<div class="empty">Bu sezon henüz maç oynanmadı.</div>`;
   const hasXG = data.standings.some((r) => r.xgf !== null);
   const rows = data.standings.map((r) => `
-    <tr>
+    <tr${r.team_id === highlight ? ' class="me"' : ""}>
       <td class="rank">${r.rank}</td>
       <td><span class="team-cell">${crest(r.team_id)}${esc(r.team)}</span></td>
       <td>${r.played}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
@@ -797,6 +797,13 @@ async function viewTeam(id) {
     <div class="date-head">Fikstür · ${fixtures.length} maç</div>
     <div class="match-list">${fixtures.map(fixtureRow).join("")}</div>` : "";
 
+  // Puan tablosu takım sayfasında da var: takımın ligde nerede olduğunu
+  // görmek için başka sayfaya gitmek gerekmesin. Takımın satırı vurgulu.
+  const tableHTML = data.standings.length
+    ? `<div class="date-head">${esc(leagueName)} puan durumu</div>
+       ${standingsHTML(data, id)}`
+    : "";
+
   const playedHTML = played.length
     ? groupByDay(played).reverse().map(([, day]) => `
         <div class="date-head">${esc(dayLabel(day[0].kickoff))}</div>
@@ -823,7 +830,8 @@ async function viewTeam(id) {
 
     ${upcomingHTML}
     ${fixtureHTML}
-    ${playedHTML}`;
+    ${playedHTML}
+    ${tableHTML}`;
 }
 
 async function liveRecordHTML() {

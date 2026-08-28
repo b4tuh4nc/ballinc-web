@@ -1203,3 +1203,11 @@ body.search-open { overflow: hidden; }
    ipucu satırın kendisi. */
 .team-name[data-team] { cursor: pointer; transition: color .12s; }
 .team-name[data-team]:hover { color: var(--accent); }
+
+/* Takım sayfasındaki puan tablosunda o takımın satırı vurgulu */
+tbody tr.me {
+  background: var(--accent-soft);
+  box-shadow: inset 3px 0 0 var(--accent);
+}
+tbody tr.me td { font-weight: 640; }
+tbody tr.me td.rank, tbody tr.me .team-cell { color: var(--accent); }
