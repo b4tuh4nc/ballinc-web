@@ -126,8 +126,11 @@ def settle(conn: sqlite3.Connection, df: pd.DataFrame) -> int:
         probs = np.asarray(json.loads(row.probs), dtype=float)
         probs = np.clip(probs / probs.sum(), 1e-12, 1.0)
 
+        # Tip kontrolü şart: sütunda NULL varsa pandas onu NaN olarak
+        # veriyor ve NaN truthy'dir — `if row.market_probs:` kontrolünü
+        # geçip json.loads'a düşüyordu.
         market_loss = None
-        if row.market_probs:
+        if isinstance(row.market_probs, str) and row.market_probs:
             mp = np.asarray(json.loads(row.market_probs), dtype=float)
             if mp.sum() > 0:
                 mp = np.clip(mp / mp.sum(), 1e-12, 1.0)

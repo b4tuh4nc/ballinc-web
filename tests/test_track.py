@@ -96,6 +96,29 @@ def test_unsettled_predictions_are_updated(conn) -> None:
     assert json.loads(probs) == [0.7, 0.2, 0.1]
 
 
+def test_settle_handles_missing_market_probs(conn) -> None:
+    """Piyasa olasılığı olmayan tahminler sonuçlanabilmeli.
+
+    pandas, NULL sütunu NaN olarak veriyor ve NaN truthy olduğu için basit
+    bir doğruluk kontrolü onu string sanıp json.loads'a düşürüyordu; gecelik
+    akış bu yüzden çöküyordu.
+    """
+    track.record(conn, [make_prediction("m9", [0.5, 0.3, 0.2], [0.4, 0.6], [0.4, 0.6])])
+    assert conn.execute(
+        "SELECT market_probs FROM predictions WHERE market='result'"
+    ).fetchone()[0] is None
+
+    played = pd.DataFrame([{
+        "match_id": "m9", "result": 0.0, "over_2_5": 1.0, "btts": 1.0,
+    }])
+    assert track.settle(conn, played) == 3
+
+    loss = conn.execute(
+        "SELECT market_logloss FROM predictions WHERE market='result'"
+    ).fetchone()[0]
+    assert loss is None
+
+
 def test_summary_reports_baseline(conn) -> None:
     # Üç maçın ikisini ev sahibi kazanıyor; baseline isabet 2/3 olmalı.
     for i, outcome in enumerate([0.0, 0.0, 2.0]):
