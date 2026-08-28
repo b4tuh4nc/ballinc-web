@@ -448,7 +448,7 @@ function standingsHTML(data, highlight = null) {
   const rows = data.standings.map((r) => `
     <tr${r.team_id === highlight ? ' class="me"' : ""}>
       <td class="rank">${r.rank}</td>
-      <td><span class="team-cell">${crest(r.team_id)}${esc(r.team)}</span></td>
+      <td><span class="team-cell" data-team="${esc(r.team_id)}">${crest(r.team_id)}${esc(r.team)}</span></td>
       <td>${r.played}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
       <td>${r.gf}:${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td>
       ${hasXG ? `<td>${r.xgf ?? "—"}</td><td>${r.xga ?? "—"}</td>` : ""}

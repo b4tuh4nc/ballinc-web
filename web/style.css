@@ -1201,8 +1201,10 @@ body.search-open { overflow: hidden; }
    Alt çizgi yoğun listede gürültü yapıyordu; yerine üzerine gelince hafif
    renk değişimi var. Dokunmatik cihazlarda hover zaten yok, orada tek
    ipucu satırın kendisi. */
-.team-name[data-team] { cursor: pointer; transition: color .12s; }
-.team-name[data-team]:hover { color: var(--accent); }
+/* Maç satırında yalnızca ad; puan tablosunda arma dahil hücrenin tamamı
+   tıklanabilir — orada satırın başka bir işlevi yok. */
+[data-team] { cursor: pointer; transition: color .12s; }
+[data-team]:hover { color: var(--accent); }
 
 /* Takım sayfasındaki puan tablosunda o takımın satırı vurgulu */
 tbody tr.me {
