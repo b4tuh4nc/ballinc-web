@@ -1284,8 +1284,11 @@ function detectGoals() {
     const before = previousScores.get(key);
     if (!firstLivePass && before !== undefined && before !== now) {
       // Skor geri gidebilir (VAR iptali); yalnızca artışta kutlama.
+      // Hangi tarafın attığı skor farkından belli oluyor, ayrı bir veriye
+      // gerek yok.
       const [bh, ba] = before.split("-").map(Number);
-      if ((state.home ?? 0) > bh || (state.away ?? 0) > ba) scored.push(key);
+      if ((state.home ?? 0) > bh) scored.push({ key, side: "home" });
+      if ((state.away ?? 0) > ba) scored.push({ key, side: "away" });
     }
     previousScores.set(key, now);
   }
@@ -1293,11 +1296,14 @@ function detectGoals() {
   return scored;
 }
 
-function flashGoal(key) {
+/** Bant golü atan taraftan süpürüyor: ev sahibi soldan sağa, deplasman
+    sağdan sola. Yön, satırdaki takım sırasıyla aynı olduğu için kimin
+    attığı bakmadan anlaşılıyor. */
+function flashGoal(key, side = "home") {
   const node = document.querySelector(`[data-live="${CSS.escape(key)}"]`);
   if (!node || node.querySelector(".goal-flash")) return;
   const flash = document.createElement("div");
-  flash.className = "goal-flash";
+  flash.className = `goal-flash from-${side === "away" ? "away" : "home"}`;
   flash.innerHTML = '<span>G<i>O</i>L!</span>';
   node.appendChild(flash);
   // Zaman aşımı yedeği şart: hareket azaltma modunda animasyon çalışmıyor,
@@ -1505,7 +1511,7 @@ async function refreshLive() {
     await fetchLive();
     const scored = detectGoals();
     applyLive();
-    scored.forEach(flashGoal);
+    scored.forEach((g) => flashGoal(g.key, g.side));
     await paintGoals();
     retimeLive();
   } catch {

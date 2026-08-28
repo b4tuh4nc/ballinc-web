@@ -1009,12 +1009,23 @@ td.pts { font-weight: 700; }
   position: absolute; inset: 0; z-index: 3;
   display: grid; place-items: center;
   border-radius: inherit;
+  pointer-events: none;
+}
+/* Ev sahibi soldan sağa, deplasman sağdan sola. Degrade de aynı yöne
+   bakıyor: parlak kenar süpürmenin gittiği tarafta kalıyor. */
+.goal-flash.from-home {
   background: linear-gradient(100deg,
     color-mix(in srgb, var(--accent) 92%, #000) 0%,
     var(--accent) 45%,
     color-mix(in srgb, var(--accent) 78%, #fff) 100%);
-  pointer-events: none;
   animation: goalSweep 3.4s cubic-bezier(.2, .8, .3, 1) both;
+}
+.goal-flash.from-away {
+  background: linear-gradient(260deg,
+    color-mix(in srgb, var(--accent) 92%, #000) 0%,
+    var(--accent) 45%,
+    color-mix(in srgb, var(--accent) 78%, #fff) 100%);
+  animation: goalSweepBack 3.4s cubic-bezier(.2, .8, .3, 1) both;
 }
 .goal-flash span {
   font-size: 1.5rem; font-weight: 800; letter-spacing: .18em;
@@ -1031,6 +1042,12 @@ td.pts { font-weight: 700; }
   78%  { opacity: 1; clip-path: inset(0 0 0 0); }
   100% { opacity: 0; clip-path: inset(0 0 0 100%); }
 }
+@keyframes goalSweepBack {
+  0%   { opacity: 0; clip-path: inset(0 0 0 100%); }
+  12%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  78%  { opacity: 1; clip-path: inset(0 0 0 0); }
+  100% { opacity: 0; clip-path: inset(0 100% 0 0); }
+}
 @keyframes goalPop {
   0%   { transform: scale(.6); opacity: 0; }
   14%  { transform: scale(1.06); opacity: 1; }
@@ -1045,7 +1062,9 @@ td.pts { font-weight: 700; }
 
 /* Hareket hassasiyeti: kutlama yerine sade bir vurgu. */
 @media (prefers-reduced-motion: reduce) {
-  .goal-flash { animation: none; opacity: 1; }
+  .goal-flash, .goal-flash.from-home, .goal-flash.from-away {
+    animation: none; opacity: 1;
+  }
   .goal-flash span, .goal-flash i { animation: none; }
 }
 
