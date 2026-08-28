@@ -14,10 +14,25 @@
     "fotmob_name": "Paderborn",
     "understat_name": "Paderborn"
   },
+  "us100": {
+    "fotmob_id": "8540",
+    "fotmob_name": "Palermo",
+    "understat_name": "Palermo"
+  },
   "us101": {
     "fotmob_id": "10233",
     "fotmob_name": "Genoa",
     "understat_name": "Genoa"
+  },
+  "us102": {
+    "fotmob_id": "9882",
+    "fotmob_name": "Sampdoria",
+    "understat_name": "Sampdoria"
+  },
+  "us103": {
+    "fotmob_id": "208931",
+    "fotmob_name": "Carpi",
+    "understat_name": "Carpi"
   },
   "us104": {
     "fotmob_id": "7943",
@@ -44,6 +59,11 @@
     "fotmob_name": "Empoli",
     "understat_name": "Empoli"
   },
+  "us109": {
+    "fotmob_id": "8533",
+    "fotmob_name": "Chievo Verona",
+    "understat_name": "Chievo"
+  },
   "us110": {
     "fotmob_id": "8535",
     "fotmob_name": "Fiorentina",
@@ -63,6 +83,16 @@
     "fotmob_id": "9804",
     "fotmob_name": "Torino",
     "understat_name": "Torino"
+  },
+  "us114": {
+    "fotmob_id": "9878",
+    "fotmob_name": "Pescara",
+    "understat_name": "Pescara"
+  },
+  "us115": {
+    "fotmob_id": "9884",
+    "fotmob_name": "Crotone",
+    "understat_name": "Crotone"
   },
   "us116": {
     "fotmob_id": "8529",
@@ -94,20 +124,40 @@
     "fotmob_name": "Augsburg",
     "understat_name": "Augsburg"
   },
+  "us122": {
+    "fotmob_id": "8177",
+    "fotmob_name": "Hertha BSC",
+    "understat_name": "Hertha Berlin"
+  },
   "us123": {
     "fotmob_id": "8697",
     "fotmob_name": "Werder Bremen",
     "understat_name": "Werder Bremen"
+  },
+  "us124": {
+    "fotmob_id": "10189",
+    "fotmob_name": "Schalke 04",
+    "understat_name": "Schalke 04"
   },
   "us125": {
     "fotmob_id": "9905",
     "fotmob_name": "Mainz 05",
     "understat_name": "Mainz 05"
   },
+  "us126": {
+    "fotmob_id": "8234",
+    "fotmob_name": "Ingolstadt",
+    "understat_name": "Ingolstadt"
+  },
   "us127": {
     "fotmob_id": "8262",
     "fotmob_name": "Darmstadt",
     "understat_name": "Darmstadt"
+  },
+  "us128": {
+    "fotmob_id": "9904",
+    "fotmob_name": "Hannover 96",
+    "understat_name": "Hannover 96"
   },
   "us129": {
     "fotmob_id": "9789",
@@ -209,6 +259,11 @@
     "fotmob_name": "Barcelona",
     "understat_name": "Barcelona"
   },
+  "us149": {
+    "fotmob_id": "9869",
+    "fotmob_name": "Sporting Gijón",
+    "understat_name": "Sporting Gijon"
+  },
   "us150": {
     "fotmob_id": "8633",
     "fotmob_name": "Real Madrid",
@@ -239,6 +294,11 @@
     "fotmob_name": "Granada",
     "understat_name": "Granada"
   },
+  "us156": {
+    "fotmob_id": "8372",
+    "fotmob_name": "Eibar",
+    "understat_name": "Eibar"
+  },
   "us157": {
     "fotmob_id": "8371",
     "fotmob_name": "Osasuna",
@@ -264,6 +324,11 @@
     "fotmob_name": "Paris Saint-Germain",
     "understat_name": "Paris Saint Germain"
   },
+  "us162": {
+    "fotmob_id": "7794",
+    "fotmob_name": "SC Bastia",
+    "understat_name": "SC Bastia"
+  },
   "us163": {
     "fotmob_id": "9851",
     "fotmob_name": "Rennes",
@@ -273,6 +338,11 @@
     "fotmob_id": "8592",
     "fotmob_name": "Marseille",
     "understat_name": "Marseille"
+  },
+  "us165": {
+    "fotmob_id": "7819",
+    "fotmob_name": "Caen",
+    "understat_name": "Caen"
   },
   "us166": {
     "fotmob_id": "10249",
@@ -289,6 +359,11 @@
     "fotmob_name": "Nantes",
     "understat_name": "Nantes"
   },
+  "us169": {
+    "fotmob_id": "9747",
+    "fotmob_name": "Guingamp",
+    "understat_name": "Guingamp"
+  },
   "us170": {
     "fotmob_id": "9831",
     "fotmob_name": "Nice",
@@ -304,6 +379,11 @@
     "fotmob_name": "Troyes",
     "understat_name": "Troyes"
   },
+  "us173": {
+    "fotmob_id": "6391",
+    "fotmob_name": "GFC Ajaccio",
+    "understat_name": "GFC Ajaccio"
+  },
   "us174": {
     "fotmob_id": "9941",
     "fotmob_name": "Toulouse",
@@ -313,6 +393,11 @@
     "fotmob_id": "9853",
     "fotmob_name": "Saint-Étienne",
     "understat_name": "Saint-Etienne"
+  },
+  "us176": {
+    "fotmob_id": "9827",
+    "fotmob_name": "Bordeaux",
+    "understat_name": "Bordeaux"
   },
   "us177": {
     "fotmob_id": "9837",
@@ -334,6 +419,41 @@
     "fotmob_name": "Metz",
     "understat_name": "Metz"
   },
+  "us181": {
+    "fotmob_id": "9836",
+    "fotmob_name": "Dijon",
+    "understat_name": "Dijon"
+  },
+  "us182": {
+    "fotmob_id": "8481",
+    "fotmob_name": "Nancy",
+    "understat_name": "Nancy"
+  },
+  "us202": {
+    "fotmob_id": "10172",
+    "fotmob_name": "Queens Park Rangers",
+    "understat_name": "Queens Park Rangers"
+  },
+  "us203": {
+    "fotmob_id": "9880",
+    "fotmob_name": "Cesena",
+    "understat_name": "Cesena"
+  },
+  "us204": {
+    "fotmob_id": "10167",
+    "fotmob_name": "Parma",
+    "understat_name": "Parma"
+  },
+  "us205": {
+    "fotmob_id": "8460",
+    "fotmob_name": "Paderborn",
+    "understat_name": "Paderborn"
+  },
+  "us206": {
+    "fotmob_id": "7869",
+    "fotmob_name": "Córdoba",
+    "understat_name": "Cordoba"
+  },
   "us207": {
     "fotmob_id": "10268",
     "fotmob_name": "Elche",
@@ -349,20 +469,45 @@
     "fotmob_name": "Lens",
     "understat_name": "Lens"
   },
+  "us219": {
+    "fotmob_id": "9796",
+    "fotmob_name": "Huddersfield Town",
+    "understat_name": "Huddersfield"
+  },
   "us220": {
     "fotmob_id": "10204",
     "fotmob_name": "Brighton & Hove Albion",
     "understat_name": "Brighton"
+  },
+  "us221": {
+    "fotmob_id": "8547",
+    "fotmob_name": "SPAL",
+    "understat_name": "SPAL 2013"
+  },
+  "us222": {
+    "fotmob_id": "6266",
+    "fotmob_name": "Benevento",
+    "understat_name": "Benevento"
   },
   "us223": {
     "fotmob_id": "7732",
     "fotmob_name": "Girona",
     "understat_name": "Girona"
   },
+  "us224": {
+    "fotmob_id": "8587",
+    "fotmob_name": "Amiens",
+    "understat_name": "Amiens"
+  },
   "us225": {
     "fotmob_id": "9848",
     "fotmob_name": "Strasbourg",
     "understat_name": "Strasbourg"
+  },
+  "us227": {
+    "fotmob_id": "8344",
+    "fotmob_name": "Cardiff City",
+    "understat_name": "Cardiff"
   },
   "us228": {
     "fotmob_id": "9879",
@@ -384,6 +529,26 @@
     "fotmob_name": "Real Valladolid",
     "understat_name": "Real Valladolid"
   },
+  "us232": {
+    "fotmob_id": "96925",
+    "fotmob_name": "SD Huesca",
+    "understat_name": "SD Huesca"
+  },
+  "us233": {
+    "fotmob_id": "8194",
+    "fotmob_name": "Fortuna Düsseldorf",
+    "understat_name": "Fortuna Duesseldorf"
+  },
+  "us234": {
+    "fotmob_id": "8165",
+    "fotmob_name": "1. FC Nürnberg",
+    "understat_name": "Nuernberg"
+  },
+  "us235": {
+    "fotmob_id": "6394",
+    "fotmob_name": "Nîmes",
+    "understat_name": "Nimes"
+  },
   "us238": {
     "fotmob_id": "8657",
     "fotmob_name": "Sheffield United",
@@ -403,6 +568,11 @@
     "fotmob_id": "8521",
     "fotmob_name": "Brest",
     "understat_name": "Brest"
+  },
+  "us242": {
+    "fotmob_id": "9858",
+    "fotmob_name": "Brescia",
+    "understat_name": "Brescia"
   },
   "us243": {
     "fotmob_id": "9888",
@@ -429,10 +599,20 @@
     "fotmob_name": "Luton Town",
     "understat_name": "Luton"
   },
+  "us260": {
+    "fotmob_id": "9881",
+    "fotmob_name": "Spezia",
+    "understat_name": "Spezia"
+  },
   "us261": {
     "fotmob_id": "8385",
     "fotmob_name": "Cádiz",
     "understat_name": "Cadiz"
+  },
+  "us262": {
+    "fotmob_id": "9912",
+    "fotmob_name": "Arminia Bielefeld",
+    "understat_name": "Arminia Bielefeld"
   },
   "us264": {
     "fotmob_id": "6480",
@@ -443,6 +623,11 @@
     "fotmob_id": "7881",
     "fotmob_name": "Venezia",
     "understat_name": "Venezia"
+  },
+  "us267": {
+    "fotmob_id": "8357",
+    "fotmob_name": "Greuther Fürth",
+    "understat_name": "Greuther Fuerth"
   },
   "us268": {
     "fotmob_id": "9911",
@@ -463,6 +648,11 @@
     "fotmob_id": "7801",
     "fotmob_name": "Cremonese",
     "understat_name": "Cremonese"
+  },
+  "us274": {
+    "fotmob_id": "8576",
+    "fotmob_name": "AC Ajaccio",
+    "understat_name": "Ajaccio"
   },
   "us275": {
     "fotmob_id": "8583",
@@ -554,6 +744,11 @@
     "fotmob_name": "Leicester City",
     "understat_name": "Leicester"
   },
+  "us76": {
+    "fotmob_id": "8659",
+    "fotmob_name": "West Bromwich Albion",
+    "understat_name": "West Bromwich Albion"
+  },
   "us77": {
     "fotmob_id": "8472",
     "fotmob_name": "Sunderland",
@@ -563,6 +758,11 @@
     "fotmob_id": "9826",
     "fotmob_name": "Crystal Palace",
     "understat_name": "Crystal Palace"
+  },
+  "us79": {
+    "fotmob_id": "9850",
+    "fotmob_name": "Norwich City",
+    "understat_name": "Norwich"
   },
   "us80": {
     "fotmob_id": "8455",
@@ -584,6 +784,16 @@
     "fotmob_name": "Arsenal",
     "understat_name": "Arsenal"
   },
+  "us84": {
+    "fotmob_id": "10003",
+    "fotmob_name": "Swansea City",
+    "understat_name": "Swansea"
+  },
+  "us85": {
+    "fotmob_id": "10194",
+    "fotmob_name": "Stoke City",
+    "understat_name": "Stoke"
+  },
   "us86": {
     "fotmob_id": "10261",
     "fotmob_name": "Newcastle United",
@@ -604,6 +814,11 @@
     "fotmob_name": "Manchester United",
     "understat_name": "Manchester United"
   },
+  "us90": {
+    "fotmob_id": "9817",
+    "fotmob_name": "Watford",
+    "understat_name": "Watford"
+  },
   "us91": {
     "fotmob_id": "8667",
     "fotmob_name": "Hull City",
@@ -613,6 +828,11 @@
     "fotmob_id": "8191",
     "fotmob_name": "Burnley",
     "understat_name": "Burnley"
+  },
+  "us93": {
+    "fotmob_id": "8549",
+    "fotmob_name": "Middlesbrough",
+    "understat_name": "Middlesbrough"
   },
   "us94": {
     "fotmob_id": "9876",
