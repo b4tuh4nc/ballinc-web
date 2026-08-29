@@ -1564,3 +1564,63 @@ body.cal-open .datestrip { z-index: 60; }
 @media (max-width: 900px) {
   .more-tab .more-label { display: none; }   /* dar alanda yalnızca ⋯ ve sayı */
 }
+
+
+/* ─── "Diğer ligler" paneli ───────────────────────────────────────────────
+   Üst çubuğun altından iniyor. Çubuk sticky ve konumlandırılmış olduğu için
+   panel ona göre hizalanıyor; sayfa kaydıkça birlikte geliyor. */
+
+.more-panel {
+  position: absolute; top: 100%; left: 0; right: 0; z-index: 45;
+  max-height: min(70vh, 34rem); overflow-y: auto;
+  padding: .2rem 0 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .28);
+}
+.more-panel[hidden], .more-scrim[hidden] { display: none; }
+
+.more-scrim {
+  position: fixed; inset: 0; z-index: 19;
+  background: rgba(0, 0, 0, .35);
+  backdrop-filter: blur(3px);
+}
+
+.more-group {
+  padding: .8rem .1rem .35rem;
+  font-size: .68rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.more-grid {
+  display: grid; gap: .4rem;
+  /* 9rem'de "Şampiyonlar Ligi" kelime ortasından bölünüyordu. */
+  grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr));
+}
+.more-card {
+  display: flex; align-items: center; gap: .5rem;
+  padding: .55rem .6rem;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--surface-2); color: var(--text);
+  min-width: 0; text-decoration: none;
+}
+.more-card img, .more-card svg { width: 20px; height: 20px; flex: none; object-fit: contain; }
+.more-card .mc-name {
+  font-size: .8rem; font-weight: 600; line-height: 1.2;
+  flex: 1; min-width: 0;
+  /* Kelime ortasından bölmek yerine sığmayanı üç noktayla kes. */
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.more-card .mc-count { font-size: .66rem; color: var(--text-muted); flex: none; }
+.more-card:hover { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.more-card[aria-current="page"] {
+  border-color: var(--accent); background: var(--accent-soft); color: var(--accent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .more-panel { animation: moreDrop .18s ease both; }
+  .more-scrim { animation: fade .18s ease both; }
+}
+@keyframes moreDrop {
+  from { opacity: 0; transform: translateY(-.5rem); }
+  to { opacity: 1; transform: translateY(0); }
+}

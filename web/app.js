@@ -1797,11 +1797,29 @@ async function paintNav() {
   // Avrupa kupaları ve besleyici ligler üst çubuğa sığmıyor; menüyü açan bir
   // giriş, onlara ulaşmanın tek yolu şeridi kaydırmak olmasın diye.
   el("more-leagues").innerHTML = others.length
-    ? `<button class="league-tab more-tab" type="button" data-open-drawer
-               aria-controls="drawer"${otherActive ? ' aria-current="page"' : ""}>
+    ? `<button class="league-tab more-tab" type="button" data-more
+               aria-controls="more-panel" aria-expanded="false"${
+                 otherActive ? ' aria-current="page"' : ""}>
          <span class="more-dots" aria-hidden="true">⋯</span>
          <span class="more-label">Diğer ligler</span><b>${others.length}</b></button>`
     : "";
+
+  const card = (l) => {
+    const current = l.code === active ? ' aria-current="page"' : "";
+    return `<a class="more-card" href="#/lig/${encodeURIComponent(l.code)}"${current}>
+      ${leagueLogo(l.code)}
+      <span class="mc-name">${esc(l.name)}</span>
+      <span class="mc-count">${l.upcoming ? `${l.upcoming} maç` : "yakında"}</span>
+    </a>`;
+  };
+  const section = (tier, title) => {
+    const rows = others.filter((l) => l.tier === tier);
+    if (!rows.length) return "";
+    return `<div class="more-group">${esc(title)}</div>
+      <div class="more-grid">${rows.map(card).join("")}</div>`;
+  };
+  el("more-panel").innerHTML = `<div class="wrap">
+    ${section(1, "Avrupa kupaları")}${section(2, "Diğer ligler")}</div>`;
 
   const onHome = !parts.length;
   const homeItem = `<a class="drawer-item"${onHome ? ' aria-current="page"' : ""} href="#/">
@@ -2455,10 +2473,32 @@ function setDrawer(open) {
 }
 
 el("menu-btn").addEventListener("click", () => setDrawer(el("drawer").hidden));
-// Üst çubuktaki "Diğer ligler" de aynı menüyü açıyor; nav her gezinmede
-// yeniden çiziliyor, o yüzden dinleyici düğmeye değil belgeye bağlı.
+/* "Diğer ligler" paneli üst çubuğun altından iniyor. Sol menü de aynı
+   yarışmaları taşıyor ama o mobil için; geniş ekranda yandan açılan bir
+   çekmece yerine üstten inen panel daha yerinde. */
+function setMorePanel(open) {
+  const panel = el("more-panel");
+  const scrim = el("more-scrim");
+  panel.hidden = !open;
+  scrim.hidden = !open;
+  document.querySelector("[data-more]")?.setAttribute("aria-expanded", String(open));
+  if (open) panel.scrollTop = 0;
+}
+
 document.addEventListener("click", (e) => {
-  if (e.target.closest("[data-open-drawer]")) setDrawer(true);
+  if (e.target.closest("[data-more]")) {
+    setMorePanel(el("more-panel").hidden);
+    return;
+  }
+  // Panelin içindeki bir yarışmaya gidilince kapanıyor; dışarı tıklamak da
+  // kapatıyor.
+  if (e.target.closest("#more-panel a") || !e.target.closest("#more-panel")) {
+    if (!el("more-panel").hidden) setMorePanel(false);
+  }
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !el("more-panel").hidden) setMorePanel(false);
 });
 el("drawer-close").addEventListener("click", () => setDrawer(false));
 el("scrim").addEventListener("click", () => setDrawer(false));
