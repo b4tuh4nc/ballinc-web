@@ -2467,11 +2467,16 @@ document.addEventListener("keydown", (e) => {
 // ─── Mobil çekmece ─────────────────────────────────────────────────────────
 
 function setDrawer(open) {
-  el("drawer").hidden = !open;
+  const drawer = el("drawer");
+  drawer.hidden = !open;
   el("scrim").hidden = !open;
   el("menu-btn").setAttribute("aria-expanded", String(open));
   // Çekmece açıkken arka planın kaymasını engelle.
   document.body.style.overflow = open ? "hidden" : "";
+  // Menü gizlenirken kaydırma konumu üzerinde kalıyor; içerik yeniden
+  // çizilse bile eleman aynı olduğu için ikinci açılışta aşağıda
+  // başlıyordu. Her açılışta en üstten.
+  if (open) drawer.scrollTop = 0;
 }
 
 el("menu-btn").addEventListener("click", () => setDrawer(el("drawer").hidden));
