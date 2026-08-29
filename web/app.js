@@ -344,6 +344,9 @@ const calendarHTML = (dates, selected, counts) =>
 async function viewHome() {
   const meta = await getJSON("meta.json");
   const hidden = hiddenLeagues();
+  // Veri yalnızca maçı olan yarışmalar için yükleniyor, ama FİLTREDE hepsi
+  // görünüyor: Avrupa Ligi ve Konferans Ligi henüz başlamadığı için listeden
+  // düşüyorlardı ve kupalar grubu eksik görünüyordu.
   const active = meta.leagues.filter((l) => l.upcoming > 0);
   // Bugün oynanmış maçlar da günün listesinde kalsın; tahmin listesinden
   // düştükleri için kayboluyorlardı.
@@ -361,7 +364,8 @@ async function viewHome() {
   }
   noteLiveDays(all);
   all.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
-  const shown = active.length - active.filter((l) => hidden.has(l.code)).length;
+  const shown = meta.leagues.length
+    - meta.leagues.filter((l) => hidden.has(l.code)).length;
 
   const idle = meta.leagues.filter((l) => l.upcoming === 0);
   const idleNote = idle.length ? `
@@ -379,9 +383,9 @@ async function viewHome() {
         <button class="filter-btn" type="button" data-filter="toggle"
                 aria-expanded="${state.filterOpen}">
           <span class="f-icon" aria-hidden="true">⚙</span>
-          Ligler <b>${shown}/${active.length}</b>
+          Ligler <b>${shown}/${meta.leagues.length}</b>
         </button>
-        ${state.filterOpen ? filterPanelHTML(active) : ""}
+        ${state.filterOpen ? filterPanelHTML(meta.leagues) : ""}
       </div>
     </div>`;
 
@@ -1505,7 +1509,7 @@ function filterPanelHTML(leagues) {
             aria-pressed="${!hidden.has(l.code)}" title="${esc(l.name)}">
       ${leagueLogo(l.code)}
       <span class="fc-name">${esc(l.name)}</span>
-      <span class="fc-count">${l.upcoming ? `${l.upcoming} maç` : "—"}</span>
+      <span class="fc-count">${l.upcoming ? `${l.upcoming} maç` : "yakında"}</span>
     </button>`;
   const group = (tier, title) => {
     const found = leagues.filter((l) => (l.tier ?? 0) === tier);
