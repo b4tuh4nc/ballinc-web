@@ -103,6 +103,15 @@ python -m pytest tests/ -q     # sızıntı ve takip testleri
 cd web && python -m http.server 8000   # siteyi lokalde aç
 ```
 
+## web/data kimin?
+
+`web/data/*.json` **CI tarafından üretilir**; lokalden commit edilmemeli.
+Lokal `export` ne bulursa onu yayınlar: ham veri eskiyse, o sırada bitmiş bir
+maç yaklaşanlardan düşer (kick-off 3.5 saati geçmiş) ama sonuçlara da girmez
+(ham veride skoru yok) ve siteden tamamen kaybolur. `export` bu maçları sayıp
+adlarıyla uyarıyor, ama en güvenlisi işi CI'ya bırakmak. Lokalde test için
+çalıştırdıysan `git checkout -- web/data` ile geri al.
+
 ## Veri kaynakları
 
 | Lig | Birincil kaynak | xG |
@@ -194,11 +203,20 @@ site canlı veri olmadan tam çalışmaya devam eder.
 `predict.upcoming` penceresi 3.5 saat geriye de açık: aksi halde bir maç
 başlar başlamaz fikstürden düşüyor ve canlı skoru gösterilemiyordu.
 
-### Golcüler
+### Maç akışı, golcüler ve istatistikler
 
-FotMob tarayıcıya yalnızca maç listesi ucunda CORS izni veriyor; golcü
-bilgisini taşıyan `matchDetails` ucu kapalı. `worker/` altındaki Cloudflare
-Worker o çağrıyı sunucu tarafında yapıp yalnızca gol olaylarını döndürüyor.
+FotMob tarayıcıya yalnızca maç listesi ucunda CORS izni veriyor; olay akışını
+ve istatistikleri taşıyan `matchDetails` ucu kapalı. `worker/` altındaki
+Cloudflare Worker o çağrıyı sunucu tarafında yapıp yalnızca gereken alanları
+döndürüyor: goller, kartlar, değişiklikler, devre bantları ve 15 istatistik.
+
+Bitmiş maçta FotMob maç kimliği elimizde olmuyor — site yalnızca takım
+kimliklerini ve tarihi biliyor. Worker maçı `date` + `home` + `away` ile de
+bulabiliyor. Bitmiş maç yanıtı 6 saat önbellekte kalıyor, devam eden maç 30
+saniye.
+
+**Worker değişirse yeniden deploy edilmesi gerekiyor**; edilmezse site akışı
+sessizce göstermez, geri kalanı çalışmaya devam eder.
 
 Kurulumu `worker/README.md` içinde. Deploy sonrası adresi
 `pipeline/config.py` → `GOAL_PROXY_URL` alanına yazmak yeterli; adres boşken
