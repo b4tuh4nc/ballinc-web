@@ -215,17 +215,27 @@ function groupByDay(matches) {
 /** Tahminli maç mı, oynanmış maç mı — ayrım skorun varlığından. */
 const dayRow = (m, i) => (m.score ? resultRow(m, i, null, true) : matchRow(m, i));
 
-/** Verilen günlerde oynanmış maçlar; gün listesine karıştırılmak üzere. */
+/** Verilen günlerde oynanmış maçlar; gün listesine karıştırılmak üzere.
+
+    İki kaynak birleşiyor: statik sonuçlar ve canlı veriden tamamlananlar
+    (pipeline üç saatte bir çalıştığı için arada biten maçlar henüz statikte
+    yok). Böylece o gün biten HER maç aynı biçimde, skoruyla çiziliyor —
+    bitmiş bir maçın kimi satırda tahmin kutuları kimi satırda skor
+    göstermesi kafa karıştırıyordu.
+
+    Sonuçlarda lig kodu yok, lig dosyasının içinde zaten belli; gün listesi
+    maçları lig lig grupladığı için burada ekleniyor. */
 function playedOn(data, days) {
-  return (data.results ?? [])
-    .filter((r) => days.has(dayKey(r.kickoff)))
-    // Sonuçlarda lig kodu yok — lig dosyasının içinde zaten belli. Gün
-    // listesi maçları lig lig grupladığı için burada ekleniyor.
-    .map((r) => ({ ...r, league: data.league }));
+  const onDay = (r) => days.has(dayKey(r.kickoff));
+  const fresh = freshResults(data).filter(onDay);
+  const known = new Set(fresh.map((r) => r.id));
+  const stored = (data.results ?? []).filter((r) => onDay(r) && !known.has(r.id));
+  return [...fresh, ...stored].map((r) => ({ ...r, league: data.league }));
 }
 
 function matchListHTML(matches, played = []) {
-  const all = [...matches, ...played]
+  const done = new Set(played.map((r) => r.id));
+  const all = [...matches.filter((m) => !done.has(m.id)), ...played]
     .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
   if (!all.length) return `<div class="empty">Bu pencerede oynanacak maç yok.</div>`;
   return groupByDay(all).map(([, list]) => `
@@ -343,9 +353,11 @@ async function viewHome() {
   for (const league of active) {
     if (hidden.has(league.code)) continue;
     const data = await getJSON(`${league.code}.json`);
-    all.push(...data.matches);
     predictions += data.matches.length;
-    all.push(...playedOn(data, days));
+    const played = playedOn(data, days);
+    const done = new Set(played.map((r) => r.id));
+    all.push(...data.matches.filter((m) => !done.has(m.id)));
+    all.push(...played);
   }
   noteLiveDays(all);
   all.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
@@ -806,6 +818,18 @@ function marketHTML(match) {
    Sayfa bu çağrıyı BEKLEMİYOR: önce boş bir yer tutucu basılıyor, veri
    gelince dolduruluyor. Aksi halde proxy yavaşken maç sayfası hiç açılmıyordu. */
 
+/** Başlamış maçta iki sekme: olan biten ve tahmin. Maç oynanırken önce
+    olasılık tablosunu göstermek yanlış sıra; oynanmamış maçta ise
+    gösterilecek başka bir şey yok, sekme de çıkmıyor. */
+function matchTabs(base, tab) {
+  const items = [["", "Maç"], ["tahmin", "Tahmin"]].map(([slug, label]) => {
+    const href = slug ? `${base}/${slug}` : base;
+    const current = (tab ?? "") === slug ? ' aria-current="page"' : "";
+    return `<a class="tab" href="${href}"${current}>${label}</a>`;
+  }).join("");
+  return `<nav class="tabs match-tabs">${items}</nav>`;
+}
+
 function detailSlot(match) {
   const live = liveData.get(liveKey(match) ?? "");
   const query = live?.matchId
@@ -910,7 +934,7 @@ async function fillMatchDetail() {
 /** Oynanmış maçın sayfası: skor, maç öncesi tahminin tutup tutmadığı,
     maç akışı ve istatistikler. Tahmin sayfasından ayrı çünkü gösterilecek
     şey farklı — olasılıklar artık bir öngörü değil, bir kayıt. */
-function viewResult(result, data, meta) {
+function viewResult(result, data, meta, tab) {
   const [hg, ag] = result.score;
   const f = result.forecast;
   const week = result.round ? ` · ${result.round}. Hafta` : "";
@@ -956,11 +980,11 @@ function viewResult(result, data, meta) {
       </div>
     </div>
 
-    ${detailSlot(result)}
-    ${verdict}`;
+    ${verdict ? matchTabs(`#/mac/${encodeURIComponent(result.id)}`, tab) : ""}
+    ${!verdict || (tab ?? "") !== "tahmin" ? detailSlot(result) : verdict}`;
 }
 
-async function viewMatch(id) {
+async function viewMatch(id, tab) {
   const meta = await getJSON("meta.json");
   let match = null, data = null;
   for (const league of meta.leagues) {
@@ -975,7 +999,7 @@ async function viewMatch(id) {
     for (const league of meta.leagues) {
       const candidate = await getJSON(`${league.code}.json`);
       const found = (candidate.results ?? []).find((m) => m.id === id);
-      if (found) return viewResult(found, candidate, meta);
+      if (found) return viewResult(found, candidate, meta, tab);
     }
     return `<a class="back" href="#/"><span class="arrow">←</span>Maçlar</a>
       <div class="empty">Bu maç bulunamadı.</div>`;
@@ -1004,9 +1028,12 @@ async function viewMatch(id) {
   const week = match.round ? ` · ${match.round}. Hafta` : "";
   const info = reliability(meta.metrics, "result");
 
-  return `
-    ${backLink(data)}
+  const base = `#/mac/${encodeURIComponent(id)}`;
+  // Canlı liste yalnızca başlamış maçları taşıyor; orada varsa maç başlamış
+  // demektir. Başlamamışta gösterilecek akış ya da istatistik yok.
+  const started = !!liveData.get(liveKey(match) ?? "");
 
+  const hero = `
     <div class="match-hero"${liveKey(match) ? ` data-live="${liveKey(match)}"` : ""}
          data-fmday="${fotmobDay(match.kickoff)}">
       <div class="hero-names">
@@ -1044,7 +1071,9 @@ async function viewMatch(id) {
         <span><i style="background:var(--draw-1x2)"></i>Beraberlik</span>
         <span><i style="background:var(--away)"></i>Deplasman kazanır</span>
       </div>
-    </div>
+    </div>`;
+
+  const prediction = `
     ${tbd}${drawNote}
 
     <section class="card">
@@ -1066,8 +1095,6 @@ async function viewMatch(id) {
           <b>${s.home} - ${s.away}</b><span>%${(s.prob * 100).toFixed(1)}</span></div>`).join("")}
       </div>
     </section>
-
-    ${detailSlot(match)}
 
     ${marketHTML(match)}
 
@@ -1092,6 +1119,12 @@ async function viewMatch(id) {
         }).join("")}
       </div>
     </section>`;
+
+  return `
+    ${backLink(data)}
+    ${hero}
+    ${started ? matchTabs(base, tab) : ""}
+    ${started && (tab ?? "") !== "tahmin" ? detailSlot(match) : prediction}`;
 }
 
 /** Tahmin penceresi dışındaki maç: sade fikstür satırı. Tahmin yok, çünkü
@@ -1419,7 +1452,7 @@ async function route() {
     if (parts[0] === "lig" && parts[1]) {
       html = await viewLeague(decodeURIComponent(parts[1]), parts[2]);
     } else if (parts[0] === "mac" && parts[1]) {
-      html = await viewMatch(decodeURIComponent(parts[1]));
+      html = await viewMatch(decodeURIComponent(parts[1]), parts[2]);
     } else if (parts[0] === "takim" && parts[1]) {
       html = await viewTeam(decodeURIComponent(parts[1]), parts[2]);
     } else if (parts[0] === "model") {
@@ -1963,8 +1996,11 @@ async function refreshLive() {
       // Yalnızca tabloyu etkileyen görünümlerde; maç listesi zaten
       // applyLive() ile yerinde güncelleniyor.
       const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
-      const affected = (parts[0] === "lig" && (parts[2] === "puan" || parts[2] === "sonuclar"))
-        || parts[0] === "takim";
+      // Maç listeleri de etkileniyor: biten maç tahmin satırından sonuç
+      // satırına dönüyor. Maç sayfası hariç — orada skor zaten applyLive()
+      // ile yerinde güncelleniyor, yeniden çizmek akışı boşuna yeniden
+      // yükletirdi.
+      const affected = parts[0] !== "mac" && parts[0] !== "model";
       if (affected) route();
     }
     lastFinishedSig = sig;
