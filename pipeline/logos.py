@@ -22,6 +22,7 @@ from pipeline.config import (
     SEASONS,
     WEB_DIR,
     raw_path,
+    seasons_for,
 )
 
 TEAM_LOGO = "https://images.fotmob.com/image_resources/logo/teamlogo/{id}.png"
@@ -69,7 +70,7 @@ def canonical_team_ids() -> dict[str, str]:
     # görünmemiş yeni çıkan takımlar. İkisini de taramak gerekiyor, yoksa
     # ligden çıkıp çıkan takımlar logosuz kalıyor.
     for league in LEAGUES:
-        for season in SEASONS:
+        for season in seasons_for(league):
             path = raw_path(league, season)
             if not path.exists():
                 continue

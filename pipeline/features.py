@@ -16,7 +16,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from pipeline.config import LEAGUES, SEASONS, raw_path
+from pipeline.config import LEAGUES, SEASONS, raw_path, seasons_for
 
 WINDOWS = (5, 10)
 MIN_PERIODS = {5: 3, 10: 5}
@@ -43,7 +43,7 @@ def load_raw() -> pd.DataFrame:
     """Bütün lig-sezonları tek DataFrame'de, kronolojik sırada."""
     frames = []
     for league in LEAGUES:
-        for season in SEASONS:
+        for season in seasons_for(league):
             path = raw_path(league, season)
             if path.exists():
                 frames.append(pd.read_parquet(path))

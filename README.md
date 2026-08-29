@@ -42,7 +42,7 @@ birbiriyle çelişememesi. Bağımsız modeller "ev sahibi kazanır" + "2.5 alt"
 tabanlı hücum ve savunma gücü, son 5 ve 10 maçın gol ve xG ortalamaları,
 ev/deplasman formu, dinlenme süresi, lig.
 
-Model **27.754 maçla** eğitiliyor (2014/15'ten bugüne, 6 lig). Veri miktarı
+Model **46.661 maçla** eğitiliyor (2014/15'ten bugüne 6 ana lig, 2021/22'den bugüne Avrupa kupaları ve 11 besleyici lig). Veri miktarı
 ölçülebilir fark yaratıyor: 3 sezondan 12 sezona çıkmak kazancı %7.2'den
 %8.1'e, xG hücum/savunma reytingi de %8.5'e taşıdı. Eski maçların ağırlığını
 azaltmayı da denedim — hiçbir yarı-ömür değeri iyileştirmedi, yani 2015'teki
@@ -77,6 +77,37 @@ Lig bazında 1X2 kazancı:
 Süper Lig'de xG verisi olmamasına rağmen model burada Premier Lig'den daha iyi
 çalışıyor — Elo ve gol formu yeterli sinyali taşıyor. Sitedeki not bu yüzden
 "xG yok" der ama kalite iddiasında bulunmaz.
+
+## Yarışmalar
+
+| Katman | Yarışma | Kaynak | xG |
+|---|---|---|---|
+| Ana ligler | Premier Lig, La Liga, Serie A, Bundesliga, Ligue 1 | Understat | ✓ |
+| Ana ligler | Süper Lig | FotMob | ✗ |
+| Avrupa kupaları | Şampiyonlar Ligi, Avrupa Ligi, Konferans Ligi | FotMob | ✗ |
+| Besleyici ligler | Eredivisie, Portekiz, Belçika, İskoçya, Yunanistan, Çekya, Danimarka, Avusturya, İsviçre, Polonya, Hırvatistan | FotMob | ✗ |
+
+Besleyici ligler kendileri için değil **kupalar için** eklendi: 2026/27 Avrupa
+kupalarındaki 108 takımın 42'si ana liglerden, 32'si bunlardan geliyor.
+Eklenmeleri kupa maçlarında takım tanınırlığını %41'den %77'ye çıkardı ve ana
+liglerin tahminlerine dokunmadı (+%0.04). Üst çubukta yalnızca ana ligler var;
+kalanı menüden ve lig filtresinden ulaşılabiliyor.
+
+**Kupa tahminleri zayıf ve site bunu açıkça yazıyor.** Ölçülen kazanç
+Şampiyonlar Ligi'nde +%0.5, Avrupa Ligi'nde +%0.7, Konferans Ligi'nde +%3.6 —
+ilk ikisi %2'lik güvenilirlik eşiğinin altında. Sebebi takımların çoğunun
+karşılaştırılabilir geçmişinin olmaması. Eğilim yukarı yönlü, çünkü domestik
+veri biriktikçe düzeliyor: 21/22'de +%0.4, 25/26'da +%2.2.
+
+Bu ligler üç formatta oynuyor ve doğrulama buna göre ayarlandı:
+
+- `double` — çift devreli tam lig. Maç sayısı takım sayısından türetilir.
+- `split` — şampiyonluk/küme grubu (Hollanda, İskoçya, Belçika, Avusturya,
+  Danimarka, Yunanistan, Çekya, Hırvatistan, İsviçre). Maç sayısı formülle
+  bulunamaz, takımlar farklı sayıda ev maçı oynar ve **aynı eşleşme aynı
+  sahada tekrar oynanır**. Bu yüzden maç kimliğine kaçıncı karşılaşma olduğu
+  eklendi — yoksa kimlikler çakışıyordu.
+- `cup` — lig aşaması + eleme. Takımlar eşit sayıda maç bile oynamıyor.
 
 ## Denenip elenenler
 

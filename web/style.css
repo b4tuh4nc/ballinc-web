@@ -1475,3 +1475,24 @@ body.cal-open .datestrip { z-index: 60; }
 .verdict-card.open .v-main { color: var(--text-muted); }
 /* Açık maçta asıl söylenecek şey alttaki ifade; onu öne çıkarıyoruz. */
 .verdict-card.open .v-alt { font-size: 1.02rem; color: var(--text); }
+
+
+/* ─── Yirmi yarışma: menü ve filtre başlıkları ────────────────────────────
+   Ana ligler, Avrupa kupaları ve besleyici ligler tek düz liste olarak
+   okunmuyordu. */
+
+.drawer-group, .filter-group {
+  padding: .7rem .9rem .3rem;
+  font-size: .68rem; font-weight: 700; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.drawer-group:first-of-type, .filter-group:first-of-type { padding-top: .3rem; }
+.filter-foot { display: flex; gap: .5rem; }
+.filter-foot .cal-today-btn { flex: 1; }
+
+
+/* Ölçülmüş kazancı eşiğin altında kalan yarışma uyarısı. */
+.note.warn {
+  border-left-color: var(--draw-1x2);
+  background: color-mix(in srgb, var(--draw-1x2) 10%, transparent);
+}

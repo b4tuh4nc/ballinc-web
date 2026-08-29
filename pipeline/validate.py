@@ -21,6 +21,8 @@ from pipeline.config import (
     TEAM_COUNT_RANGE,
     raw_path,
     season_label,
+    league_format,
+    seasons_for,
 )
 
 
@@ -63,16 +65,22 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
     if not (lo <= len(teams) <= hi):
         rep.error(f"{tag}: {len(teams)} takım — beklenen aralık {lo}-{hi} dışında")
 
+    fmt = league_format(league)
+
     # 3. Yapısal tutarlılık: çift devreli ligde maç sayısı takım sayısından
     #    tek başına belirlenir. Fazla maç = lig dışı maç sızmış; eksik maç =
     #    çekim yarım kalmış.
-    want = expected_matches(len(teams))
-    if len(df) != want:
-        msg = f"{tag}: {len(teams)} takım için {want} maç olmalı, {len(df)} var"
-        if is_current and len(df) < want:
-            rep.warn(msg + " (fikstür henüz tamamlanmamış olabilir)")
-        else:
-            rep.error(msg)
+    #    tek başına belirlenir. Split ve kupa formatlarında böyle bir formül
+    #    yok: şampiyonluk grubu maç sayısını değiştiriyor, kupada takımlar
+    #    eşit sayıda maç bile oynamıyor.
+    if fmt == "double":
+        want = expected_matches(len(teams))
+        if len(df) != want:
+            msg = f"{tag}: {len(teams)} takım için {want} maç olmalı, {len(df)} var"
+            if is_current and len(df) < want:
+                rep.warn(msg + " (fikstür henüz tamamlanmamış olabilir)")
+            else:
+                rep.error(msg)
 
     # 4. Takım kimliği ↔ isim 1:1 olmalı
     pairs = pd.concat([
@@ -89,13 +97,16 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
     dup_id = df["match_id"].duplicated().sum()
     if dup_id:
         rep.error(f"{tag}: {dup_id} kopya match_id")
-    dup_fx = df.duplicated(subset=["home_id", "away_id"]).sum()
-    if dup_fx:
-        rep.error(f"{tag}: {dup_fx} kopya fikstür (aynı ev-deplasman eşleşmesi)")
+    if fmt == "double":
+        # Split formatta aynı eşleşme aynı sahada tekrar oynanıyor, kupada
+        # eleme turları iki maçlı. İkisinde de bu bir hata değil.
+        dup_fx = df.duplicated(subset=["home_id", "away_id"]).sum()
+        if dup_fx:
+            rep.error(f"{tag}: {dup_fx} kopya fikstür (aynı ev-deplasman eşleşmesi)")
 
     # 6. Her takım eşit sayıda ev/deplasman maçı oynamalı
     counts = df["home_id"].value_counts()
-    if len(counts) and not is_current:
+    if fmt == "double" and len(counts) and not is_current:
         if counts.nunique() > 1:
             rep.error(
                 f"{tag}: takımların ev maçı sayıları eşit değil "
@@ -168,7 +179,7 @@ def main() -> int:
     missing = 0
 
     for league in LEAGUES:
-        for season in SEASONS:
+        for season in seasons_for(league):
             path = raw_path(league, season)
             if not path.exists():
                 missing += 1

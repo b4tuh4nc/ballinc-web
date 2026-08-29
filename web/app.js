@@ -501,6 +501,17 @@ async function viewLeague(code, tab) {
     <p class="note">Bu lig için xG verisi bulunmuyor; tahminler yalnızca gol,
       form ve Elo verisine dayanıyor.${measured}</p>` : "";
 
+  // Ölçülmüş kazancı %2'nin altında kalan yarışmalarda tahmin gösteriyoruz
+  // ama güvenilir olduğunu iddia etmiyoruz. Avrupa kupaları böyle: takımların
+  // çoğunun karşılaştırılabilir bir geçmişi yok ve model orada taban orandan
+  // ayrışamıyor.
+  const weak = lgResult && lgResult.reliable === false ? `
+    <p class="note warn">Model bu yarışmada <strong>güvenilir değil</strong>:
+      ${lgResult.n} maçlık ölçümde baseline'dan yalnızca
+      %${(lgResult.skill * 100).toFixed(1)} daha iyi çıktı (eşik %2).
+      Tahminler gösteriliyor ama bunlara dayanarak karar verme.
+      <a href="#/model">ölçümün tamamı</a></p>` : "";
+
   return `
     <div class="page-head">
       <div class="page-title">${leagueLogo(code)}<h1>${esc(data.name)}</h1></div>
@@ -508,7 +519,7 @@ async function viewLeague(code, tab) {
         ${data.results.length} oynanmış</p>
       <nav class="tabs">${tabs}</nav>
     </div>
-    ${xgNote}
+    ${weak}${xgNote}
     ${body}`;
 }
 
@@ -1458,12 +1469,19 @@ function setHiddenLeagues(set) {
 
 function filterPanelHTML(leagues) {
   const hidden = hiddenLeagues();
-  const rows = leagues.map((l) => `
+  const row = (l) => `
     <button class="filter-row" type="button" data-toggle-league="${esc(l.code)}"
             aria-pressed="${!hidden.has(l.code)}">
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span>
       <span class="tick" aria-hidden="true">✓</span>
-    </button>`).join("");
+    </button>`;
+  const group = (tier, title) => {
+    const found = leagues.filter((l) => (l.tier ?? 0) === tier);
+    if (!found.length) return "";
+    return `<div class="filter-group">${esc(title)}</div>${found.map(row).join("")}`;
+  };
+  const rows = group(0, "Ligler") + group(1, "Avrupa kupaları")
+    + group(2, "Diğer ligler");
   // Bulanık katman panelle AYNI yığınlama bağlamında olmalı; kök seviyeye
   // koyulursa .page-head'in kendi bağlamı yüzünden panelin altında kalıyor
   // ve panelin kendisi de bulanıklaşıyor (takvimde aynı hatayı yapmıştım).
@@ -1475,6 +1493,7 @@ function filterPanelHTML(leagues) {
       </div>
       ${rows}
       <div class="filter-foot">
+        <button class="cal-today-btn" type="button" data-league-main>Sadece ana ligler</button>
         <button class="cal-today-btn" type="button" data-league-all>Hepsini göster</button>
       </div>
     </div>`;
@@ -1670,6 +1689,18 @@ el("view").addEventListener("click", (event) => {
     return route();
   }
 
+  // Yirmi yarışma açıkken günün listesi uzun oluyor; tek dokunuşla altı ana
+  // lige dönmek, hepsini tek tek kapatmaktan iyi.
+  if (event.target.closest("[data-league-main]")) {
+    event.insideFilter = true;
+    // Tıklama işleyicisi eşzamanlı; meta zaten önbellekte ama söz veriyor.
+    return getJSON("meta.json").then((meta) => {
+      setHiddenLeagues(new Set(meta.leagues.filter((l) => l.tier).map((l) => l.code)));
+      state.day = null; state.stripStart = null;
+      return route();
+    });
+  }
+
   const strip = event.target.closest("[data-strip]");
   if (strip) {
     state.stripStart = (state.stripStart ?? 0) + Number(strip.dataset.strip) * STRIP_DAYS;
@@ -1715,7 +1746,10 @@ async function paintNav() {
   const parts = location.hash.replace(/^#\/?/, "").split("/").filter(Boolean);
   const active = parts[0] === "lig" ? decodeURIComponent(parts[1]) : "";
 
-  el("league-nav").innerHTML = meta.leagues.map((l) => {
+  // Üst çubukta yalnızca ana ligler. Yirmi yarışmayı buraya dizmek çubuğu
+  // kullanılamaz hale getirirdi; Avrupa kupaları ve besleyici ligler menüde
+  // ve lig filtresinde.
+  el("league-nav").innerHTML = meta.leagues.filter((l) => !l.tier).map((l) => {
     const current = l.code === active ? ' aria-current="page"' : "";
     return `<a class="league-tab" href="#/lig/${encodeURIComponent(l.code)}"${current}>
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span></a>`;
@@ -1727,13 +1761,23 @@ async function paintNav() {
       <span class="d-count">${meta.leagues.reduce((n, l) => n + l.upcoming, 0)} maç</span></a>
     <div class="drawer-sep"></div>`;
 
-  el("drawer-nav").innerHTML = homeItem + meta.leagues.map((l) => {
+  const item = (l) => {
     const current = l.code === active ? ' aria-current="page"' : "";
     const count = l.upcoming ? `${l.upcoming} maç` : "fikstür yok";
     return `<a class="drawer-item" href="#/lig/${encodeURIComponent(l.code)}"${current}>
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span>
       <span class="d-count">${count}</span></a>`;
-  }).join("");
+  };
+  // Yirmi yarışma tek düz liste olarak okunmuyor; başlıklarla ayrılıyor.
+  const group = (tier, title) => {
+    const rows = meta.leagues.filter((l) => (l.tier ?? 0) === tier);
+    if (!rows.length) return "";
+    return `<div class="drawer-group">${esc(title)}</div>${rows.map(item).join("")}`;
+  };
+  el("drawer-nav").innerHTML = homeItem
+    + group(0, "Ligler")
+    + group(1, "Avrupa kupaları")
+    + group(2, "Diğer ligler");
 
   goalProxy = meta.goal_proxy || "";
 

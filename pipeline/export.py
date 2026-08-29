@@ -335,6 +335,10 @@ def main() -> int:
             "code": code,
             "name": cfg["name"],
             "flag": cfg["flag"],
+            # 0/yok: üst çubukta gösterilen ana ligler. 1: Avrupa kupaları.
+            # 2: kupalara takım gönderen ligler. Yirmi yarışmayı üst çubuğa
+            # dizmek kullanılamaz olurdu; ikisi de menüden ulaşılabiliyor.
+            "tier": cfg.get("tier", 0),
             "has_xg": cfg.get("has_xg", True),
             "upcoming": len(matches),
             "played": int(season_df["is_result"].sum()),

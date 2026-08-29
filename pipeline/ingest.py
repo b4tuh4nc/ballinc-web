@@ -20,6 +20,7 @@ from pipeline.config import (
     RAW_DIR,
     SEASONS,
     UNDERSTAT_LEAGUES,
+    seasons_for,
     raw_path,
     season_label,
 )
@@ -69,9 +70,15 @@ def canonicalise(df: pd.DataFrame, league: str) -> pd.DataFrame:
             df[f"{side}_id"] = ids
             df[f"{side}_team"] = names
 
-    df["match_id"] = (
-        df["league"] + "-" + df["season"] + "-" + df["home_id"] + "-" + df["away_id"]
-    )
+    base = (df["league"] + "-" + df["season"] + "-"
+            + df["home_id"] + "-" + df["away_id"])
+    # Split formatlı liglerde aynı eşleşme aynı sahada birden çok kez
+    # oynanıyor (İskoçya'da 3-4 kez). Sadece takımlardan türetilen kimlik
+    # o maçlarda çakışıyordu. Kaçıncı karşılaşma olduğu kronolojik sırayla
+    # ekleniyor; ilk karşılaşma eksiz kalıyor ki çift devreli liglerin
+    # mevcut kimlikleri değişmesin.
+    order = df.groupby(base.values)["datetime"].rank(method="first").astype(int)
+    df["match_id"] = base.where(order == 1, base + "-" + order.astype(str))
     return df
 
 
@@ -178,7 +185,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Ham maç verisini çeker")
     parser.add_argument("--leagues", nargs="*", default=None,
                         help="varsayılan: yapılandırmadaki bütün ligler")
-    parser.add_argument("--seasons", nargs="*", default=SEASONS)
+    parser.add_argument("--seasons", nargs="*", default=None,
+                        help="varsayılan: her lig için uygun sezonlar")
     args = parser.parse_args()
 
     wanted = set(args.leagues) if args.leagues else None
@@ -188,10 +196,14 @@ def main() -> int:
     failures = 0
     if us:
         print(f"Understat → {RAW_DIR}")
-        failures += ingest_understat(us, args.seasons)
+        failures += ingest_understat(us, args.seasons or SEASONS)
     if fm:
         print(f"\nFotMob → {RAW_DIR}")
-        failures += ingest_fotmob(fm, args.seasons)
+        # Avrupa kupaları ve besleyici ligler FotMob'da 2021/22'ye kadar var;
+        # daha eskisini istemek her koşuda boşa istek demek.
+        for league in fm:
+            failures += ingest_fotmob([league],
+                                      args.seasons or seasons_for(league))
 
     if failures:
         print(f"\n{failures} lig-sezon çekilemedi.")

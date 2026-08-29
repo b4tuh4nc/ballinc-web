@@ -18,7 +18,7 @@ from typing import Any
 import pandas as pd
 import requests
 
-from pipeline.config import LEAGUES
+from pipeline.config import LEAGUES, league_format
 from pipeline.sources.understat import COLUMNS
 
 BASE_URL = "https://www.fotmob.com/api/data/leagues"
@@ -172,8 +172,18 @@ def fetch_league_season(league: str, season: str) -> pd.DataFrame:
         return pd.DataFrame(columns=COLUMNS)
 
     df = pd.DataFrame(rows, columns=COLUMNS).drop_duplicates(subset=["match_id"])
-    df = drop_non_league(df)
-    df = df.drop_duplicates(subset=["home_id", "away_id"], keep="first")
+
+    fmt = league_format(league)
+    if fmt != "cup":
+        # Kupada takım başına maç sayısı zaten eşit değil; bu filtre orada
+        # gerçek maçları atardı.
+        df = drop_non_league(df)
+    if fmt == "double":
+        # Çift devreli ligde bir eşleşme sahada bir kez oynanır, fazlası
+        # sızmış kupa maçıdır. Split formatta ise aynı eşleşme aynı sahada
+        # tekrar oynanıyor (İskoçya'da takımlar 3-4 kez karşılaşıyor) ve bu
+        # satır gerçek lig maçlarını sessizce siliyor.
+        df = df.drop_duplicates(subset=["home_id", "away_id"], keep="first")
 
     for col in ("home_goals", "away_goals", "home_xg", "away_xg"):
         df[col] = pd.to_numeric(df[col], errors="coerce").astype("float64")

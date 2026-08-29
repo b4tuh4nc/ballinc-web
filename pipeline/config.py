@@ -30,6 +30,16 @@ ARCHIVE_SEASONS = [f"{y}_{y + 1}" for y in range(2014, 2025)]
 LIVE_SEASONS = ["2025_2026", "2026_2027"]
 SEASONS = ARCHIVE_SEASONS + LIVE_SEASONS
 
+# Avrupa kupaları ve besleyici ligler FotMob'da 2021/22'ye kadar var; daha
+# eskisini istemek boş dönüyor ve her koşuda gereksiz istek demek.
+EUROPE_FIRST_SEASON = "2021_2022"
+
+
+def seasons_for(league: str) -> list[str]:
+    if not LEAGUES[league].get("tier"):
+        return SEASONS
+    return [s for s in SEASONS if s >= EUROPE_FIRST_SEASON]
+
 # ─── Ligler ──────────────────────────────────────────────────────────────────
 # understat: getLeagueData slug'ı. La Liga'nınki küçük "l" ile "La_liga" —
 #            eski sistemde "La_Liga" denendiği için lig hiç çekilemiyordu.
@@ -78,7 +88,55 @@ LEAGUES = {
         "fotmob": 71,
         "has_xg": False,  # FotMob lig fikstür ucunda xG yok
     },
+
+    # ─── Avrupa kupalarına takım gönderen ligler ─────────────────────────
+    # 2026/27 Avrupa kupalarındaki 108 takımın 42'si yukarıdaki altı ligden,
+    # 32'si aşağıdakilerden geliyor. Eklenmeleri kupa maçlarındaki tahmin
+    # kazancını +%5.2'den +%6.0'a çıkardı ve altı ligimizin tahminlerine
+    # dokunmadı (+%0.04). Ölçüm README'de.
+    #
+    # Hiçbirinde xG yok: FotMob lig fikstür ucu vermiyor.
+    "NED": {"name": "Eredivisie", "flag": "🇳🇱", "fotmob": 57,
+            "has_xg": False, "format": "split", "tier": 2},
+    "POR": {"name": "Portekiz Ligi", "flag": "🇵🇹", "fotmob": 61,
+            "has_xg": False, "tier": 2},
+    "BEL": {"name": "Belçika Pro Lig", "flag": "🇧🇪", "fotmob": 40,
+            "has_xg": False, "format": "split", "tier": 2},
+    "SCO": {"name": "İskoçya Premiership", "flag": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "fotmob": 64,
+            "has_xg": False, "format": "split", "tier": 2},
+    "GRE": {"name": "Yunanistan Süper Lig", "flag": "🇬🇷", "fotmob": 135,
+            "has_xg": False, "format": "split", "tier": 2},
+    "CZE": {"name": "Çekya 1. Lig", "flag": "🇨🇿", "fotmob": 122,
+            "has_xg": False, "format": "split", "tier": 2},
+    "DEN": {"name": "Danimarka Süper Lig", "flag": "🇩🇰", "fotmob": 46,
+            "has_xg": False, "format": "split", "tier": 2},
+    "AUT": {"name": "Avusturya Bundesliga", "flag": "🇦🇹", "fotmob": 38,
+            "has_xg": False, "format": "split", "tier": 2},
+    "SUI": {"name": "İsviçre Süper Lig", "flag": "🇨🇭", "fotmob": 69,
+            "has_xg": False, "format": "split", "tier": 2},
+    "POL": {"name": "Polonya Ekstraklasa", "flag": "🇵🇱", "fotmob": 196,
+            "has_xg": False, "tier": 2},
+    "CRO": {"name": "Hırvatistan HNL", "flag": "🇭🇷", "fotmob": 252,
+            "has_xg": False, "format": "split", "tier": 2},
+
+    # ─── Avrupa kupaları ─────────────────────────────────────────────────
+    "UCL": {"name": "Şampiyonlar Ligi", "flag": "🏆", "fotmob": 42,
+            "has_xg": False, "format": "cup", "tier": 1},
+    "UEL": {"name": "Avrupa Ligi", "flag": "🥈", "fotmob": 73,
+            "has_xg": False, "format": "cup", "tier": 1},
+    "UECL": {"name": "Konferans Ligi", "flag": "🥉", "fotmob": 10216,
+             "has_xg": False, "format": "cup", "tier": 1},
 }
+
+
+def league_format(league: str) -> str:
+    return LEAGUES[league].get("format", DEFAULT_FORMAT)
+
+
+# Sitede üst çubukta gösterilenler. Yirmi yarışmayı üst çubuğa dizmek
+# kullanılamaz hale getirirdi; geri kalanı menüden ve lig filtresinden
+# ulaşılabiliyor.
+PRIMARY_LEAGUES = [k for k, v in LEAGUES.items() if not v.get("tier")]
 
 # ─── Görünen takım adları ────────────────────────────────────────────────────
 # Kanonik ad Understat'tan geliyor ve bazı takımları İngilizceleştiriyor
@@ -104,8 +162,21 @@ TEAM_DISPLAY_NAMES = {
 }
 
 
-# Bir ligin takım sayısı bu aralığın dışındaysa veri şüphelidir.
-TEAM_COUNT_RANGE = (16, 22)
+# Bir ligin takım sayısı bu aralığın dışındaysa veri şüphelidir. Lig başına
+# `teams` ile daraltılabilir; Avrupa'nın küçük ligleri 10 takımla oynuyor.
+TEAM_COUNT_RANGE = (8, 40)
+
+# Lig formatı — doğrulamanın hangi kuralları uygulayacağını belirler.
+#   "double" : çift devreli tam lig. Maç sayısı takım sayısından türetilebilir
+#              (T×(T−1)), her takım eşit sayıda ev maçı oynar, bir eşleşme
+#              sahada bir kez tekrarlanır.
+#   "split"  : lig sonrası şampiyonluk/küme grubu (Hollanda, İskoçya, Belçika,
+#              Avusturya, Danimarka, Yunanistan, Çekya, Hırvatistan, İsviçre).
+#              Maç sayısı formülle bulunamaz, takımlar farklı sayıda ev maçı
+#              oynar ve AYNI eşleşme aynı sahada birden çok kez tekrarlanır.
+#   "cup"    : lig aşaması + eleme (Avrupa kupaları). Takımlar eşit sayıda
+#              maç bile oynamıyor.
+DEFAULT_FORMAT = "double"
 
 # Birincil kaynak: Understat varsa o (xG için). FotMob her ligde tanımlı ama
 # yalnızca Understat'ın kapsamadığı liglerde birincil kaynak olarak kullanılıyor;
