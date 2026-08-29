@@ -869,6 +869,36 @@ function timelineHTML(timeline) {
   </section>`;
 }
 
+/* VAR kararlarının Türkçesi. Listede olmayan bir karar gelirse FotMob'un
+   kendi İngilizce metni gösteriliyor: çevrilmemiş göstermek, hiç
+   göstermemekten iyi. Sözlük gerçek maçlardan toplandı. */
+const VAR_WORDS = {
+  var_goal_cancelled: "gol iptal",
+  var_goal_awarded: "gol verildi",
+  var_goal_confirmed: "gol onaylandı",
+  var_penalty_cancelled: "penaltı iptal",
+  var_penalty_awarded: "penaltı verildi",
+  var_penalty_confirmed: "penaltı onaylandı",
+  var_penalty_miss_retake: "penaltı tekrarlanacak",
+  var_red_card_given: "kırmızı kart",
+  var_red_card_cancelled: "kırmızı kart iptal",
+  var_card_upgrade: "kart yükseltildi",
+  offside: "ofsayt",
+  no_offside: "ofsayt yok",
+  foul: "faul",
+  no_foul: "faul yok",
+  handball: "el",
+  no_handball: "el yok",
+};
+
+function varText(e) {
+  const parts = (e.keys ?? []).map((key, i) => VAR_WORDS[key] ?? e.words?.[i] ?? key);
+  if (parts.length) return parts.join(" · ");
+  // Karar henüz verilmemiş: canlı maçta hakem ekrana giderken bu durum
+  // birkaç dakika sürüyor.
+  return e.pending ? "inceleniyor" : "";
+}
+
 function eventBody(e) {
   if (e.t === "gol") {
     const marks = `${e.pen ? " (P)" : ""}${e.own ? " (KK)" : ""}`;
@@ -889,7 +919,10 @@ function eventBody(e) {
       + `<i class="out">${esc(e.out)}</i></span>`;
   }
   if (e.t === "var") {
-    return `<span class="tl-var">VAR</span><span class="tl-name">${esc(e.name)}</span>`;
+    const what = varText(e);
+    return `<span class="tl-var">VAR</span>`
+      + `<span class="tl-name">${esc(e.name)}`
+      + (what ? `<i class="tl-why">${esc(what)}</i>` : "") + `</span>`;
   }
   return "";
 }

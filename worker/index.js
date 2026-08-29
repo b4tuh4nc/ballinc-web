@@ -152,9 +152,19 @@ function buildTimeline(events, finalScore) {
       case "AddedTime":
         out.push({ m: e.time ?? null, t: "uzatma", mins: e.minutesAddedInput ?? null });
         break;
-      case "VAR":
-        out.push({ ...at, ...who, t: "var" });
+      case "VAR": {
+        // Karar hem anahtar hem de FotMob'un kendi metniyle geçiyor: site
+        // anahtarı Türkçeye çeviriyor, tanımadığı bir karar gelirse metne
+        // düşüyor. Böylece yeni bir karar türü çıkınca bilgi kaybolmuyor.
+        const decision = e.VAR?.decision ?? {};
+        out.push({
+          ...at, ...who, t: "var",
+          pending: !!e.VAR?.pendingDecision,
+          keys: decision.key ?? [],
+          words: decision.value ?? [],
+        });
         break;
+      }
       default:
         break;   // Comment ve tanımadığımız tipler atlanıyor
     }

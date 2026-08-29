@@ -1369,6 +1369,11 @@ body.cal-open .datestrip { z-index: 60; }
 .tl-side.right { justify-content: flex-start; }
 
 .tl-name { min-width: 0; overflow-wrap: anywhere; }
+/* VAR kararı: "Florian Wirtz" tek başına neyin incelendiğini söylemiyordu. */
+.tl-why {
+  display: block; font-style: normal;
+  font-size: .72rem; color: var(--text-muted);
+}
 .tl-name .in { font-style: normal; color: var(--accent); }
 .tl-name .out { font-style: normal; color: var(--text-muted); }
 .tl-name .in::before { content: "↑ "; }
