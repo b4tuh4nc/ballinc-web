@@ -1331,3 +1331,19 @@ body.cal-open .datestrip { z-index: 60; }
 .match[data-outcome="G"] { box-shadow: inset 3px 0 0 var(--accent); }
 .match[data-outcome="B"] { box-shadow: inset 3px 0 0 var(--draw-1x2); }
 .match[data-outcome="M"] { box-shadow: inset 3px 0 0 var(--away); }
+
+
+/* ─── Beraberliğe açık maç ────────────────────────────────────────────────
+   Beraberlik hiçbir zaman en olası sonuç olmadığı için X kutusu asla
+   vurgulanmıyordu. Sarı, sitedeki beraberlik rengiyle aynı. */
+
+.odds-cell.drawish {
+  background: color-mix(in srgb, var(--draw-1x2) 16%, transparent);
+  color: var(--draw-1x2);
+}
+.odds-cell.drawish span { color: inherit; opacity: .72; }
+.extra-chip.draw-chip {
+  color: var(--draw-1x2);
+  border-color: color-mix(in srgb, var(--draw-1x2) 40%, transparent);
+  letter-spacing: .03em;
+}

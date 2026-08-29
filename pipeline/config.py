@@ -80,6 +80,30 @@ LEAGUES = {
     },
 }
 
+# ─── Görünen takım adları ────────────────────────────────────────────────────
+# Kanonik ad Understat'tan geliyor ve bazı takımları İngilizceleştiriyor
+# ("FC Cologne"), bazılarının resmî uzun adını kullanıyor ("Parma Calcio
+# 1913"), bazılarında da aksan düşüyor ("Malaga").
+#
+# Burası YALNIZCA gösterim. Takım kimlikleri, crosswalk eşlemesi ve maç
+# kimlikleri kanonik adla çalışmaya devam ediyor — isim değişikliği bir
+# takımın geçmişini koparmıyor. Eski ad arama takma adı olarak korunuyor.
+TEAM_DISPLAY_NAMES = {
+    "FC Cologne": "Köln",
+    "Bayern Munich": "Bayern Münih",
+    "Borussia M.Gladbach": "Mönchengladbach",
+    "RasenBallsport Leipzig": "RB Leipzig",
+    "Athletic Club": "Athletic Bilbao",
+    "Atletico Madrid": "Atlético Madrid",
+    "Alaves": "Alavés",
+    "Malaga": "Málaga",
+    "Deportivo La Coruna": "Deportivo La Coruña",
+    "AC Milan": "Milan",
+    "Parma Calcio 1913": "Parma",
+    "Paris Saint Germain": "Paris Saint-Germain",
+}
+
+
 # Bir ligin takım sayısı bu aralığın dışındaysa veri şüphelidir.
 TEAM_COUNT_RANGE = (16, 22)
 

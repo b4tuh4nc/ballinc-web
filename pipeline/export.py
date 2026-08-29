@@ -20,10 +20,13 @@ from pipeline.config import (
     GOAL_PROXY_URL,
     LEAGUES,
     MODELS_DIR,
+    TEAM_DISPLAY_NAMES,
     WEB_DATA_DIR,
     season_label,
 )
 from pipeline.model import GoalModel
+
+_ORIGINAL_NAMES = {v: k for k, v in TEAM_DISPLAY_NAMES.items()}
 
 FORM_LENGTH = 5
 
@@ -188,9 +191,18 @@ def build_teams(df) -> list[dict]:
             if team_id in teams:
                 continue
             entry = {"id": team_id, "name": name, "league": league}
+            # Arama takma adları: FotMob'un yerel yazımı ve — ad
+            # düzeltildiyse — Understat'ın eski adı. Kullanıcı "Cologne"
+            # arayınca da Köln'ü bulabilmeli.
+            alts = []
             alias = aliases.get(team_id)
             if alias and alias != name:
-                entry["alt"] = alias
+                alts.append(alias)
+            original = _ORIGINAL_NAMES.get(name)
+            if original and original != alias:
+                alts.append(original)
+            if alts:
+                entry["alt"] = alts
             # FotMob kimligi: canli veri isimle degil kimlikle geliyor, favori
             # takimin bildirimi de bu esleme uzerinden bulunuyor.
             fm = (str(team_id).removeprefix("fm") if str(team_id).startswith("fm")
@@ -261,8 +273,20 @@ def _warn_if_stale(df) -> None:
     print()
 
 
+def _rename_teams(df):
+    """Görünen adları tek noktada uygula.
+
+    Sütunlar burada değiştiği için matchler, puan durumu, fikstür ve takım
+    dizini otomatik olarak düzeltilmiş adı alıyor; her yazım noktasını ayrı
+    ayrı yamamak gerekmiyor.
+    """
+    for side in ("home", "away"):
+        df[f"{side}_team"] = df[f"{side}_team"].replace(TEAM_DISPLAY_NAMES)
+    return df
+
+
 def main() -> int:
-    df = predict_mod.load_features()
+    df = _rename_teams(predict_mod.load_features())
     _warn_if_stale(df)
     model = GoalModel.load(MODELS_DIR)
 

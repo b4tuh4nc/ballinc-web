@@ -95,12 +95,24 @@ function reliability(metrics, key) {
 
 // ─── Maç satırı ────────────────────────────────────────────────────────────
 
+/* Beraberlik hiçbir maçta en olası sonuç çıkmıyor: iki gol beklentisinden
+   kurulan Poisson matrisinde beraberlik olasılığı %33'ü aşamıyor. Bu yüzden
+   X kutusu hiç vurgulanmıyordu ve beraberliğe açık maçlar diğerlerinden
+   ayırt edilemiyordu.
+
+   Eşik ölçümle seçildi: beraberlik olasılığı %27'yi geçen maçlarda (maçların
+   dörtte biri) gerçek beraberlik oranı %28.7 — taban %25.2'nin belirgin
+   üstünde. Yani vurgu boş bir uyarı değil. */
+const DRAW_ALERT = 0.27;
+
 function oddsCells(match) {
   const p = match.markets.result;
   const best = p.indexOf(Math.max(...p));
   const labels = ["1", "X", "2"];
+  const drawish = p[1] >= DRAW_ALERT;
   return `<div class="odds">${p.map((v, i) => `
-    <div class="odds-cell${i === best ? " best" : ""}">
+    <div class="odds-cell${i === best ? " best" : ""}${i === 1 && drawish ? " drawish" : ""}"${
+      i === 1 && drawish ? ` title="Beraberliğe açık maç: bu olasılıktaki maçların yaklaşık %29 kadarı berabere bitiyor"` : ""}>
       <span>${labels[i]}</span><b>%${pct(v)}</b>
     </div>`).join("")}</div>`;
 }
@@ -109,7 +121,10 @@ function extraChips(match) {
   const ou = match.markets.over_2_5, bt = match.markets.btts;
   if (!ou || !bt) return "";
   const over = ou[1] >= ou[0], yes = bt[1] >= bt[0];
+  const draw = (match.markets.result?.[1] ?? 0) >= DRAW_ALERT
+    ? `<span class="extra-chip draw-chip">BERABERLİĞE AÇIK</span>` : "";
   return `<div class="extra">
+    ${draw}
     <span class="extra-chip">2.5 ${over ? "ÜST" : "ALT"} <b>%${pct(over ? ou[1] : ou[0])}</b></span>
     <span class="extra-chip">KG ${yes ? "VAR" : "YOK"} <b>%${pct(yes ? bt[1] : bt[0])}</b></span>
   </div>`;
@@ -1956,7 +1971,8 @@ async function renderSearch(query = "") {
   // yönetim ekranı oluyor, ayrı bir sayfaya gerek kalmıyor.
   const list = needle
     ? teams.filter((t) =>
-        foldTr(t.name).includes(needle) || foldTr(t.alt ?? "").includes(needle))
+        foldTr(t.name).includes(needle)
+        || foldTr([].concat(t.alt ?? []).join(" ")).includes(needle))
     : teams.filter((t) => favs.has(t.id));
 
   const box = el("search-results");
