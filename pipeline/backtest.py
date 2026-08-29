@@ -56,11 +56,14 @@ def prior_baseline(y_train: np.ndarray, n_test: int, n_classes: int) -> np.ndarr
     return np.tile(counts / counts.sum(), (n_test, 1))
 
 
-def run(df: pd.DataFrame, test_seasons: list[str]) -> tuple[pd.DataFrame, pd.DataFrame]:
+def run(df: pd.DataFrame,
+        test_seasons: list[str]) -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:
     cols = features.feature_columns(df)
     played = df[df["result"].notna()].copy()
     rows: list[dict] = []
     per_league: list[dict] = []
+    verdict_probs: list[np.ndarray] = []
+    verdict_y: list[np.ndarray] = []
 
     for season in test_seasons:
         start = played.loc[played["season"] == season, "datetime"].min()
@@ -77,6 +80,8 @@ def run(df: pd.DataFrame, test_seasons: list[str]) -> tuple[pd.DataFrame, pd.Dat
             train[cols], train["home_goals"].to_numpy(), train["away_goals"].to_numpy()
         )
         probs, _ = model.predict_markets(test[cols])
+        verdict_probs.append(probs["result"])
+        verdict_y.append(test["result"].to_numpy().astype(int))
 
         for label, (target, n_classes, _) in MARKETS.items():
             y_test = test[target].to_numpy()
@@ -120,7 +125,50 @@ def run(df: pd.DataFrame, test_seasons: list[str]) -> tuple[pd.DataFrame, pd.Dat
         print(f"  ✓ {season}: {len(train)} maç ile eğitildi, {len(test)} maç test edildi "
               f"(rho={model.rho:+.3f})")
 
-    return pd.DataFrame(rows), pd.DataFrame(per_league)
+    confidence = confidence_table(
+        np.vstack(verdict_probs), np.concatenate(verdict_y)
+    ) if verdict_probs else []
+    return pd.DataFrame(rows), pd.DataFrame(per_league), confidence
+
+
+# Site "Barcelona kazanır" gibi bir cümle kuruyor. O cümlenin ne kadar
+# tuttuğu uydurulamaz: burada ölçülüp metrics.json'a yazılıyor ve site
+# ölçülen rakamı gösteriyor.
+#
+# İki ifade ölçülüyor:
+#   tek   — model en olası dediği sonucu tutturdu mu
+#   çifte — favori (ev/dep arasında yüksek olan) kaybetmedi mi
+#
+# Ayrım şuradan çıktı: modelin güveni %50'nin altındayken tek seçim %44
+# tutuyor, "favori kaybetmez" ise %72. Bilmediği yerde bildiğini iddia
+# etmemek için site o maçlarda ikincisini söylüyor.
+# Ust dilim ikiye bolundu: %60-100 tek dilimken %83 guvenli bir mac icin
+# "bu tahmin %70 tuttu" deniyordu, oysa dilimin ustunde isabet cok daha
+# yuksek. Not artik maca daha yakin bir rakam gosteriyor.
+CONFIDENCE_BANDS = [(0.0, 0.50), (0.50, 0.60), (0.60, 0.72), (0.72, 1.01)]
+
+
+def confidence_table(probs: np.ndarray, y: np.ndarray) -> list[dict]:
+    conf = probs.max(axis=1)
+    # Beraberlik hiçbir zaman en olası sonuç değil (Poisson matrisinde
+    # olasılığı %33'ü aşamıyor), dolayısıyla favori ev ya da deplasman.
+    fav = np.where(probs[:, 0] >= probs[:, 2], 0, 2)
+    single = probs.argmax(axis=1) == y
+    survives = y != np.where(fav == 0, 2, 0)
+    p_survives = probs[np.arange(len(y)), fav] + probs[:, 1]
+
+    out = []
+    for lo, hi in CONFIDENCE_BANDS:
+        m = (conf >= lo) & (conf < hi)
+        if m.sum() < 100:
+            continue
+        out.append({
+            "lo": lo, "hi": min(hi, 1.0), "n": int(m.sum()),
+            "single": round(float(single[m].mean()), 4),
+            "double": round(float(survives[m].mean()), 4),
+            "double_said": round(float(p_survives[m].mean()), 4),
+        })
+    return out
 
 
 def summarise_leagues(per_league: pd.DataFrame) -> pd.DataFrame:
@@ -178,7 +226,7 @@ def _fmt(df: pd.DataFrame) -> str:
 
 
 def write_metrics(results: pd.DataFrame, summary: pd.DataFrame,
-                  leagues: pd.DataFrame) -> None:
+                  leagues: pd.DataFrame, confidence: list[dict]) -> None:
     """Ölçümü models/metrics.json'a yazar; site bunu okuyup gösterir.
 
     Eski projedeki accuracy.json sadece çıplak doğruluk oranı tutuyordu ve
@@ -190,6 +238,7 @@ def write_metrics(results: pd.DataFrame, summary: pd.DataFrame,
         "method": "walk-forward: her sezon, kendisinden önceki maçlarla eğitildi",
         "markets": {},
         "leagues": {},
+        "confidence": confidence,
         "folds": json.loads(results.to_json(orient="records")),
     }
     for row in leagues.itertuples(index=False) if not leagues.empty else []:
@@ -235,7 +284,7 @@ def main() -> int:
     df = pd.read_parquet(path) if path.exists() else features.build()
 
     print("Walk-forward backtest (her sezon, kendisinden önceki maçlarla eğitilir)\n")
-    results, per_league = run(df, args.seasons)
+    results, per_league, confidence = run(df, args.seasons)
     if results.empty:
         print("Değerlendirilecek sezon yok.")
         return 1
@@ -255,7 +304,7 @@ def main() -> int:
         f"%{SKILL_THRESHOLD * 100:.0f} altındaysa market güvenilir sayılmıyor."
     )
 
-    write_metrics(results, summary, leagues)
+    write_metrics(results, summary, leagues, confidence)
     return 0
 
 

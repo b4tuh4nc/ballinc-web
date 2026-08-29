@@ -1448,3 +1448,30 @@ body.cal-open .datestrip { z-index: 60; }
   .tl-row { grid-template-columns: 1fr 2.6rem 1fr; }
   .tl-side { font-size: .76rem; }
 }
+
+
+/* ─── Modelin cümlesi ─────────────────────────────────────────────────────
+   Renk, ifadenin ne kadar güvenilir olduğunu söylüyor: yeşil net, sarı
+   temkinli, gri "model burada bir şey bilmiyor". */
+
+.verdict-card .v-main {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .75rem; margin: .2rem 0 0; font-size: 1.15rem;
+}
+.verdict-card .v-alt {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .75rem; margin: .45rem 0 0;
+  padding-top: .45rem; border-top: 1px solid var(--border);
+  font-size: .92rem; color: var(--text-muted);
+}
+.verdict-card .v-alt b { color: var(--text); font-weight: 600; }
+.verdict-card .v-pct { font-variant-numeric: tabular-nums; font-weight: 700; }
+.verdict-card .note { margin-top: .6rem; }
+
+.verdict-card.strong { border-left: 3px solid var(--accent); }
+.verdict-card.strong .v-main { color: var(--accent); }
+.verdict-card.mid { border-left: 3px solid var(--draw-1x2); }
+.verdict-card.open { border-left: 3px solid var(--border); }
+.verdict-card.open .v-main { color: var(--text-muted); }
+/* Açık maçta asıl söylenecek şey alttaki ifade; onu öne çıkarıyoruz. */
+.verdict-card.open .v-alt { font-size: 1.02rem; color: var(--text); }

@@ -1017,6 +1017,68 @@ function viewResult(result, data, meta, tab) {
     ${!verdict || (tab ?? "") !== "tahmin" ? detailSlot(result) : verdict}`;
 }
 
+/* Modelin cümlesi.
+
+   Olasılıkları gizlemiyoruz — kalibrasyonları ölçüldü ve doğrular — ama
+   "%36 %27 %37" tek başına hiçbir şey söylemiyor. Öte yandan düz bir
+   "ev sahibi kazanır" da yanlış olurdu: ölçümde modelin güveni %50'nin
+   altındayken o cümle yalnızca %43 tutuyor, yani üç maçın ikisinde yanlış.
+
+   Çözüm, cümleyi modelin GERÇEKTEN bildiği kadarına göre kurmak. Eşikler
+   uydurulmuyor: hangi güven diliminde tek seçimin ne kadar tuttuğu
+   backtest'te ölçülüp meta.json'a yazılıyor, buradaki mantık o rakama
+   bakıyor. Model iyileşirse cümleler kendiliğinden güçleniyor. */
+
+function verdictHTML(match, meta) {
+  const p = match.markets?.result;
+  const bands = meta.confidence ?? [];
+  if (!p || !bands.length) return "";
+
+  const conf = Math.max(...p);
+  const band = bands.find((b) => conf >= b.lo && conf < b.hi) ?? bands.at(-1);
+
+  // Beraberlik hiçbir zaman en olası sonuç olmuyor, dolayısıyla favori ya ev
+  // ya deplasman.
+  const favHome = p[0] >= p[2];
+  const fav = favHome ? match.home : match.away;
+  const pFav = favHome ? p[0] : p[2];
+  const safe = pFav + p[1];
+
+  const name = esc(fav.name);
+  const single = `<b>${name} kazanır</b><span class="v-pct">%${pct(pFav)}</span>`;
+  const survives = `<b>${name} kaybetmez</b><span class="v-pct">%${pct(safe)}</span>`;
+  const measured = `Geriye dönük ölçümde bu güvendeki
+    ${band.n.toLocaleString("tr-TR")} maçta`;
+
+  if (band.single >= 0.60) {
+    return `<section class="card verdict-card strong">
+      <h2>Model ne diyor?</h2>
+      <p class="v-main">${single}</p>
+      <p class="v-alt">${survives}</p>
+      <p class="note">${measured} bu tahmin %${pct(band.single)} tuttu;
+        "kaybetmez" ifadesi %${pct(band.double)}.</p>
+    </section>`;
+  }
+  if (band.single >= 0.50) {
+    return `<section class="card verdict-card mid">
+      <h2>Model ne diyor?</h2>
+      <p class="v-main"><b>${name} favori</b><span class="v-pct">%${pct(pFav)}</span></p>
+      <p class="v-alt">${survives}</p>
+      <p class="note">${measured} tek sonuç seçmek %${pct(band.single)} tuttu —
+        yani yaklaşık her iki maçtan birinde yanlış. "Kaybetmez" ifadesi
+        %${pct(band.double)} tuttu.</p>
+    </section>`;
+  }
+  return `<section class="card verdict-card open">
+    <h2>Model ne diyor?</h2>
+    <p class="v-main"><b>Açık maç</b></p>
+    <p class="v-alt">${survives}</p>
+    <p class="note">${measured} tek sonuç seçmek yalnızca %${pct(band.single)}
+      tuttu. Model burada net bir şey söyleyemiyor; söyleyebildiği en
+      güvenilir şey yukarıdaki ("kaybetmez" ölçümde %${pct(band.double)}).</p>
+  </section>`;
+}
+
 async function viewMatch(id, tab) {
   const meta = await getJSON("meta.json");
   let match = null, data = null;
@@ -1047,17 +1109,6 @@ async function viewMatch(id, tab) {
   const tbd = match.time_confirmed === false
     ? `<p class="note">Başlama saati henüz kesinleşmedi, değişebilir.</p>` : "";
 
-  // Beraberlik futbolda neredeyse hiçbir zaman TEK BAŞINA en olası sonuç
-  // olmuyor: olasılığı ~%33'ü aşmazken favori rahatça aşıyor. Ölçümde
-  // 4152 maçın yalnızca 1'inde beraberlik en yüksek çıktı. Sadece en
-  // yükseği vurgulamak "model hiç beraberlik demiyor" izlenimi veriyordu.
-  const topProb = Math.max(ph, pd, pa);
-  const balanced = topProb - pd <= 0.08;
-  const drawNote = balanced
-    ? `<p class="note">Dengeli maç: beraberlik ihtimali (%${pct(pd)}) en olası
-        sonuca çok yakın. Beraberlik futbolda nadiren tek başına en yüksek
-        olasılıktır — bu yüzden yukarıda vurgulanmasa da göz ardı edilmemeli.</p>`
-    : "";
   const week = match.round ? ` · ${match.round}. Hafta` : "";
   const info = reliability(meta.metrics, "result");
 
@@ -1107,7 +1158,8 @@ async function viewMatch(id, tab) {
     </div>`;
 
   const prediction = `
-    ${tbd}${drawNote}
+    ${tbd}
+    ${verdictHTML(match, meta)}
 
     <section class="card">
       <h2>En olası skor ${info?.reliable

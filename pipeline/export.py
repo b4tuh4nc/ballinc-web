@@ -348,6 +348,9 @@ def main() -> int:
         "season": season_label(CURRENT_SEASON),
         "leagues": league_meta,
         "metrics": metrics.get("markets", {}),
+        # Modelin kurduğu cümlenin ne kadar tuttuğu: güven dilimi başına
+        # ölçülmüş isabet. Site bu rakamı gösteriyor, uydurmuyor.
+        "confidence": metrics.get("confidence", []),
         "window_days": predict_mod.PREDICT_WINDOW_DAYS,
         "goal_proxy": GOAL_PROXY_URL,
     }
