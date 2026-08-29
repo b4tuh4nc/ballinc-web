@@ -476,6 +476,23 @@ async function viewHome() {
     ${groups}`;
 }
 
+/** Tahmin penceresinin ötesindeki maçlar: sade fikstür, tahmin yok.
+    O kadar ileri tarihte form verisi anlamsız ve saatler de kesin değil. */
+async function seasonRestHTML(code, data) {
+  let all;
+  try {
+    all = await getJSON(`${code}-fixtures.json`);
+  } catch {
+    return "";   // fikstür dosyası yoksa sessizce atlanıyor
+  }
+  const shown = new Set(data.matches.map((m) => m.id));
+  const rest = (all.fixtures ?? []).filter((m) => !shown.has(m.id));
+  if (!rest.length) return "";
+  return `
+    <div class="date-head">Sezonun kalanı · ${rest.length} maç</div>
+    <div class="match-list">${rest.map(fixtureRow).join("")}</div>`;
+}
+
 async function viewLeague(code, tab) {
   const data = await getJSON(`${code}.json`);
   noteLiveDays(data.matches);
@@ -491,7 +508,19 @@ async function viewLeague(code, tab) {
   let body;
   if (tab === "puan") body = standingsHTML(data);
   else if (tab === "sonuclar") body = resultsHTML(data);
-  else body = matchListHTML(data.matches, playedOn(data, new Set([todayKey()])));
+  else {
+    // Tahmin penceresi 14 gün; ondan uzaktaki maçlar da fikstür olarak
+    // görünsün. Avrupa Ligi 16 Eylül'de, Konferans Ligi 15 Ekim'de
+    // başlıyor ve pencereye girmedikleri için sayfaları bomboştu.
+    const rest = await seasonRestHTML(code, data);
+    const played = playedOn(data, new Set([todayKey()]));
+    // Altında yüzlerce maç dururken "oynanacak maç yok" demek anlamsız.
+    body = (data.matches.length || played.length || !rest)
+      ? matchListHTML(data.matches, played) + rest
+      : `<p class="note">Bu yarışma tahmin penceresinin (${data.matches.length
+          ? "" : "14 gün"}) dışında başlıyor; aşağıda sezonun tam fikstürü
+          var, maçlar yaklaştıkça tahminleri eklenecek.</p>${rest}`;
+  }
 
   const lgResult = data.metrics?.result;
   const measured = lgResult
@@ -1469,16 +1498,20 @@ function setHiddenLeagues(set) {
 
 function filterPanelHTML(leagues) {
   const hidden = hiddenLeagues();
-  const row = (l) => `
-    <button class="filter-row" type="button" data-toggle-league="${esc(l.code)}"
-            aria-pressed="${!hidden.has(l.code)}">
-      ${leagueLogo(l.code)}<span>${esc(l.name)}</span>
-      <span class="tick" aria-hidden="true">✓</span>
+  // Yirmi yarışma dikey liste olarak uzun ve okunması yorucu; logoların
+  // olduğu bir ızgarada hepsi tek ekranda görünüyor ve seçim tek dokunuş.
+  const cell = (l) => `
+    <button class="filter-cell" type="button" data-toggle-league="${esc(l.code)}"
+            aria-pressed="${!hidden.has(l.code)}" title="${esc(l.name)}">
+      ${leagueLogo(l.code)}
+      <span class="fc-name">${esc(l.name)}</span>
+      <span class="fc-count">${l.upcoming ? `${l.upcoming} maç` : "—"}</span>
     </button>`;
   const group = (tier, title) => {
     const found = leagues.filter((l) => (l.tier ?? 0) === tier);
     if (!found.length) return "";
-    return `<div class="filter-group">${esc(title)}</div>${found.map(row).join("")}`;
+    return `<div class="filter-group">${esc(title)}</div>
+      <div class="filter-grid">${found.map(cell).join("")}</div>`;
   };
   const rows = group(0, "Ligler") + group(1, "Avrupa kupaları")
     + group(2, "Diğer ligler");
@@ -1488,7 +1521,7 @@ function filterPanelHTML(leagues) {
   return `<div class="filter-scrim" aria-hidden="true"></div>
     <div class="filter-panel" role="dialog" aria-label="Lig filtresi">
       <div class="filter-head">
-        <span>Ligler</span>
+        <span>Ligler <b>${leagues.length - hidden.size}/${leagues.length}</b></span>
         <button class="icon-btn" type="button" data-filter="close" aria-label="Kapat">✕</button>
       </div>
       ${rows}
