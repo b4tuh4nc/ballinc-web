@@ -2511,6 +2511,22 @@ document.addEventListener("keydown", (e) => {
   if (e.key === "Escape" && !el("drawer").hidden) setDrawer(false);
 });
 
+/* Marka ve "Tüm maçlar" bağlantıları "en başa dön" demek, "kaldığın yere
+   dön" değil. Kaydırma hafızası geri tuşu için var; oradan gelen kullanıcı
+   bıraktığı yeri bulmalı, ama ana sayfaya bilerek dönen en üstten
+   başlamalı.
+
+   İki durum da ele alınıyor: başka bir sayfadan gelince route() hafızadaki
+   konuma atlıyordu (kayıt siliniyor), zaten ana sayfadayken ise hash
+   değişmediği için hiçbir şey olmuyordu (elle yukarı kaydırılıyor). */
+document.addEventListener("click", (event) => {
+  const home = event.target.closest('a[href="#/"]');
+  if (!home) return;
+  scrollMemory.delete("#/");
+  scrollMemory.delete("");
+  window.scrollTo({ top: 0, behavior: "auto" });
+});
+
 window.addEventListener("hashchange", (event) => {
   // Ayrıldığımız görünümün konumu saklanıyor.
   const from = new URL(event.oldURL).hash;
