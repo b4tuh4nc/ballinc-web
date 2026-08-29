@@ -1342,11 +1342,6 @@ body.cal-open .datestrip { z-index: 60; }
   color: var(--draw-1x2);
 }
 .odds-cell.drawish span { color: inherit; opacity: .72; }
-.extra-chip.draw-chip {
-  color: var(--draw-1x2);
-  border-color: color-mix(in srgb, var(--draw-1x2) 40%, transparent);
-  letter-spacing: .03em;
-}
 
 
 /* ─── Maç akışı ───────────────────────────────────────────────────────────

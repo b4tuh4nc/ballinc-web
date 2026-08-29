@@ -121,10 +121,10 @@ function extraChips(match) {
   const ou = match.markets.over_2_5, bt = match.markets.btts;
   if (!ou || !bt) return "";
   const over = ou[1] >= ou[0], yes = bt[1] >= bt[0];
-  const draw = (match.markets.result?.[1] ?? 0) >= DRAW_ALERT
-    ? `<span class="extra-chip draw-chip">BERABERLİĞE AÇIK</span>` : "";
+  // Buraya "BERABERLİĞE AÇIK" diye ayrı bir çip konmuştu ama satırdaki
+  // diğer çipleri kaydırıp listeyi hizasız bırakıyordu. Sarı X kutusu
+  // uyarıyı zaten veriyor.
   return `<div class="extra">
-    ${draw}
     <span class="extra-chip">2.5 ${over ? "ÜST" : "ALT"} <b>%${pct(over ? ou[1] : ou[0])}</b></span>
     <span class="extra-chip">KG ${yes ? "VAR" : "YOK"} <b>%${pct(yes ? bt[1] : bt[0])}</b></span>
   </div>`;
@@ -201,11 +201,31 @@ function groupByDay(matches) {
   return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-function matchListHTML(matches) {
-  if (!matches.length) return `<div class="empty">Bu pencerede oynanacak maç yok.</div>`;
-  return groupByDay(matches).map(([, list]) => `
+/* Maç, kick-off'tan 3.5 saat sonra tahmin listesinden düşüp sonuçlara
+   geçiyor. Gün listeleri yalnızca tahmin listesini okuduğu için o maçlar
+   günün listesinden TAMAMEN kayboluyordu — bugün oynanmış bir maçı görmek
+   için lig sayfasının Sonuçlar sekmesine gitmek gerekiyordu. Skor zaten
+   elimizde; günün listesinde skoruyla duruyorlar. */
+
+/** Tahminli maç mı, oynanmış maç mı — ayrım skorun varlığından. */
+const dayRow = (m, i) => (m.score ? resultRow(m, i) : matchRow(m, i));
+
+/** Verilen günlerde oynanmış maçlar; gün listesine karıştırılmak üzere. */
+function playedOn(data, days) {
+  return (data.results ?? [])
+    .filter((r) => days.has(dayKey(r.kickoff)))
+    // Sonuçlarda lig kodu yok — lig dosyasının içinde zaten belli. Gün
+    // listesi maçları lig lig grupladığı için burada ekleniyor.
+    .map((r) => ({ ...r, league: data.league }));
+}
+
+function matchListHTML(matches, played = []) {
+  const all = [...matches, ...played]
+    .sort((a, b) => a.kickoff.localeCompare(b.kickoff));
+  if (!all.length) return `<div class="empty">Bu pencerede oynanacak maç yok.</div>`;
+  return groupByDay(all).map(([, list]) => `
     <div class="date-head">${esc(dayLabel(list[0].kickoff))}</div>
-    <div class="match-list">${list.map(matchRow).join("")}</div>
+    <div class="match-list">${list.map(dayRow).join("")}</div>
   `).join("");
 }
 
@@ -310,11 +330,17 @@ async function viewHome() {
   const meta = await getJSON("meta.json");
   const hidden = hiddenLeagues();
   const active = meta.leagues.filter((l) => l.upcoming > 0);
+  // Bugün oynanmış maçlar da günün listesinde kalsın; tahmin listesinden
+  // düştükleri için kayboluyorlardı.
+  const days = new Set([todayKey()]);
   const all = [];
+  let predictions = 0;
   for (const league of active) {
     if (hidden.has(league.code)) continue;
     const data = await getJSON(`${league.code}.json`);
     all.push(...data.matches);
+    predictions += data.matches.length;
+    all.push(...playedOn(data, days));
   }
   noteLiveDays(all);
   all.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
@@ -330,7 +356,7 @@ async function viewHome() {
   const head = `
     <div class="page-head${state.filterOpen ? " filter-open" : ""}">
       <div class="page-title"><h1>Yaklaşan maçlar</h1></div>
-      <p class="sub">Önümüzdeki ${meta.window_days} günün maçları · ${all.length} tahmin ·
+      <p class="sub">Önümüzdeki ${meta.window_days} günün maçları · ${predictions} tahmin ·
         <a href="#/model">model ne kadar isabetli?</a></p>
       <div class="filter-wrap">
         <button class="filter-btn" type="button" data-filter="toggle"
@@ -383,7 +409,8 @@ async function viewHome() {
   // Adayları gizli olarak basıyoruz; applyLive() yalnızca gerçekten devam
   // edenleri açıyor. Böylece canlı durumu bilmeden render edebiliyoruz.
   const previous = shiftKey(selected, -1);
-  const carry = all.filter((m) => dayKey(m.kickoff) === previous && liveKey(m));
+  // Oynanmış maçlar buraya girmemeli: devam eden maç adaylarını arıyoruz.
+  const carry = all.filter((m) => !m.score && dayKey(m.kickoff) === previous && liveKey(m));
   const carryHTML = carry.length ? `
     <div class="carry" hidden>
       <div class="date-head carry-head">Önceki günden devam eden</div>
@@ -402,7 +429,7 @@ async function viewHome() {
 
   const pinnedHTML = pinned.length ? `
     <div class="date-head pinned-head">★ Favori takımların</div>
-    <div class="match-list">${pinned.map(matchRow).join("")}</div>` : "";
+    <div class="match-list">${pinned.map(dayRow).join("")}</div>` : "";
 
   const byLeague = new Map();
   for (const m of rest) {
@@ -419,7 +446,7 @@ async function viewHome() {
         <span class="lh-count">${matches.length} maç</span>
         <span class="chev" aria-hidden="true">›</span>
       </a>
-      <div class="match-list">${matches.map(matchRow).join("")}</div>`).join("");
+      <div class="match-list">${matches.map(dayRow).join("")}</div>`).join("");
 
   return `
     ${head}
@@ -447,7 +474,7 @@ async function viewLeague(code, tab) {
   let body;
   if (tab === "puan") body = standingsHTML(data);
   else if (tab === "sonuclar") body = resultsHTML(data);
-  else body = matchListHTML(data.matches);
+  else body = matchListHTML(data.matches, playedOn(data, new Set([todayKey()])));
 
   const lgResult = data.metrics?.result;
   const measured = lgResult
