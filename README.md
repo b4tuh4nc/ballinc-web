@@ -109,6 +109,28 @@ Bu ligler üç formatta oynuyor ve doğrulama buna göre ayarlandı:
   eklendi — yoksa kimlikler çakışıyordu.
 - `cup` — lig aşaması + eleme. Takımlar eşit sayıda maç bile oynamıyor.
 
+## Tahmin penceresi
+
+Site 60 gün ilerisini tahmin ediyor. Sınır ölçülerek seçildi: bir "bugün"
+tarihi seçilip o tarihten sonraki bütün maçların skorları silindi,
+feature'lar öyle üretildi ve gelecekteki maçlar tahmin edildi — yani model
+gerçekten o günkü formu kullandı.
+
+| Gün ileri | Maç | Kazanç |
+|---|---|---|
+| 0–7 | 1.745 | +%7.0 |
+| 7–14 | 1.545 | +%6.0 |
+| 21–35 | 3.063 | +%6.2 |
+| 60–100 | 7.691 | +%5.2 |
+
+Bozulma var ama küçük: 100 gün ilerisi bile %2'lik güvenilirlik eşiğinin
+çok üstünde. Pencere önceden 14 gündü ve bu sayı ölçülmeden konmuştu.
+
+60'ta durmanın sebebi ölçüm değil boyut: pencere büyüdükçe ana sayfanın
+indirdiği JSON büyüyor (14 gün 319 tahmin / 1.3 MB, 60 gün 1.081 tahmin /
+1.9 MB). 60 gün, Avrupa Ligi'nin (16 Eylül) ve Konferans Ligi'nin
+(15 Ekim) ilk maç gününü kapsıyor.
+
 ## Denenip elenenler
 
 Hepsi aynı walk-forward ölçüsüyle test edildi. Buraya yazılmalarının sebebi,

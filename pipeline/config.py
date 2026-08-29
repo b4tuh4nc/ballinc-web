@@ -205,7 +205,7 @@ GOAL_PROXY_URL = "https://ballinc-proxy.1903batuhancftc.workers.dev/"
 
 # ─── Tahmin penceresi ────────────────────────────────────────────────────────
 # Bundan uzaktaki fikstürlerde saatler placeholder ve form verisi anlamsız.
-PREDICT_WINDOW_DAYS = 14
+PREDICT_WINDOW_DAYS = 60
 
 # Poisson skor matrisi kenar uzunluğu (0..10 gol)
 MAX_GOALS = 11
