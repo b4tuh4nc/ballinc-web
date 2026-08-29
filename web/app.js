@@ -1790,8 +1790,10 @@ async function paintNav() {
   const otherActive = others.some((l) => l.code === active);
   el("league-nav").innerHTML = meta.leagues.filter((l) => !l.tier).map((l) => {
     const current = l.code === active ? ' aria-current="page"' : "";
-    return `<a class="league-tab" href="#/lig/${encodeURIComponent(l.code)}"${current}>
-      ${leagueLogo(l.code)}<span>${esc(l.name)}</span></a>`;
+    // Dar ekranda yazı gizlenip yalnızca logo kalıyor; başlık nitelikleri
+    // adı erişilebilir tutuyor.
+    return `<a class="league-tab" href="#/lig/${encodeURIComponent(l.code)}"${current}
+       title="${esc(l.name)}">${leagueLogo(l.code)}<span>${esc(l.name)}</span></a>`;
   }).join("");
 
   // Avrupa kupaları ve besleyici ligler üst çubuğa sığmıyor; menüyü açan bir

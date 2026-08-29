@@ -107,7 +107,31 @@ img { max-width: 100%; }
   border-bottom: 1px solid var(--border);
 }
 
-.topbar-inner { display: flex; align-items: center; gap: .85rem; min-height: 54px; }
+/* Üst çubuk içerik genişliğinden (940px) daha geniş: aynı sınırla
+   kalınca lig şeridine yalnızca 540px kalıyordu ve 611px gerekiyordu --
+   Süper Lig geniş ekranda bile kesiliyordu. İçerik 940px'te kalıyor,
+   yalnızca gezinme şeridi genişliyor. */
+.topbar-inner {
+  display: flex; align-items: center; gap: .7rem; min-height: 54px;
+  width: min(1200px, 100% - 1.75rem);
+}
+
+/* Dar alanda önce "Diğer ligler" yazısı, sonra sekme dolgusu küçülüyor;
+   amaç altı ligin de görünür kalması. */
+@media (max-width: 1100px) {
+  .more-tab .more-label { display: none; }
+}
+@media (max-width: 1000px) {
+  .league-tab { padding: .32rem .48rem; font-size: .8rem; gap: .3rem; }
+  .topbar-inner { gap: .5rem; }
+}
+/* 940px altında altı lig yazılarıyla birlikte sığmıyor ve sonuncusu
+   kesiliyordu. Yalnızca logolar kalınca altısı da görünüyor; ad title
+   niteliğinde duruyor. */
+@media (max-width: 940px) {
+  .leagues .league-tab > span { display: none; }
+  .leagues .league-tab { padding: .34rem .45rem; }
+}
 
 .brand {
   display: flex; align-items: center; gap: .4rem;
@@ -1561,9 +1585,7 @@ body.cal-open .datestrip { z-index: 60; }
 @media (max-width: 620px) {
   #more-leagues { display: none; }
 }
-@media (max-width: 900px) {
-  .more-tab .more-label { display: none; }   /* dar alanda yalnızca ⋯ ve sayı */
-}
+
 
 
 /* ─── "Diğer ligler" paneli ───────────────────────────────────────────────
