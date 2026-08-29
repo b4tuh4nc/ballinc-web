@@ -234,8 +234,36 @@ def _write(path, payload) -> int:
     return len(text.encode("utf-8"))
 
 
+def _warn_if_stale(df) -> None:
+    """Bu export'un siteden silecegi maclari say ve soyle.
+
+    Export ne bulursa onu yayinliyor. Lokalde eski `data/raw/` ile calistirip
+    sonucu commit'lemek, o sirada bitmis maclari siteden TAMAMEN siliyor: mac
+    yaklasanlardan dusuyor (kick-off 3.5 saati gecmis) ama sonuclara da
+    girmiyor (ham veride skoru yok). Site canli skordan tamamlayamiyor cunku
+    mac artik hicbir listede degil.
+
+    Sureye bakmak yetmiyor -- 4.5 saatlik veri bile mac kaybettirebiliyor.
+    Dogrudan asil arizaya bakiliyor: baslamis ama sonucu olmayan mac var mi?
+    """
+    season = df[df["season"] == CURRENT_SEASON]
+    cutoff = (pd.Timestamp.utcnow().tz_localize(None)
+              - pd.Timedelta(hours=predict_mod.LIVE_WINDOW_HOURS))
+    orphan = season[(season["datetime"] < cutoff) & (~season["is_result"].astype(bool))]
+    if orphan.empty:
+        return
+    print(f"\n  ! {len(orphan)} mac baslamis ama sonucu ham veride yok. Bu export"
+          f" onlari\n    siteden tamamen siler (ne yaklasanlarda ne sonuclarda"
+          f" gorunurler).\n    Commit etmeden once `python -m pipeline.ingest`"
+          f" calistir ya da CI'ya birak.")
+    for row in orphan.head(5).itertuples(index=False):
+        print(f"      {row.datetime:%d.%m %H:%M}  {row.home_team} - {row.away_team}")
+    print()
+
+
 def main() -> int:
     df = predict_mod.load_features()
+    _warn_if_stale(df)
     model = GoalModel.load(MODELS_DIR)
 
     metrics_path = MODELS_DIR / "metrics.json"

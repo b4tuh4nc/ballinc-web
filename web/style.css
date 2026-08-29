@@ -1320,3 +1320,14 @@ body.cal-open .datestrip { z-index: 60; }
 @media (prefers-reduced-motion: reduce) {
   .toast { animation: none; }
 }
+
+
+/* ─── Takım sayfasında sonuçlar ───────────────────────────────────────────
+   Satırın sol kenarındaki renk, listeyi aşağı tararken hangi maçın
+   kazanıldığını tek bakışta gösteriyor; sağdaki G/B/M hapı da yazıyla
+   söylüyor. Kenar `box-shadow` ile çiziliyor, `border` ile değil: border
+   içeriği kaydırıp satırları hizasız bırakırdı. */
+
+.match[data-outcome="G"] { box-shadow: inset 3px 0 0 var(--accent); }
+.match[data-outcome="B"] { box-shadow: inset 3px 0 0 var(--draw-1x2); }
+.match[data-outcome="M"] { box-shadow: inset 3px 0 0 var(--away); }

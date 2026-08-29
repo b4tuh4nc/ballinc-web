@@ -144,10 +144,17 @@ function forecastChip(result) {
     ${PICK_LABEL[f.pick]} <b>%${pct(f.probs[f.pick])}</b></span>`;
 }
 
-function resultRow(result, index = 0) {
+/** `perspective` verilirse (takım sayfası) sonuç o takım açısından
+    G/B/M olarak işaretleniyor. Sadece skora bakıp kimin kazandığını çıkarmak,
+    takımın kâh ev kâh deplasman olduğu bir listede yorucu. */
+function resultRow(result, index = 0, perspective = null) {
   const [hg, ag] = result.score;
+  const mine = perspective === result.home.id ? [hg, ag]
+    : perspective === result.away.id ? [ag, hg] : null;
+  const outcome = !mine ? "" : mine[0] > mine[1] ? "G" : mine[0] === mine[1] ? "B" : "M";
+  const label = { G: "Galibiyet", B: "Beraberlik", M: "Mağlubiyet" }[outcome] ?? "";
   return `
-    <div class="match" style="--i:${index}">
+    <div class="match"${outcome ? ` data-outcome="${outcome}"` : ""} style="--i:${index}">
       <div class="match-time">${timeIn(result.kickoff)}</div>
       <div class="match-teams">
         <div class="team-line${hg < ag ? " dim" : ""}">
@@ -160,6 +167,7 @@ function resultRow(result, index = 0) {
         </div>
       </div>
       <div class="match-markets">
+        ${outcome ? `<span class="pill ${outcome}" title="${label}">${outcome}</span>` : ""}
         ${forecastChip(result)}
         ${result.xg ? `<span class="extra-chip">xG <b>${result.xg[0]} - ${result.xg[1]}</b></span>` : ""}
       </div>
@@ -951,7 +959,7 @@ async function viewTeam(id, tab) {
   const playedHTML = played.length
     ? groupByDay(played).reverse().map(([, day]) => `
         <div class="date-head">${esc(dayLabel(day[0].kickoff))}</div>
-        <div class="match-list">${day.map(resultRow).join("")}</div>`).join("")
+        <div class="match-list">${day.map((m, i) => resultRow(m, i, id)).join("")}</div>`).join("")
     : "";
 
   return `
