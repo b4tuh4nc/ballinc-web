@@ -1786,11 +1786,22 @@ async function paintNav() {
   // Üst çubukta yalnızca ana ligler. Yirmi yarışmayı buraya dizmek çubuğu
   // kullanılamaz hale getirirdi; Avrupa kupaları ve besleyici ligler menüde
   // ve lig filtresinde.
+  const others = meta.leagues.filter((l) => l.tier);
+  const otherActive = others.some((l) => l.code === active);
   el("league-nav").innerHTML = meta.leagues.filter((l) => !l.tier).map((l) => {
     const current = l.code === active ? ' aria-current="page"' : "";
     return `<a class="league-tab" href="#/lig/${encodeURIComponent(l.code)}"${current}>
       ${leagueLogo(l.code)}<span>${esc(l.name)}</span></a>`;
   }).join("");
+
+  // Avrupa kupaları ve besleyici ligler üst çubuğa sığmıyor; menüyü açan bir
+  // giriş, onlara ulaşmanın tek yolu şeridi kaydırmak olmasın diye.
+  el("more-leagues").innerHTML = others.length
+    ? `<button class="league-tab more-tab" type="button" data-open-drawer
+               aria-controls="drawer"${otherActive ? ' aria-current="page"' : ""}>
+         <span class="more-dots" aria-hidden="true">⋯</span>
+         <span class="more-label">Diğer ligler</span><b>${others.length}</b></button>`
+    : "";
 
   const onHome = !parts.length;
   const homeItem = `<a class="drawer-item"${onHome ? ' aria-current="page"' : ""} href="#/">
@@ -2444,6 +2455,11 @@ function setDrawer(open) {
 }
 
 el("menu-btn").addEventListener("click", () => setDrawer(el("drawer").hidden));
+// Üst çubuktaki "Diğer ligler" de aynı menüyü açıyor; nav her gezinmede
+// yeniden çiziliyor, o yüzden dinleyici düğmeye değil belgeye bağlı.
+document.addEventListener("click", (e) => {
+  if (e.target.closest("[data-open-drawer]")) setDrawer(true);
+});
 el("drawer-close").addEventListener("click", () => setDrawer(false));
 el("scrim").addEventListener("click", () => setDrawer(false));
 el("drawer").addEventListener("click", (e) => {

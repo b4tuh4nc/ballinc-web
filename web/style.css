@@ -877,7 +877,8 @@ td.pts { font-weight: 700; }
    gelen tarih şeridinin altında kalıyordu. Yükseltme yalnızca panel açıkken
    uygulanıyor: kalıcı olsaydı mobilde takvim modalının bulanık katmanının
    üstünde kalır, başlık ve filtre düğmesi net görünürdü. */
-.page-head.filter-open { position: relative; z-index: 50; }
+/* Filtre artık modal; başlığı yukarı taşıyan z-index hilesi kaldırıldı —
+   o hile başlığın üst çubukla üst üste binmesine yol açıyordu. */
 
 .filter-btn {
   display: inline-flex; align-items: center; gap: .4rem;
@@ -894,12 +895,20 @@ td.pts { font-weight: 700; }
 }
 .filter-btn .f-icon { font-size: .9rem; }
 
+/* Filtre her genişlikte ekranın ortasında, arkası bulanık. Önceden
+   masaüstünde başlığın altına açılan bir kutuydu; sayfa başlığını üst
+   çubuğun üstüne çıkarmak için z-index hilesi gerekiyordu ve o hile
+   başlığın çubukla üst üste binmesine yol açıyordu. Modal olunca hem sorun
+   ortadan kalkıyor hem de yirmi yarışmalık ızgaraya yer açılıyor. */
 .filter-panel {
-  position: absolute; top: calc(100% + .4rem); left: 0; z-index: 46;
-  width: 15.5rem; padding: .4rem;
+  position: fixed; inset: 0; margin: auto; z-index: 60;
+  width: min(26rem, calc(100vw - 2rem));
+  height: max-content; max-height: min(80vh, 40rem);
+  overflow-y: auto;
+  padding: .7rem;
   background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, .18), var(--shadow);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .32), var(--shadow);
 }
 
 .filter-row {
@@ -1122,10 +1131,14 @@ td.pts { font-weight: 700; }
 
 /* ─── Mobilde lig filtresi: ortada, arkası bulanık ────────────────────── */
 
-.filter-scrim { display: none; }
+.filter-scrim {
+  position: fixed; inset: 0; z-index: 55;
+  background: rgba(0, 0, 0, .45);
+  backdrop-filter: blur(4px);
+}
 
 .filter-head {
-  display: none;
+  display: flex;
   align-items: center; justify-content: space-between;
   padding: .2rem .3rem .6rem;
   margin-bottom: .3rem;
@@ -1133,26 +1146,7 @@ td.pts { font-weight: 700; }
   font-size: .9rem; font-weight: 680;
 }
 
-@media (max-width: 620px) {
-  .filter-scrim {
-    display: block;
-    position: fixed; inset: 0; z-index: 55;
-    background: rgba(0, 0, 0, .45);
-    backdrop-filter: blur(4px);
-  }
-  .filter-head { display: flex; }
-
-  .filter-wrap .filter-panel {
-    position: fixed; inset: 0; margin: auto;
-    width: min(20rem, calc(100vw - 2rem)); height: max-content;
-    max-height: calc(100vh - 3rem); overflow-y: auto;
-    z-index: 60;
-    padding: .7rem;
-    transform-origin: center;
-  }
-  .filter-row { padding: .65rem .55rem; font-size: .9rem; }
-  body.filter-open { overflow: hidden; }
-}
+body.filter-open { overflow: hidden; }
 
 @media (prefers-reduced-motion: no-preference) {
   .filter-scrim { animation: fade .2s ease both; }
@@ -1536,10 +1530,37 @@ body.cal-open .datestrip { z-index: 60; }
 
 /* Izgara için panel genişletildi: 15.5rem'de tek sütun kalıyordu.
    Dar ekranda ekrana sığacak kadar daralıyor. */
-.filter-panel {
-  width: min(26rem, calc(100vw - 2rem));
-  max-height: min(80vh, 40rem);
-  overflow-y: auto;
-}
 .filter-grid { padding-left: .5rem; padding-right: .5rem; }
 .drawer-group, .filter-group { padding-left: .5rem; padding-right: .5rem; }
+
+
+/* ─── Üst çubukta "Diğer ligler" ──────────────────────────────────────────
+   Altı ana lig dışındaki on dört yarışmaya üst çubuktan ulaşmanın yolu
+   yoktu; menüyü açıyor. */
+
+.more-tab { border: 0; font: inherit; cursor: pointer; }
+.more-tab .more-dots { font-size: 1rem; line-height: 1; letter-spacing: .06em; }
+.more-tab b {
+  font-size: .68rem; font-weight: 700;
+  padding: .05rem .3rem; border-radius: 999px;
+  background: var(--surface-3); color: var(--text-muted);
+}
+.more-tab:hover b { background: var(--surface-2); }
+
+
+/* "Diğer ligler" şeridin dışında ve sağa sabit; şerit kaydığında da
+   görünür kalıyor. Dar ekranda yerini hamburger menü alıyor. */
+#more-leagues { flex: none; display: flex; margin-left: .35rem; }
+
+/* Şerit kaydırılabilir; sağ kenardaki solma bunu belli ediyor. Olmayınca
+   son lig "Diğer ligler"in altında yarıda kesiliyormuş gibi duruyordu. */
+.leagues {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 1.6rem), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 1.6rem), transparent);
+}
+@media (max-width: 620px) {
+  #more-leagues { display: none; }
+}
+@media (max-width: 900px) {
+  .more-tab .more-label { display: none; }   /* dar alanda yalnızca ⋯ ve sayı */
+}
