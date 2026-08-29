@@ -1347,3 +1347,104 @@ body.cal-open .datestrip { z-index: 60; }
   border-color: color-mix(in srgb, var(--draw-1x2) 40%, transparent);
   letter-spacing: .03em;
 }
+
+
+/* ─── Maç akışı ───────────────────────────────────────────────────────────
+   Dakikalar ortada bir sütunda, ev sahibi olayları solda, deplasman sağda.
+   Hangi tarafın olayı olduğu konumdan anlaşıldığı için ayrıca yazmıyoruz. */
+
+.timeline { display: flex; flex-direction: column; }
+
+.tl-row {
+  display: grid;
+  grid-template-columns: 1fr 3.2rem 1fr;
+  align-items: center;
+  gap: .4rem;
+  padding: .3rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+}
+.tl-row:last-child { border-bottom: 0; }
+
+.tl-min {
+  text-align: center; font-size: .74rem; font-weight: 650;
+  color: var(--text-muted); font-variant-numeric: tabular-nums;
+}
+.tl-side { display: flex; align-items: center; gap: .4rem; min-width: 0; font-size: .82rem; }
+.tl-side.left { justify-content: flex-end; text-align: right; }
+.tl-side.right { justify-content: flex-start; }
+
+.tl-name { min-width: 0; overflow-wrap: anywhere; }
+.tl-name .in { font-style: normal; color: var(--accent); }
+.tl-name .out { font-style: normal; color: var(--text-muted); }
+.tl-name .in::before { content: "↑ "; }
+.tl-name .out::before { content: " ↓ "; }
+
+.tl-ico { flex: none; font-size: .9rem; }
+.tl-ico.sub { color: var(--text-muted); font-size: .8rem; }
+.tl-score {
+  flex: none; font-size: .74rem; font-variant-numeric: tabular-nums;
+  padding: .05rem .3rem; border-radius: 4px;
+  background: var(--surface-2); color: var(--text);
+}
+.tl-var {
+  flex: none; font-size: .6rem; font-weight: 700; letter-spacing: .06em;
+  padding: .1rem .3rem; border-radius: 4px;
+  border: 1px solid var(--border); color: var(--text-muted);
+}
+
+.tl-card { flex: none; width: 9px; height: 13px; border-radius: 2px; }
+.tl-card.sari { background: var(--draw-1x2); }
+.tl-card.kirmizi { background: var(--away); }
+/* İkinci sarıdan kırmızı: iki rengi birden taşıyor. */
+.tl-card.ikinci {
+  background: linear-gradient(135deg, var(--draw-1x2) 0 50%, var(--away) 50% 100%);
+}
+
+.tl-band {
+  margin: .35rem 0; padding: .3rem .5rem; border-radius: 6px;
+  background: var(--surface-2); text-align: center;
+  font-size: .74rem; font-weight: 650; letter-spacing: .04em;
+}
+.tl-band.soft { background: transparent; color: var(--text-muted); font-weight: 500; }
+
+/* ─── Maç istatistikleri ─────────────────────────────────────────────────── */
+
+.stat-row { margin-bottom: .7rem; }
+.stat-row:last-child { margin-bottom: 0; }
+.stat-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: .5rem; font-size: .78rem;
+}
+.stat-head span { color: var(--text-muted); font-size: .74rem; text-align: center; }
+.stat-head b { font-variant-numeric: tabular-nums; }
+.stat-bar {
+  margin-top: .22rem; height: 5px; border-radius: 3px;
+  background: var(--away); overflow: hidden;
+}
+.stat-bar i { display: block; height: 100%; background: var(--home); }
+
+/* ─── Oynanmış maç sayfası ───────────────────────────────────────────────── */
+
+.hero-score.final { font-variant-numeric: tabular-nums; }
+
+.verdict { display: flex; align-items: flex-start; gap: .7rem; }
+.verdict .mark {
+  flex: none; display: grid; place-items: center;
+  width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  font-size: .9rem; font-weight: 700;
+}
+.verdict.hit .mark { background: var(--accent-soft); color: var(--accent); }
+.verdict.miss .mark {
+  background: color-mix(in srgb, var(--away) 16%, transparent); color: var(--away);
+}
+.verdict-all { display: flex; gap: .4rem; margin-top: .35rem; }
+.verdict-all span {
+  font-size: .72rem; padding: .1rem .38rem; border-radius: 5px;
+  background: var(--surface-2); color: var(--text-muted);
+}
+.verdict-all .pick { background: var(--accent-soft); color: var(--accent); font-weight: 650; }
+
+@media (max-width: 560px) {
+  .tl-row { grid-template-columns: 1fr 2.6rem 1fr; }
+  .tl-side { font-size: .76rem; }
+}

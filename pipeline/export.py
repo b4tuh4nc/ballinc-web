@@ -307,6 +307,12 @@ def main() -> int:
         season_df = df[(df["league"] == code) & (df["season"] == CURRENT_SEASON)]
         matches = by_league.get(code, [])
 
+        # Oynanmış maçlara da FotMob takım kimliği: maç sayfasındaki olay
+        # akışı bitmiş maçlarda da gösteriliyor ve proxy maçı tarih + takım
+        # kimliğiyle buluyor (FotMob maç kimliği elimizde yok).
+        results = build_results(season_df, _past_predictions(season_df, model))
+        attach_fotmob_ids(results)      # yerinde ekliyor
+
         payload = {
             "league": code,
             "name": cfg["name"],
@@ -317,7 +323,7 @@ def main() -> int:
             # kalitesi hakkında varsayım yapmak yerine rakamı gösteriyoruz.
             "metrics": league_metrics.get(code, {}),
             "matches": matches,
-            "results": build_results(season_df, _past_predictions(season_df, model)),
+            "results": results,
             "standings": build_standings(season_df),
         }
         size = _write(WEB_DATA_DIR / f"{code}.json", payload)

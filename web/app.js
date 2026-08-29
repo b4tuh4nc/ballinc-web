@@ -169,7 +169,8 @@ function resultRow(result, index = 0, perspective = null) {
   const outcome = !mine ? "" : mine[0] > mine[1] ? "G" : mine[0] === mine[1] ? "B" : "M";
   const label = { G: "Galibiyet", B: "Beraberlik", M: "Mağlubiyet" }[outcome] ?? "";
   return `
-    <div class="match"${outcome ? ` data-outcome="${outcome}"` : ""} style="--i:${index}">
+    <a class="match"${outcome ? ` data-outcome="${outcome}"` : ""} style="--i:${index}"
+       href="#/mac/${encodeURIComponent(result.id)}">
       <div class="match-time">${timeIn(result.kickoff)}</div>
       <div class="match-teams">
         <div class="team-line${hg < ag ? " dim" : ""}">
@@ -186,8 +187,8 @@ function resultRow(result, index = 0, perspective = null) {
         ${forecastChip(result)}
         ${result.xg ? `<span class="extra-chip">xG <b>${result.xg[0]} - ${result.xg[1]}</b></span>` : ""}
       </div>
-      <div class="chev"></div>
-    </div>`;
+      <div class="chev" aria-hidden="true">›</div>
+    </a>`;
 }
 
 function groupByDay(matches) {
@@ -765,6 +766,168 @@ function marketHTML(match) {
   </section>`;
 }
 
+/* ─── Maç akışı ve istatistikler ─────────────────────────────────────────
+   Hem canlı hem oynanmış maçlarda gösteriliyor. Veri worker'dan geliyor:
+   canlı maçta FotMob maç kimliği elimizde (canlı listeden), oynanmışta yok --
+   o yüzden worker maçı tarih + takım kimliğiyle de bulabiliyor.
+
+   Sayfa bu çağrıyı BEKLEMİYOR: önce boş bir yer tutucu basılıyor, veri
+   gelince dolduruluyor. Aksi halde proxy yavaşken maç sayfası hiç açılmıyordu. */
+
+function detailSlot(match) {
+  const live = liveData.get(liveKey(match) ?? "");
+  const query = live?.matchId
+    ? `matchId=${encodeURIComponent(live.matchId)}`
+    : (match.home?.fm && match.away?.fm)
+      ? `date=${fotmobDay(match.kickoff)}&home=${encodeURIComponent(match.home.fm)}`
+        + `&away=${encodeURIComponent(match.away.fm)}`
+      : null;
+  if (!query || !goalProxy) return "";
+  return `<div id="match-detail" data-query="${esc(query)}"></div>`;
+}
+
+/** Dakikalar ortada, ev sahibi olayları solda, deplasman sağda. Hangi tarafın
+    olayı olduğu satırın hangi yanında durduğundan anlaşılıyor. */
+function timelineHTML(timeline) {
+  if (!timeline?.length) return "";
+  const rows = timeline.map((e) => {
+    if (e.t === "devre") {
+      const label = e.label === "HT" ? "İY" : e.label === "FT" ? "MS" : esc(e.label);
+      return `<div class="tl-band">${label} ${e.score[0]} - ${e.score[1]}</div>`;
+    }
+    if (e.t === "uzatma") {
+      return e.mins ? `<div class="tl-band soft">+${e.mins} dakika uzatma</div>` : "";
+    }
+    const body = eventBody(e);
+    if (!body) return "";
+    const minute = e.add ? `${e.m}+${e.add}'` : `${e.m}'`;
+    return `<div class="tl-row">
+      <div class="tl-side left">${e.home ? body : ""}</div>
+      <div class="tl-min">${minute}</div>
+      <div class="tl-side right">${e.home ? "" : body}</div>
+    </div>`;
+  });
+  return `<section class="card">
+    <h2>Maç akışı</h2>
+    <div class="timeline">${rows.join("")}</div>
+  </section>`;
+}
+
+function eventBody(e) {
+  if (e.t === "gol") {
+    const marks = `${e.pen ? " (P)" : ""}${e.own ? " (KK)" : ""}`;
+    const score = e.score ? `<b class="tl-score">${e.score[0]} - ${e.score[1]}</b>` : "";
+    return `<span class="tl-ico" aria-hidden="true">⚽</span>`
+      + `<span class="tl-name">${esc(e.name)}${marks}</span>${score}`;
+  }
+  if (e.t === "kart") {
+    const title = e.card === "ikinci" ? "İkinci sarıdan kırmızı"
+      : e.card === "kirmizi" ? "Kırmızı kart" : "Sarı kart";
+    return `<span class="tl-card ${e.card}" title="${title}"></span>`
+      + `<span class="tl-name">${esc(e.name)}</span>`;
+  }
+  if (e.t === "degisiklik") {
+    // Okların kendisi zaten değişikliği anlatıyor; ayrıca simge koymak
+    // satırı gereksiz kalabalıklaştırıyordu.
+    return `<span class="tl-name"><i class="in">${esc(e.in)}</i>`
+      + `<i class="out">${esc(e.out)}</i></span>`;
+  }
+  if (e.t === "var") {
+    return `<span class="tl-var">VAR</span><span class="tl-name">${esc(e.name)}</span>`;
+  }
+  return "";
+}
+
+/** Çubuk, iki takımın payını gösteriyor. Sayısal olmayan değerlerde
+    ("562 (89%)") baştaki sayı alınıyor; alınamazsa çubuk çizilmiyor. */
+function statsHTML(stats) {
+  if (!stats?.length) return "";
+  const rows = stats.map((s) => {
+    const h = Number.parseFloat(s.home), a = Number.parseFloat(s.away);
+    const total = (Number.isFinite(h) ? h : 0) + (Number.isFinite(a) ? a : 0);
+    const share = Number.isFinite(h) && Number.isFinite(a) && total > 0
+      ? (h / total) * 100 : null;
+    return `<div class="stat-row">
+      <div class="stat-head"><b>${esc(s.home)}</b>
+        <span>${esc(s.label)}</span><b>${esc(s.away)}</b></div>
+      ${share === null ? "" : `<div class="stat-bar"><i style="width:${share.toFixed(1)}%"></i></div>`}
+    </div>`;
+  });
+  return `<section class="card"><h2>İstatistikler</h2>${rows.join("")}</section>`;
+}
+
+let detailBusy = "";
+
+async function fillMatchDetail() {
+  const slot = document.getElementById("match-detail");
+  if (!slot || !goalProxy) return;
+  const query = slot.dataset.query;
+  if (detailBusy === query && slot.innerHTML) return;
+  detailBusy = query;
+  try {
+    const response = await fetch(`${goalProxy}?${query}`, { cache: "no-store" });
+    if (!response.ok) return;
+    const payload = await response.json();
+    // Sayfa bu arada değişmiş olabilir.
+    const still = document.getElementById("match-detail");
+    if (!still || still.dataset.query !== query) return;
+    still.innerHTML = timelineHTML(payload.timeline) + statsHTML(payload.stats);
+  } catch { /* akış gösterilemezse sayfanın geri kalanı çalışmaya devam eder */ }
+}
+
+/** Oynanmış maçın sayfası: skor, maç öncesi tahminin tutup tutmadığı,
+    maç akışı ve istatistikler. Tahmin sayfasından ayrı çünkü gösterilecek
+    şey farklı — olasılıklar artık bir öngörü değil, bir kayıt. */
+function viewResult(result, data, meta) {
+  const [hg, ag] = result.score;
+  const f = result.forecast;
+  const week = result.round ? ` · ${result.round}. Hafta` : "";
+
+  const verdict = !f ? "" : `
+    <section class="card">
+      <h2>Model ne demişti?</h2>
+      <div class="verdict ${f.hit ? "hit" : "miss"}">
+        <span class="mark">${f.hit ? "✓" : "✗"}</span>
+        <div>
+          <b>${["Ev sahibi kazanır", "Beraberlik", "Deplasman kazanır"][f.pick]}</b>
+          <span class="muted"> · %${pct(f.probs[f.pick])} ihtimal veriyordu</span>
+          <div class="verdict-all">
+            ${["1", "X", "2"].map((label, i) =>
+              `<span class="${i === f.pick ? "pick" : ""}">${label} %${pct(f.probs[i])}</span>`
+            ).join("")}
+          </div>
+        </div>
+      </div>
+      <p class="note">Bu olasılıklar maç oynanmadan önce hesaplandı ve
+        değiştirilemez şekilde kaydedildi.
+        <a href="#/model">Modelin genel isabeti</a></p>
+    </section>`;
+
+  return `
+    ${backLink(data)}
+
+    <div class="match-hero">
+      <div class="hero-names">
+        <div class="hero-team">
+          ${crest(result.home.id, "lg")}
+          <strong><span class="team-name" data-team="${esc(result.home.id)}">${esc(result.home.name)}</span></strong>
+        </div>
+        <div class="hero-mid">
+          <strong class="hero-score final">${hg}<span class="dash">–</span>${ag}</strong>
+          ${esc(dayLabel(result.kickoff))}${week}
+          ${result.xg ? `<span class="muted">xG ${result.xg[0]} - ${result.xg[1]}</span>` : ""}
+        </div>
+        <div class="hero-team">
+          ${crest(result.away.id, "lg")}
+          <strong><span class="team-name" data-team="${esc(result.away.id)}">${esc(result.away.name)}</span></strong>
+        </div>
+      </div>
+    </div>
+
+    ${detailSlot(result)}
+    ${verdict}`;
+}
+
 async function viewMatch(id) {
   const meta = await getJSON("meta.json");
   let match = null, data = null;
@@ -775,8 +938,15 @@ async function viewMatch(id) {
     if (found) { match = found; data = candidate; break; }
   }
   if (!match) {
+    // Oynanmış maçlar tahmin listesinden düşüyor ama sonuçlarda duruyor;
+    // maç akışı ve istatistikler orada da gösteriliyor.
+    for (const league of meta.leagues) {
+      const candidate = await getJSON(`${league.code}.json`);
+      const found = (candidate.results ?? []).find((m) => m.id === id);
+      if (found) return viewResult(found, candidate, meta);
+    }
     return `<a class="back" href="#/"><span class="arrow">←</span>Maçlar</a>
-      <div class="empty">Bu maç artık tahmin listesinde değil. Oynanmış olabilir.</div>`;
+      <div class="empty">Bu maç bulunamadı.</div>`;
   }
 
   const standing = Object.fromEntries(data.standings.map((r) => [r.team_id, r]));
@@ -864,6 +1034,8 @@ async function viewMatch(id) {
           <b>${s.home} - ${s.away}</b><span>%${(s.prob * 100).toFixed(1)}</span></div>`).join("")}
       </div>
     </section>
+
+    ${detailSlot(match)}
 
     ${marketHTML(match)}
 
@@ -1231,6 +1403,7 @@ async function route() {
     // biten maçlarla tamamlanıyor, orada canlı satır olmasa bile.
     applyLive();
     startLive();
+    fillMatchDetail();
     // Gerçek gezinmede sayfa başına dön. Gün/hafta seçimi gibi yerinde
     // durum değişikliklerinde kaydırma korunuyor, yoksa listede aşağıdayken
     // gün değiştirmek kullanıcıyı yukarı fırlatırdı.
