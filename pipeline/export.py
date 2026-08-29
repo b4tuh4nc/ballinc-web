@@ -176,10 +176,8 @@ def build_teams(df) -> list[dict]:
     # FotMob'un yerel yazımı arama takma adı olarak ekleniyor: bizim kanonik
     # adımız Understat'tan geliyor ("Bayern Munich") ama kullanıcı yerel
     # yazımı arayabilir ("Bayern München").
-    aliases = {
-        us_id: entry["fotmob_name"]
-        for us_id, entry in crosswalk.load().items()
-    }
+    entries = crosswalk.load()
+    aliases = {us_id: e["fotmob_name"] for us_id, e in entries.items()}
 
     teams: dict[str, dict] = {}
     for row in season.itertuples(index=False):
@@ -193,6 +191,12 @@ def build_teams(df) -> list[dict]:
             alias = aliases.get(team_id)
             if alias and alias != name:
                 entry["alt"] = alias
+            # FotMob kimligi: canli veri isimle degil kimlikle geliyor, favori
+            # takimin bildirimi de bu esleme uzerinden bulunuyor.
+            fm = (str(team_id).removeprefix("fm") if str(team_id).startswith("fm")
+                  else (entries.get(team_id) or {}).get("fotmob_id"))
+            if fm:
+                entry["fm"] = str(fm)
             teams[team_id] = entry
     return sorted(teams.values(), key=lambda t: t["name"])
 

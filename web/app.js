@@ -479,52 +479,110 @@ function forecastFor(match, state) {
   return { probs, pick, hit: pick === outcome };
 }
 
-/** Puan durumuna, statik veriye girmemiş biten maçları uygular. */
+/** Şu anda oynanan maçlar. Puan durumuna geçici olarak işleniyor: tablo,
+    skorlar o an geçerliymiş gibi sıralanıyor. Hangi satırın canlı olduğunu
+    skor rozeti, sıralamanın nasıl değiştiğini ok gösteriyor. */
+function ongoingMatches(data) {
+  const out = [];
+  for (const m of data.matches ?? []) {
+    const state = liveData.get(liveKey(m) ?? "");
+    if (!state?.ongoing || state.home == null || state.away == null) continue;
+    out.push({ home: m.home, away: m.away, score: [state.home, state.away] });
+  }
+  return out;
+}
+
+/** Puan durumuna, statik veriye girmemiş biten maçları ve devam eden
+    maçların anlık skorlarını uygular. */
 function standingsWithFresh(data) {
   const fresh = freshResults(data);
-  if (!fresh.length) return { rows: data.standings, added: 0 };
+  const ongoing = ongoingMatches(data);
+  if (!fresh.length && !ongoing.length) {
+    return { rows: data.standings, added: 0, live: new Map(), ongoing: 0 };
+  }
 
-  const rows = new Map(data.standings.map((r) => [r.team_id, { ...r, form: [...r.form] }]));
   const blank = (team) => ({
     team_id: team.id, team: team.name, short: team.short ?? null,
     played: 0, w: 0, d: 0, l: 0, gf: 0, ga: 0, gd: 0, points: 0,
     xgf: null, xga: null, form: [],
   });
 
-  for (const match of fresh) {
-    const [hg, ag] = match.score;
-    for (const [team, own, other] of [[match.home, hg, ag], [match.away, ag, hg]]) {
-      if (!rows.has(team.id)) rows.set(team.id, blank(team));
-      const row = rows.get(team.id);
-      row.played += 1;
-      row.gf += own;
-      row.ga += other;
-      row.gd = row.gf - row.ga;
-      if (own > other) { row.w += 1; row.points += 3; row.form.push("G"); }
-      else if (own === other) { row.d += 1; row.points += 1; row.form.push("B"); }
-      else { row.l += 1; row.form.push("M"); }
-      row.form = row.form.slice(-5);
+  const build = (matches) => {
+    const rows = new Map(data.standings.map((r) => [r.team_id, { ...r, form: [...r.form] }]));
+    for (const match of matches) {
+      const [hg, ag] = match.score;
+      for (const [team, own, other] of [[match.home, hg, ag], [match.away, ag, hg]]) {
+        if (!rows.has(team.id)) rows.set(team.id, blank(team));
+        const row = rows.get(team.id);
+        row.played += 1;
+        row.gf += own;
+        row.ga += other;
+        row.gd = row.gf - row.ga;
+        if (own > other) { row.w += 1; row.points += 3; row.form.push("G"); }
+        else if (own === other) { row.d += 1; row.points += 1; row.form.push("B"); }
+        else { row.l += 1; row.form.push("M"); }
+        row.form = row.form.slice(-5);
+      }
     }
-  }
+    const table = [...rows.values()]
+      .sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
+    table.forEach((row, i) => { row.rank = i + 1; });
+    return table;
+  };
 
-  const table = [...rows.values()]
-    .sort((a, b) => b.points - a.points || b.gd - a.gd || b.gf - a.gf);
-  table.forEach((row, i) => { row.rank = i + 1; });
-  return { rows: table, added: fresh.length };
+  const table = build([...fresh, ...ongoing]);
+  // Ok, YALNIZCA devam eden maçların yol açtığı hareketi gösteriyor: karşılaştırma
+  // canlı maçlar uygulanmamış tabloya karşı yapılıyor.
+  const before = new Map(build(fresh).map((r) => [r.team_id, r.rank]));
+
+  // Rozet gerçek maç skorunu (ev - deplasman) gösteriyor, rengi ise takımın
+  // kendi durumundan alıyor: aynı maçtaki iki takımda yazı aynı, renk farklı.
+  const live = new Map();
+  for (const m of ongoing) {
+    const [hg, ag] = m.score;
+    live.set(m.home.id, { score: `${hg} - ${ag}`, own: hg, other: ag });
+    live.set(m.away.id, { score: `${hg} - ${ag}`, own: ag, other: hg });
+  }
+  for (const row of table) {
+    const info = live.get(row.team_id);
+    if (info) info.move = (before.get(row.team_id) ?? row.rank) - row.rank;
+  }
+  return { rows: table, added: fresh.length, live, ongoing: ongoing.length };
 }
 
 function standingsHTML(data, highlight = null) {
-  const { rows: table, added } = standingsWithFresh(data);
+  const { rows: table, added, live, ongoing } = standingsWithFresh(data);
   if (!table.length) return `<div class="empty">Bu sezon henüz maç oynanmadı.</div>`;
   const hasXG = table.some((r) => r.xgf !== null);
-  const note = added
+  const notes = [];
+  if (ongoing) {
+    notes.push(`${ongoing} maç şu anda oynanıyor; tablo anlık skorlara göre
+                sıralandı, oklar bu maçların yol açtığı hareketi gösteriyor.`);
+  }
+  if (added) {
+    notes.push(`${added} yeni biten maç canlı skorlardan eklendi; xG değerleri
+                bir sonraki güncellemede gelecek.`);
+  }
+  const note = notes.length
     ? `<p class="muted" style="margin:.6rem 0 0;font-size:.78rem">
-         ${added} yeni biten maç canlı skorlardan eklendi; xG değerleri bir
-         sonraki güncellemede gelecek.</p>` : "";
+         ${notes.join(" ")}</p>` : "";
+
+  const badge = (info) => {
+    if (!info) return "";
+    const cls = info.own > info.other ? "win"
+      : info.own === info.other ? "draw" : "loss";
+    return `<span class="live-score ${cls}">${info.score}</span>`;
+  };
+  const arrow = (info) => {
+    if (!info?.move) return "";
+    const up = info.move > 0;
+    return `<span class="rank-move ${up ? "up" : "down"}" title="${Math.abs(info.move)} sıra ${up ? "yükseldi" : "geriledi"}">${up ? "▲" : "▼"}</span>`;
+  };
+
   const rows = table.map((r) => `
     <tr${r.team_id === highlight ? ' class="me"' : ""}>
-      <td class="rank">${r.rank}</td>
-      <td><span class="team-cell" data-team="${esc(r.team_id)}">${crest(r.team_id)}${esc(r.team)}</span></td>
+      <td class="rank">${r.rank}${arrow(live.get(r.team_id))}</td>
+      <td><div class="stand-team"><span class="team-cell" data-team="${esc(r.team_id)}">${crest(r.team_id)}${esc(r.team)}</span>${badge(live.get(r.team_id))}</div></td>
       <td>${r.played}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
       <td>${r.gf}:${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td>
       ${hasXG ? `<td>${r.xgf ?? "—"}</td><td>${r.xga ?? "—"}</td>` : ""}
@@ -1379,12 +1437,19 @@ const FLASH_TEXT = {
   kirmizi: '<b class="rc"></b>KIRMIZI',
 };
 
+const previousFinished = new Map();
+
 function detectEvents() {
   const events = [];
   for (const [key, state] of liveData) {
     const home = state.home ?? 0, away = state.away ?? 0;
     const now = `${home}-${away}`;
     const before = previousScores.get(key);
+    // Maç sonu bildirim üretiyor ama bant üretmiyor: FLASH_TEXT'te karşılığı yok.
+    if (!firstLivePass && previousFinished.get(key) === false && state.finished) {
+      events.push({ key, kind: "bitti" });
+    }
+    previousFinished.set(key, !!state.finished);
     if (!firstLivePass && before !== undefined && before !== now) {
       // Hangi tarafın attığı skor farkından belli oluyor, ayrı bir veriye
       // gerek yok.
@@ -1530,8 +1595,12 @@ async function paintGoals() {
     const nowCards = `${homeCards.length}-${awayCards.length}`;
     if (seenCards !== undefined && seenCards !== nowCards) {
       const [ph, pa] = seenCards.split("-").map(Number);
-      if (homeCards.length > ph) flashEvent(key, { kind: "kirmizi", side: "home" });
-      else if (awayCards.length > pa) flashEvent(key, { kind: "kirmizi", side: "away" });
+      const side = homeCards.length > ph ? "home"
+        : awayCards.length > pa ? "away" : null;
+      if (side) {
+        flashEvent(key, { kind: "kirmizi", side });
+        notifyEvents([{ key, kind: "kirmizi", side }]);
+      }
     }
     previousCards.set(key, nowCards);
   }
@@ -1582,6 +1651,9 @@ async function fetchLive() {
         matchId: match.id,
         home: match.home?.score,
         away: match.away?.score,
+        // Bildirim metni icin: sayfada olmayan bir mac icin de ad gerekiyor.
+        homeName: match.home?.name,
+        awayName: match.away?.name,
         // FotMob dakikayı görünmez yön işaretleri ve kesme işaretiyle
         // gönderiyor ("92‎’‎"); ham sayıyı saklayıp biçimi biz veriyoruz.
         minute: (status.liveTime?.short ?? "")
@@ -1653,7 +1725,8 @@ async function refreshLive() {
     await fetchLive();
     const events = detectEvents();
     applyLive();
-    events.forEach((e) => flashEvent(e.key, e));
+    events.filter((e) => FLASH_TEXT[e.kind]).forEach((e) => flashEvent(e.key, e));
+    notifyEvents(events);
     await paintGoals();
     retimeLive();
 
@@ -1713,6 +1786,115 @@ function applyTheme(theme) {
     applyTheme(next);
   });
 })();
+
+// ─── Bildirimler ───────────────────────────────────────────────────────────
+
+/* Yalnızca favori takımların maçları için. Altı ligin bütün gollerini
+   bildirmek siteyi kullanılmaz yapardı; favori zaten "beni bu ilgilendiriyor"
+   demenin yolu.
+
+   Sunucu yok, dolayısıyla gerçek push da yok: bildirim ancak site bir sekmede
+   açıkken çıkıyor. Kapalıyken bildirim göndermek servis çalışanı ve push
+   sunucusu gerektirirdi — bu sitenin tamamen statik olması pahasına. */
+
+const NOTIFY_KEY = "ballinc-notify";
+
+function notifyOn() {
+  try { return localStorage.getItem(NOTIFY_KEY) === "1"; } catch { return false; }
+}
+
+function setNotifyOn(on) {
+  try { localStorage.setItem(NOTIFY_KEY, on ? "1" : "0"); } catch { /* özel pencere */ }
+  syncNotifyButton();
+}
+
+function syncNotifyButton() {
+  const btn = document.getElementById("notify-toggle");
+  if (!btn) return;
+  const on = notifyOn() && window.Notification?.permission === "granted";
+  btn.classList.toggle("on", on);
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  btn.setAttribute("title", on
+    ? "Favori takım bildirimleri açık"
+    : "Favori takım bildirimleri kapalı");
+}
+
+/** Kısa bilgi çubuğu. Bildirim izni gibi sessizce başarısız olabilen
+    işlemlerde kullanıcı ne olduğunu görebilmeli. */
+function toast(message) {
+  document.querySelector(".toast")?.remove();
+  const node = document.createElement("div");
+  node.className = "toast";
+  node.setAttribute("role", "status");
+  node.textContent = message;
+  document.body.appendChild(node);
+  setTimeout(() => node.remove(), 4200);
+}
+
+async function toggleNotify() {
+  if (!("Notification" in window)) {
+    toast("Tarayıcın bildirimleri desteklemiyor.");
+    return;
+  }
+  if (notifyOn()) { setNotifyOn(false); toast("Bildirimler kapatıldı."); return; }
+
+  let permission = Notification.permission;
+  // İzin isteği kullanıcı hareketi gerektiriyor; bu yüzden burada, tıklamada.
+  if (permission === "default") permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    toast("Bildirim izni verilmedi. Tarayıcı ayarlarından açabilirsin.");
+    syncNotifyButton();
+    return;
+  }
+  setNotifyOn(true);
+  const count = favourites().size;
+  toast(count
+    ? `Bildirimler açık · ${count} favori takım`
+    : "Bildirimler açık. Henüz favori takımın yok — aramadan yıldıza dokun.");
+}
+
+/** FotMob kimliği → bizim takım kimliğimiz. Canlı veri FotMob kimliğiyle
+    geliyor, favoriler bizim kimliğimizle saklanıyor. */
+let fmIndex = null;
+async function fmToTeam() {
+  if (fmIndex) return fmIndex;
+  fmIndex = new Map();
+  for (const t of await loadTeams()) if (t.fm) fmIndex.set(String(t.fm), t.id);
+  return fmIndex;
+}
+
+const NOTIFY_TEXT = {
+  gol: (h, a, hg, ag) => [`⚽ ${h} ${hg} - ${ag} ${a}`, "Gol!"],
+  iptal: (h, a, hg, ag) => [`${h} ${hg} - ${ag} ${a}`, "VAR: gol iptal edildi"],
+  kirmizi: (h, a, hg, ag) => [`${h} ${hg} - ${ag} ${a}`, "Kırmızı kart"],
+  bitti: (h, a, hg, ag) => [`Maç sonu · ${h} ${hg} - ${ag} ${a}`, ""],
+};
+
+async function notifyEvents(events) {
+  if (!events.length || !notifyOn()) return;
+  if (window.Notification?.permission !== "granted") return;
+
+  const favs = favourites();
+  if (!favs.size) return;
+  const index = await fmToTeam();
+
+  for (const event of events) {
+    const state = liveData.get(event.key);
+    if (!state) continue;
+    const mine = event.key.split("|").some((fm) => favs.has(index.get(fm)));
+    if (!mine) continue;
+
+    const build = NOTIFY_TEXT[event.kind];
+    if (!build) continue;
+    const [title, body] = build(state.homeName ?? "Ev", state.awayName ?? "Deplasman",
+                                state.home ?? 0, state.away ?? 0);
+    try {
+      // tag maç başına: aynı maçın yeni bildirimi eskisinin yerini alıyor,
+      // bildirim merkezi tek maçtan on tane bildirimle dolmuyor.
+      new Notification(title, { body, tag: event.key, icon: "assets/logo.png" });
+    } catch { /* bazı tarayıcılar yalnızca servis çalışanından izin veriyor */ }
+  }
+}
 
 // ─── Takım arama ve favoriler ──────────────────────────────────────────────
 
@@ -1801,6 +1983,8 @@ function setSearch(open) {
 }
 
 el("search-btn").addEventListener("click", () => setSearch(el("search").hidden));
+el("notify-toggle").addEventListener("click", toggleNotify);
+syncNotifyButton();
 el("search-close").addEventListener("click", () => setSearch(false));
 el("search-scrim").addEventListener("click", () => setSearch(false));
 el("search-input").addEventListener("input", (e) => renderSearch(e.target.value));

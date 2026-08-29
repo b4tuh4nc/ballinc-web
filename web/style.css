@@ -1275,3 +1275,48 @@ tbody tr.me td.rank, tbody tr.me .team-cell { color: var(--accent); }
 /* Takvim açıkken şerit geçici olarak üst barın üstüne çıkıyor: modal ve
    bulanık katman şeridin yığınlama bağlamında yaşıyor. */
 body.cal-open .datestrip { z-index: 60; }
+
+
+/* ─── Canlı puan durumu ───────────────────────────────────────────────────
+   Oynanan maçın skoru takımın yanında, o takım açısından renklendirilmiş:
+   önde yeşil, berabere sarı, geride kırmızı. Ok yalnızca canlı maçların yol
+   açtığı sıra hareketini gösteriyor. */
+
+.stand-team {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: .5rem;
+}
+.live-score {
+  flex: none;
+  font-size: .72rem; font-weight: 700;
+  padding: .1rem .4rem; border-radius: 5px;
+  color: #fff; white-space: nowrap;
+}
+.live-score.win { background: var(--accent); }
+.live-score.draw { background: var(--draw-1x2); color: #241a00; }
+.live-score.loss { background: var(--away); }
+
+.rank-move { margin-left: .3rem; font-size: .6rem; vertical-align: 1px; }
+.rank-move.up { color: var(--accent); }
+.rank-move.down { color: var(--away); }
+
+/* ─── Bildirim düğmesi ve bilgi çubuğu ───────────────────────────────────── */
+
+#notify-toggle.on { color: var(--accent); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 1.25rem; transform: translateX(-50%);
+  z-index: 200; max-width: min(30rem, calc(100vw - 2rem));
+  padding: .6rem .9rem; border-radius: 10px;
+  background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .28);
+  font-size: .85rem; line-height: 1.4; text-align: center;
+  animation: toastIn .25s ease both;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translate(-50%, .5rem); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .toast { animation: none; }
+}
