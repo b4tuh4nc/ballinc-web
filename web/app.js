@@ -162,16 +162,21 @@ function forecastChip(result) {
 /** `perspective` verilirse (takım sayfası) sonuç o takım açısından
     G/B/M olarak işaretleniyor. Sadece skora bakıp kimin kazandığını çıkarmak,
     takımın kâh ev kâh deplasman olduğu bir listede yorucu. */
-function resultRow(result, index = 0, perspective = null) {
+function resultRow(result, index = 0, perspective = null, done = false) {
   const [hg, ag] = result.score;
   const mine = perspective === result.home.id ? [hg, ag]
     : perspective === result.away.id ? [ag, hg] : null;
   const outcome = !mine ? "" : mine[0] > mine[1] ? "G" : mine[0] === mine[1] ? "B" : "M";
   const label = { G: "Galibiyet", B: "Beraberlik", M: "Mağlubiyet" }[outcome] ?? "";
   return `
-    <a class="match"${outcome ? ` data-outcome="${outcome}"` : ""} style="--i:${index}"
-       href="#/mac/${encodeURIComponent(result.id)}">
-      <div class="match-time">${timeIn(result.kickoff)}</div>
+    <a class="match${done ? " is-done" : ""}"${outcome ? ` data-outcome="${outcome}"` : ""}
+       style="--i:${index}" href="#/mac/${encodeURIComponent(result.id)}">
+      <div class="match-time">${done
+        // Gün listesinde oynanmamış maçlarla yan yana duruyorlar; başlama
+        // saati yerine durumu yazmak ayrımı netleştiriyor. Canlı veriyle
+        // güncellenen satırlar da aynı sözcüğü kullanıyor.
+        ? `<span class="clock">BİTTİ</span>`
+        : timeIn(result.kickoff)}</div>
       <div class="match-teams">
         <div class="team-line${hg < ag ? " dim" : ""}">
           ${crest(result.home.id)}<span class="team-name" data-team="${esc(result.home.id)}">${esc(result.home.name)}</span>
@@ -208,7 +213,7 @@ function groupByDay(matches) {
    elimizde; günün listesinde skoruyla duruyorlar. */
 
 /** Tahminli maç mı, oynanmış maç mı — ayrım skorun varlığından. */
-const dayRow = (m, i) => (m.score ? resultRow(m, i) : matchRow(m, i));
+const dayRow = (m, i) => (m.score ? resultRow(m, i, null, true) : matchRow(m, i));
 
 /** Verilen günlerde oynanmış maçlar; gün listesine karıştırılmak üzere. */
 function playedOn(data, days) {
