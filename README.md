@@ -78,6 +78,49 @@ Süper Lig'de xG verisi olmamasına rağmen model burada Premier Lig'den daha iy
 çalışıyor — Elo ve gol formu yeterli sinyali taşıyor. Sitedeki not bu yüzden
 "xG yok" der ama kalite iddiasında bulunmaz.
 
+## Denenip elenenler
+
+Hepsi aynı walk-forward ölçüsüyle test edildi. Buraya yazılmalarının sebebi,
+aynı fikirlerin tekrar denenmesini önlemek — hiçbiri modeli iyileştirmedi:
+
+| Fikir | Kazanç | Not |
+|---|---|---|
+| Sakatlık / eksik oyuncu | +%0.01 | 3.472 maç, 6 lig. Uzun süreli sakatlık zaten forma yansımış |
+| Motivasyon (küme/Avrupa hattı) | +%0.01 | Sezon sonu maçlarında da fark yok |
+| Head-to-head geçmişi | +%0.01 | Geçmişi bol eşleşmelerde bile (ort. 8.1 maç) |
+| Avrupa kupaları | −%0.04 | Yorgunluk maçlarında da −%0.10 |
+| Eski maçlara az ağırlık | negatif | 1/2/4 yıl yarı-ömür denendi |
+| Elo sezon devri ayarı | %0.00 | Mevcut 0.75 zaten en iyisi |
+| Maça göre Dixon-Coles rho | %0.00 | 2, 3, 4 kova denendi |
+| Beraberlik kalibrasyonu | +%0.02 | Sapmayı düzeltiyor ama tahmini değil |
+
+Avrupa kupalarının kötüleştirmesinin sebebi ölçüldü: kupa rakiplerinin
+%59'u bizim liglerimizde olmayan takımlar, Elo 1500'den başlıyorlar ve
+kendi takımlarımızın reytingine gürültü katıyorlar.
+
+Ortak sonuç: **maç sonucu geçmişindeki sinyal tükenmiş.** Elo, xG tabanlı
+hücum/savunma reytingi ve rolling form onu zaten çıkarıyor. Buradan sonrası
+için nitelik olarak farklı veri gerekiyor.
+
+## Modelin nerede kaybettiği
+
+Kayıp tek bir yerde yoğunlaşıyor — denk maçlarda:
+
+| Güç farkı (Elo) | Maç | Kazanç | İsabet |
+|---|---|---|---|
+| denk (0–40) | 2.504 | +%0.7 | %43.6 |
+| az fark (40–100) | 3.251 | +%2.8 | %47.0 |
+| belirgin (100–200) | 3.264 | +%10.6 | %57.4 |
+| büyük (200+) | 1.639 | +%24.5 | %70.8 |
+
+Bu bir hata değil sınır: denk maçlarda beraberliğin +2 puan eksik tahmin
+edildiğini bulup düzelttik, tahmin +%0.02 iyileşti. Yani o maçlar model
+yanıldığı için değil gerçekten belirsiz oldukları için zor.
+
+Site bu yüzden modelin cümlesini güvenine göre kuruyor: bilmediği yerde
+"açık maç" diyor ve söyleyebildiği en güvenilir şeyi ("favori kaybetmez")
+öne çıkarıyor. Eşikler `models/metrics.json` içinde ölçülüyor.
+
 ## Kurulum
 
 Biten sezonlar `data/archive/` altında repoda duruyor ve yeniden çekilmiyor;
