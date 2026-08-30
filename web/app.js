@@ -1349,6 +1349,67 @@ function fixtureRow(match, index = 0) {
 /** Tek takımın sayfası: yaklaşan maçları, sonuçları ve puan durumundaki yeri.
     Ek veri gerekmiyor — lig JSON'u zaten hepsini taşıyor, takıma göre
     süzüyoruz. */
+/** Takımın sezonu, yarışma yarışma.
+
+    Kupa ve lig maçları ayrı dosyalarda; takımın Avrupa maçlarını görmek için
+    bütün yarışmaların taranması gerekiyor. Dosyalar `getJSON` içinde
+    önbellekli, yani ilk gezinmeden sonra ek ağ trafiği yok.
+
+    Sıra: önce takımın kendi ligi, sonra Avrupa kupaları, sonra kalanlar --
+    kullanıcının aradığı şey neredeyse her zaman ilk ikisi. */
+async function teamSeason(id, meta, ownLeague) {
+  const involves = (m) => m.home?.id === id || m.away?.id === id;
+  const order = (l) => (l.code === ownLeague ? 0 : (l.tier ?? 0) === 1 ? 1 : 2);
+  const out = [];
+
+  for (const lg of [...meta.leagues].sort((a, b) => order(a) - order(b))) {
+    let data;
+    try {
+      data = await getJSON(`${lg.code}.json`);
+    } catch { continue; }
+
+    const played = [...freshResults(data), ...(data.results ?? [])].filter(involves);
+    const upcoming = (data.matches ?? []).filter(involves);
+    let rest = [];
+    if (upcoming.length || played.length) {
+      // Fikstür dosyası yalnızca takımın gerçekten oynadığı yarışmalar için
+      // isteniyor; yirmi dosyayı boşuna indirmemek için.
+      try {
+        const all = await getJSON(`${lg.code}-fixtures.json`);
+        const shown = new Set(upcoming.map((m) => m.id));
+        rest = (all.fixtures ?? []).filter((m) => involves(m) && !shown.has(m.id));
+      } catch { /* fikstür dosyası olmayabilir */ }
+    }
+    if (played.length || upcoming.length || rest.length) {
+      out.push({ code: lg.code, name: lg.name, played, upcoming, rest });
+    }
+  }
+  return out;
+}
+
+/** Yarışma başlığı + oynanmışlar + sezonun kalanı. */
+function competitionBlock(comp, id) {
+  const total = comp.played.length + comp.upcoming.length + comp.rest.length;
+  const head = `<a class="league-head" href="#/lig/${encodeURIComponent(comp.code)}">
+    ${leagueLogo(comp.code)}<span class="lh-name">${esc(comp.name)}</span>
+    <span class="lh-count">${total} maç</span>
+    <span class="chev" aria-hidden="true">›</span></a>`;
+
+  const playedRows = comp.played.length ? `
+    <div class="date-head">Oynanmış maçlar · ${comp.played.length}</div>
+    <div class="match-list">${comp.played
+      .map((m, i) => resultRow(m, i, id)).join("")}</div>` : "";
+
+  // Tahminli maçlar önce, sonra pencerenin ötesindeki sade fikstür.
+  const ahead = [...comp.upcoming.map((m, i) => matchRow(m, i)),
+                 ...comp.rest.map((m, i) => fixtureRow(m, i))];
+  const aheadRows = ahead.length ? `
+    <div class="date-head">Sezonun kalanı · ${ahead.length}</div>
+    <div class="match-list">${ahead.join("")}</div>` : "";
+
+  return head + playedRows + aheadRows;
+}
+
 async function viewTeam(id, tab) {
   const teams = await loadTeams();
   const team = teams.find((t) => t.id === id);
@@ -1398,9 +1459,13 @@ async function viewTeam(id, tab) {
 
   // Sonuçlar gün gün: sezon ilerledikçe yalnızca saat göstermek hangi maçın
   // ne zaman oynandığını belirsiz bırakıyor.
-  const fixtureHTML = fixtures.length ? `
-    <div class="date-head">Sezonun kalanı · ${fixtures.length} maç</div>
-    <div class="match-list">${fixtures.map(fixtureRow).join("")}</div>` : "";
+  // Fikstür sekmesi takımın BÜTÜN yarışmalarını gösteriyor: lig, Avrupa
+  // kupası, hepsi ayrı başlık altında ve her birinde önce oynanmışlar sonra
+  // sezonun kalanı. Eskiden yalnızca kendi liginin kalan maçları vardı.
+  const season = await teamSeason(id, meta, team.league);
+  const fixtureHTML = season.length
+    ? season.map((c) => competitionBlock(c, id)).join("")
+    : `<div class="empty">Bu sezon için maç bulunamadı.</div>`;
 
   // Puan tablosu takım sayfasında da var: takımın ligde nerede olduğunu
   // görmek için başka sayfaya gitmek gerekmesin. Takımın satırı vurgulu.
@@ -1433,7 +1498,7 @@ async function viewTeam(id, tab) {
     <nav class="tabs team-tabs">${tabs}</nav>
     ${tab === "puan" ? tableHTML
       : tab === "fikstur"
-        ? (fixtureHTML || `<div class="empty">Kalan fikstür yok.</div>`)
+        ? fixtureHTML
         : `${upcomingHTML}${playedHTML}`}`;
 }
 

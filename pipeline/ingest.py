@@ -53,7 +53,13 @@ def canonicalise(df: pd.DataFrame, league: str) -> pd.DataFrame:
     if df.empty:
         return df
 
-    if LEAGUES[league].get("understat"):
+    # Eskiden yalnızca Understat ligleri için çalışıyordu; Avrupa kupaları
+    # eklenince bu bir kimlik kopmasına yol açtı. Barcelona ligde `us148`,
+    # kupada `fm8634` oluyordu — model için iki ayrı takım, dolayısıyla
+    # kupadaki Elo'su lig formundan kopuk 1500'den başlıyordu. Artık her
+    # yarışmada deneniyor; karşılığı olmayan takım (Süper Lig, yabancı
+    # kulüpler) kendi `fm` kimliğinde kalıyor, yani bu kayıpsız.
+    if True:
         entries = crosswalk.load()
         by_fotmob = {e["fotmob_id"]: (us_id, e["understat_name"])
                      for us_id, e in entries.items()}

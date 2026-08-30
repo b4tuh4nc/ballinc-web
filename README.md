@@ -93,11 +93,16 @@ Eklenmeleri kupa maçlarında takım tanınırlığını %41'den %77'ye çıkard
 liglerin tahminlerine dokunmadı (+%0.04). Üst çubukta yalnızca ana ligler var;
 kalanı menüden ve lig filtresinden ulaşılabiliyor.
 
-**Kupa tahminleri zayıf ve site bunu açıkça yazıyor.** Ölçülen kazanç
-Şampiyonlar Ligi'nde +%0.5, Avrupa Ligi'nde +%0.7, Konferans Ligi'nde +%3.6 —
-ilk ikisi %2'lik güvenilirlik eşiğinin altında. Sebebi takımların çoğunun
-karşılaştırılabilir geçmişinin olmaması. Eğilim yukarı yönlü, çünkü domestik
-veri biriktikçe düzeliyor: 21/22'de +%0.4, 25/26'da +%2.2.
+Kupa tahminleri Şampiyonlar Ligi'nde +%11.0 (isabet %58.8), Avrupa Ligi'nde
++%4.7, Konferans Ligi'nde +%5.8 — üçü de güvenilirlik eşiğinin üstünde.
+
+Bu rakamlar bir hata düzeltildikten sonrakiler. Kupalar ilk eklendiğinde
+`ingest.canonicalise` takım kimliklerini yalnızca Understat ligleri için
+kanonikleştiriyordu; kupaların `understat` anahtarı olmadığı için Barcelona
+ligde `us148`, kupada `fm8634` oluyordu. Model için iki ayrı takım: kupadaki
+Elo'su lig formundan kopuk 1500'den başlıyordu. UCL ile La Liga arasında
+**sıfır ortak takım** vardı. Düzeltmeden önce ölçüm Şampiyonlar Ligi'nde
++%0.5 diyordu; sonrasında +%11.0.
 
 Bu ligler üç formatta oynuyor ve doğrulama buna göre ayarlandı:
 
