@@ -2468,6 +2468,15 @@ function startLive() {
   refreshLive();
 }
 
+/* Başlama bildirimi canlı yoklamadan ayrı: canlı yoklama yalnızca ekranda
+   maç varken çalışıyor, oysa "maçın başlıyor" bildirimi hangi sayfada
+   olursan ol gelmeli. Bildirim kapalıysa ya da favori yoksa hiçbir şey
+   yapmıyor, yani boşa maliyet çıkarmıyor. */
+setInterval(checkStartingSoon, 60_000);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) checkStartingSoon();
+});
+
 // Sekme arka plandayken boşuna istek atma.
 document.addEventListener("visibilitychange", () => {
   if (!document.hidden) refreshLive();
@@ -2553,6 +2562,7 @@ async function toggleNotify() {
     return;
   }
   setNotifyOn(true);
+  checkStartingSoon();
   const count = favourites().size;
   toast(count
     ? `Bildirimler açık · ${count} favori takım`
@@ -2575,6 +2585,60 @@ const NOTIFY_TEXT = {
   kirmizi: (h, a, hg, ag) => [`${h} ${hg} - ${ag} ${a}`, "Kırmızı kart"],
   bitti: (h, a, hg, ag) => [`Maç sonu · ${h} ${hg} - ${ag} ${a}`, ""],
 };
+
+/* Maç başlangıcı bildirimi. Diğer bildirimler canlı olaylardan tetikleniyor
+   (skor değişimi, kart); bu farklı bir tetikleyici: fikstürdeki başlama
+   saatine bakıyor.
+
+   Bir maç için bir kez bildiriliyor. Kayıt localStorage'da çünkü sayfa
+   yenilenince tekrar bildirmemeli; eski kayıtlar temizleniyor ki liste
+   sınırsız büyümesin. */
+const START_ALERT_MIN = 15;
+const STARTED_KEY = "ballinc-notified-start";
+
+function notifiedStarts() {
+  try { return JSON.parse(localStorage.getItem(STARTED_KEY) || "{}"); }
+  catch { return {}; }
+}
+
+function markStartNotified(id) {
+  const now = Date.now();
+  const kept = Object.fromEntries(
+    Object.entries(notifiedStarts())
+      .filter(([, at]) => now - at < 24 * 3600 * 1000));
+  kept[id] = now;
+  try { localStorage.setItem(STARTED_KEY, JSON.stringify(kept)); }
+  catch { /* özel pencere */ }
+}
+
+async function checkStartingSoon() {
+  if (!notifyOn() || window.Notification?.permission !== "granted") return;
+  const favs = favourites();
+  if (!favs.size) return;
+
+  const meta = await getJSON("meta.json");
+  const seen = notifiedStarts();
+  const now = Date.now();
+
+  for (const lg of meta.leagues) {
+    if (!lg.upcoming) continue;
+    let data;
+    try { data = await getJSON(`${lg.code}.json`); } catch { continue; }
+    for (const m of data.matches ?? []) {
+      if (seen[m.id]) continue;
+      if (!favs.has(m.home?.id) && !favs.has(m.away?.id)) continue;
+      const mins = (new Date(m.kickoff).getTime() - now) / 60000;
+      if (mins <= 0 || mins > START_ALERT_MIN) continue;
+      markStartNotified(m.id);
+      try {
+        new Notification(`${m.home.name} - ${m.away.name}`, {
+          body: `${Math.round(mins)} dakika sonra başlıyor · ${esc(lg.name)}`,
+          tag: `start-${m.id}`, icon: "assets/logo.png",
+        });
+      } catch { /* bazı tarayıcılar yalnızca servis çalışanından izin veriyor */ }
+    }
+  }
+}
 
 async function notifyEvents(events) {
   if (!events.length || !notifyOn()) return;
