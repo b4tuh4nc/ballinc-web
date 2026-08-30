@@ -184,12 +184,21 @@ function buildLineup(lineup) {
     if (!team) return null;
     // starters bazen satir satir dizi diziler halinde geliyor; duzlestiriliyor.
     const raw = team.starters ?? [];
+    // FotMob dizilişi iki koordinat sisteminde veriyor: yatay saha ve dikey
+    // saha. İkisi de geçiyor; site geniş ekranda yatayı, dar ekranda dikeyi
+    // kullanıyor.
     const starters = (Array.isArray(raw[0]) ? raw.flat() : raw)
       .filter(Boolean)
       .map((p) => ({
         n: p.name ?? "",
         no: p.shirtNumber ?? null,
         cap: !!p.isCaptain,
+        h: p.horizontalLayout
+          ? { x: p.horizontalLayout.x, y: p.horizontalLayout.y } : null,
+        v: p.verticalLayout
+          ? { x: p.verticalLayout.x, y: p.verticalLayout.y } : null,
+        // gol / asist / sarı kart — oyuncunun kendi kaydında geliyor
+        ev: (p.performance?.events ?? []).map((e) => e.type).filter(Boolean),
       }));
     return {
       formation: team.formation ?? null,

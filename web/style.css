@@ -1788,3 +1788,84 @@ body.cal-open .datestrip { z-index: 60; }
   table th, table td { padding-left: .3rem; padding-right: .3rem; }
   .stand-team .team-cell { font-size: .82rem; }
 }
+
+
+/* ─── Saha görünümü ───────────────────────────────────────────────────────
+   Oyuncu konumları FotMob'un koordinatlarından; formasyon dizisinden
+   türetilmiyor. Geniş ekranda yatay saha (ev solda), dar ekranda dikey --
+   dar bir ekranda yatay saha okunmuyor. */
+
+.pitch {
+  position: relative; width: 100%;
+  margin: .2rem 0 1rem;
+  border-radius: 10px; overflow: hidden;
+  background:
+    repeating-linear-gradient(90deg,
+      #1f6b42 0 8%, #1c6440 8% 16%);
+}
+.pitch.hz { aspect-ratio: 105 / 68; }
+.pitch.v { aspect-ratio: 68 / 105; }
+:root:not([data-theme="dark"]) .pitch {
+  background: repeating-linear-gradient(90deg, #2f8a58 0 8%, #2b8253 8% 16%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .pitch {
+    background: repeating-linear-gradient(90deg, #1f6b42 0 8%, #1c6440 8% 16%);
+  }
+}
+
+/* Saha çizgileri: orta çizgi, orta yuvarlak ve iki ceza sahası. */
+.pitch-lines { position: absolute; inset: 4px; border: 2px solid rgba(255,255,255,.28); }
+.pitch-lines::before, .pitch-lines::after { content: ""; position: absolute; }
+.pitch.hz .pitch-lines::before {
+  left: 50%; top: 0; bottom: 0; border-left: 2px solid rgba(255,255,255,.28);
+}
+.pitch.hz .pitch-lines::after {
+  left: 50%; top: 50%; width: 18%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255,255,255,.28); border-radius: 50%;
+}
+.pitch.v .pitch-lines::before {
+  top: 50%; left: 0; right: 0; border-top: 2px solid rgba(255,255,255,.28);
+}
+.pitch.v .pitch-lines::after {
+  top: 50%; left: 50%; width: 28%; aspect-ratio: 1;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(255,255,255,.28); border-radius: 50%;
+}
+
+.pp {
+  position: absolute; transform: translate(-50%, -50%);
+  display: flex; flex-direction: column; align-items: center; gap: .12rem;
+  width: 5.2rem; text-align: center; pointer-events: none;
+}
+.pp-no {
+  display: grid; place-items: center;
+  width: 1.7rem; height: 1.7rem; border-radius: 50%;
+  font-size: .74rem; font-weight: 700; color: #fff;
+  border: 2px solid rgba(255,255,255,.85);
+}
+.pp.h .pp-no { background: #1d6fd6; }
+.pp.a .pp-no { background: #12a06a; }
+.pp-name {
+  font-size: .62rem; line-height: 1.15; font-weight: 600; color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,.7);
+  overflow-wrap: anywhere;
+}
+.pp-name b { font-size: .52rem; opacity: .8; margin-left: .12rem; }
+
+.pm-wrap { position: absolute; top: -.25rem; left: 60%; display: flex; gap: 1px; }
+.pm { font-style: normal; font-size: .6rem; line-height: 1; }
+.pm.yc, .pm.rc { width: 6px; height: 9px; border-radius: 1px; }
+.pm.yc { background: var(--draw-1x2); }
+.pm.rc { background: var(--away); }
+.pm.out { color: #ff5a4d; font-size: .55rem; }
+
+/* Saha varken listede yalnızca yedekler kalıyor. */
+.lineups.compact .lu-head { margin-bottom: .2rem; }
+
+@media (max-width: 620px) {
+  .pp { width: 4.2rem; }
+  .pp-no { width: 1.45rem; height: 1.45rem; font-size: .66rem; }
+  .pp-name { font-size: .56rem; }
+}

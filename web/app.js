@@ -1057,7 +1057,69 @@ function playerRow(p, side) {
   return `<li class="pl ${side}">${no}<span class="pl-name">${esc(p.n)}</span>${cap}</li>`;
 }
 
-function lineupHTML(lineup, match) {
+/* Saha görünümü. Koordinatlar FotMob'dan geliyor, formasyon dizisinden
+   türetilmiyor — türetseydik "4-2-3-1" gibi belirsiz dizilişlerde oyuncular
+   yanlış yere düşerdi.
+
+   Geniş ekranda yatay saha (ev solda, deplasman sağda), dar ekranda dikey
+   saha; FotMob iki koordinat sistemini de veriyor ve dar bir ekranda yatay
+   saha okunmuyor. */
+function pitchHTML(lineup, timeline) {
+  const vertical = window.matchMedia("(max-width: 620px)").matches;
+  const key = vertical ? "v" : "h";
+  const has = (t) => (t?.starters ?? []).some((p) => p[key]);
+  if (!has(lineup.home) && !has(lineup.away)) return "";
+
+  // Oyundan çıkanlar akıştan: oyuncunun kendi kaydında bu bilgi yok.
+  const off = new Set((timeline ?? [])
+    .filter((e) => e.t === "degisiklik" && e.out).map((e) => e.out));
+
+  const mark = (p) => {
+    const bits = [];
+    if (p.ev?.includes("goal")) bits.push('<i class="pm goal" title="Gol">⚽</i>');
+    if (p.ev?.includes("yellowCard")) bits.push('<i class="pm yc" title="Sarı kart"></i>');
+    if (p.ev?.includes("redCard")) bits.push('<i class="pm rc" title="Kırmızı kart"></i>');
+    if (off.has(p.n)) bits.push('<i class="pm out" title="Oyundan çıktı">▼</i>');
+    return bits.length ? `<span class="pm-wrap">${bits.join("")}</span>` : "";
+  };
+
+  const dot = (p, side) => {
+    const c = p[key];
+    if (!c) return "";
+    // Dikey koordinatlarda eksenler yer değiştiriyor: yatayda x derinlik ve
+    // y yanal konum, dikeyde tam tersi. Ayrımı yapmayınca kaleci sahanın
+    // ortasında değil kenarında çıkıyordu.
+    const depth = vertical ? c.y : c.x;
+    const lateral = vertical ? c.x : c.y;
+    // Ev sahibi kendi yarısında; deplasman aynadan yansıtılıyor.
+    const along = side === "h" ? depth * 0.5 : 1 - depth * 0.5;
+    const across = side === "h" ? lateral : 1 - lateral;
+    const [left, top] = vertical ? [across, along] : [along, across];
+    return `<div class="pp ${side}" style="left:${(left * 100).toFixed(1)}%;
+                 top:${(top * 100).toFixed(1)}%">
+      <span class="pp-no">${esc(String(p.no ?? ""))}</span>
+      <span class="pp-name">${esc(shortName(p.n))}${p.cap ? '<b>K</b>' : ""}</span>
+      ${mark(p)}
+    </div>`;
+  };
+
+  const dots = [
+    ...(lineup.home?.starters ?? []).map((p) => dot(p, "h")),
+    ...(lineup.away?.starters ?? []).map((p) => dot(p, "a")),
+  ].join("");
+
+  return `<div class="pitch ${vertical ? "v" : "hz"}">
+    <div class="pitch-lines" aria-hidden="true"></div>${dots}</div>`;
+}
+
+/** "Alexis Mac Allister" -> "A. Mac Allister". Saha dar; tam ad taşıyor. */
+function shortName(name) {
+  const parts = String(name ?? "").trim().split(/\s+/);
+  if (parts.length < 2) return name ?? "";
+  return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
+}
+
+function lineupHTML(lineup, match, timeline) {
   if (!lineup?.home?.starters?.length && !lineup?.away?.starters?.length) return "";
   const note = LINEUP_KIND[lineup.type];
   const col = (team, side, name) => {
@@ -1067,7 +1129,8 @@ function lineupHTML(lineup, match) {
         <b>${esc(name)}</b>
         ${team.formation ? `<span class="lu-form">${esc(team.formation)}</span>` : ""}
       </div>
-      <ul class="lu-list">${team.starters.map((p) => playerRow(p, side)).join("")}</ul>
+      ${pitch ? "" : `<ul class="lu-list">${
+        team.starters.map((p) => playerRow(p, side)).join("")}</ul>`}
       ${team.subs.length ? `<div class="lu-sub-head">Yedekler</div>
         <ul class="lu-list subs">${team.subs.map((p) => playerRow(p, side)).join("")}</ul>` : ""}
       ${team.coach ? `<div class="lu-coach">Teknik direktör · ${esc(team.coach)}</div>` : ""}
@@ -1083,9 +1146,12 @@ function lineupHTML(lineup, match) {
   };
   const outs = missing(lineup.home, match.home.name) + missing(lineup.away, match.away.name);
 
+  const pitch = pitchHTML(lineup, timeline);
+
   return `<section class="card">
     <h2>Kadrolar${note ? ` <span class="badge soft">${esc(note)}</span>` : ""}</h2>
-    <div class="lineups">
+    ${pitch}
+    <div class="lineups${pitch ? " compact" : ""}">
       ${col(lineup.home, "h", match.home.name)}
       ${col(lineup.away, "a", match.away.name)}
     </div>
@@ -1156,7 +1222,7 @@ async function fillMatchDetail() {
     // gösteriyor. Veri tek çağrıda geldiği için sekme değiştirmek yeni
     // istek doğurmuyor -- worker yanıtı zaten önbellekli.
     still.innerHTML = still.dataset.tab === "kadro"
-      ? (lineupHTML(payload.lineup, match)
+      ? (lineupHTML(payload.lineup, match, payload.timeline)
          || `<div class="empty">Bu maç için kadro bilgisi yok.</div>`)
       : timelineHTML(payload.timeline) + statsHTML(payload.stats)
         + h2hHTML(payload.h2h, match);
