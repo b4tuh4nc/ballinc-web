@@ -904,7 +904,8 @@ function marketHTML(match) {
     olasılık tablosunu göstermek yanlış sıra; oynanmamış maçta ise
     gösterilecek başka bir şey yok, sekme de çıkmıyor. */
 function matchTabs(base, tab) {
-  const items = [["", "Maç"], ["tahmin", "Tahmin"]].map(([slug, label]) => {
+  const items = [["", "Maç"], ["kadro", "Kadro"], ["tahmin", "Tahmin"]]
+    .map(([slug, label]) => {
     const href = slug ? `${base}/${slug}` : base;
     const current = (tab ?? "") === slug ? ' aria-current="page"' : "";
     return `<a class="tab" href="${href}"${current}>${label}</a>`;
@@ -912,7 +913,7 @@ function matchTabs(base, tab) {
   return `<nav class="tabs match-tabs">${items}</nav>`;
 }
 
-function detailSlot(match) {
+function detailSlot(match, tab) {
   const live = liveData.get(liveKey(match) ?? "");
   const query = live?.matchId
     ? `matchId=${encodeURIComponent(live.matchId)}`
@@ -926,7 +927,7 @@ function detailSlot(match) {
   const names = JSON.stringify({ home: { name: match.home.name },
                                  away: { name: match.away.name } });
   return `<div id="match-detail" data-query="${esc(query)}"
-               data-match="${esc(names)}"></div>`;
+               data-match="${esc(names)}" data-tab="${esc(tab ?? "")}"></div>`;
 }
 
 /** Dakikalar ortada, ev sahibi olayları solda, deplasman sağda. Hangi tarafın
@@ -1125,25 +1126,40 @@ function h2hHTML(h2h, match) {
 }
 
 let detailBusy = "";
+// Sekme değişince aynı maçın verisi yeniden isteniyordu. Yanıt maç
+// başına saklanıyor; canlı maçta zaten 60 saniyede bir tazeleniyor.
+const detailCache = new Map();
 
 async function fillMatchDetail() {
   const slot = document.getElementById("match-detail");
   if (!slot || !goalProxy) return;
-  const query = slot.dataset.query;
+  // Anahtar sekmeyi de içeriyor: aynı maçta sekme değişince yeniden
+  // çizilmesi gerekiyor.
+  const query = `${slot.dataset.query}|${slot.dataset.tab}`;
   if (detailBusy === query && slot.innerHTML) return;
   detailBusy = query;
   try {
-    const response = await fetch(`${goalProxy}?${query}`, { cache: "no-store" });
-    if (!response.ok) return;
-    const payload = await response.json();
+    let payload = detailCache.get(slot.dataset.query);
+    if (!payload) {
+      const response = await fetch(`${goalProxy}?${slot.dataset.query}`,
+                                   { cache: "no-store" });
+      if (!response.ok) return;
+      payload = await response.json();
+      if (detailCache.size > 30) detailCache.delete(detailCache.keys().next().value);
+      detailCache.set(slot.dataset.query, payload);
+    }
     // Sayfa bu arada değişmiş olabilir.
     const still = document.getElementById("match-detail");
-    if (!still || still.dataset.query !== query) return;
+    if (!still || `${still.dataset.query}|${still.dataset.tab}` !== query) return;
     const match = JSON.parse(still.dataset.match);
-    still.innerHTML = timelineHTML(payload.timeline)
-      + lineupHTML(payload.lineup, match)
-      + statsHTML(payload.stats)
-      + h2hHTML(payload.h2h, match);
+    // Kadro ayrı sekmede; "Maç" sekmesi olan biteni ve istatistikleri
+    // gösteriyor. Veri tek çağrıda geldiği için sekme değiştirmek yeni
+    // istek doğurmuyor -- worker yanıtı zaten önbellekli.
+    still.innerHTML = still.dataset.tab === "kadro"
+      ? (lineupHTML(payload.lineup, match)
+         || `<div class="empty">Bu maç için kadro bilgisi yok.</div>`)
+      : timelineHTML(payload.timeline) + statsHTML(payload.stats)
+        + h2hHTML(payload.h2h, match);
   } catch { /* akış gösterilemezse sayfanın geri kalanı çalışmaya devam eder */ }
 }
 
@@ -1197,7 +1213,7 @@ function viewResult(result, data, meta, tab) {
     </div>
 
     ${verdict ? matchTabs(`#/mac/${encodeURIComponent(result.id)}`, tab) : ""}
-    ${!verdict || (tab ?? "") !== "tahmin" ? detailSlot(result) : verdict}`;
+    ${!verdict || (tab ?? "") !== "tahmin" ? detailSlot(result, tab) : verdict}`;
 }
 
 /* Modelin cümlesi.
@@ -1392,7 +1408,7 @@ async function viewMatch(id, tab) {
     ${backLink(data)}
     ${hero}
     ${started ? matchTabs(base, tab) : ""}
-    ${started && (tab ?? "") !== "tahmin" ? detailSlot(match) : prediction}`;
+    ${started && (tab ?? "") !== "tahmin" ? detailSlot(match, tab) : prediction}`;
 }
 
 /** Tahmin penceresi dışındaki maç: sade fikstür satırı. Tahmin yok, çünkü
