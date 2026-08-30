@@ -374,6 +374,9 @@ async function viewHome() {
 
   lastList = { href: "#/", label: "Tüm maçlar" };
 
+  // Panel gövde seviyesinde; #view yeniden çizilse de o kapta duruyor.
+  paintFilter(meta.leagues);
+
   const head = `
     <div class="page-head${state.filterOpen ? " filter-open" : ""}">
       <div class="page-title"><h1>Yaklaşan maçlar</h1></div>
@@ -385,7 +388,6 @@ async function viewHome() {
           <span class="f-icon" aria-hidden="true">⚙</span>
           Ligler <b>${shown}/${meta.leagues.length}</b>
         </button>
-        ${state.filterOpen ? filterPanelHTML(meta.leagues) : ""}
       </div>
     </div>`;
 
@@ -1500,6 +1502,15 @@ function setHiddenLeagues(set) {
   catch { /* özel pencere */ }
 }
 
+/** Filtreyi gövde seviyesindeki kabına çizer.
+
+    `#view` içinde olamaz: sayfa geçiş animasyonu her doğrudan çocuğa kalıcı
+    bir yığınlama bağlamı veriyor ve panelin z-index'i o bağlamın dışına
+    çıkamıyor — maç listesi panelin üstüne biniyordu. */
+function paintFilter(leagues) {
+  el("filter-host").innerHTML = state.filterOpen ? filterPanelHTML(leagues) : "";
+}
+
 function filterPanelHTML(leagues) {
   const hidden = hiddenLeagues();
   // Yirmi yarışma dikey liste olarak uzun ve okunması yorucu; logoların
@@ -1603,6 +1614,12 @@ async function route() {
     }
     view.innerHTML = html;
     view.dataset.painted = "1";
+    // Filtre yalnızca ana sayfada var; başka görünüme geçilince kalıntı
+    // kalmasın (kap #view dışında olduğu için kendiliğinden temizlenmiyor).
+    if (parts.length) {
+      state.filterOpen = false;
+      el("filter-host").innerHTML = "";
+    }
     document.body.classList.toggle("cal-open", state.calOpen);
     document.body.classList.toggle("filter-open", state.filterOpen);
     // Canlı yoklama her görünümde çalışıyor: puan durumu ve sonuçlar da
@@ -1635,7 +1652,10 @@ function scrollSelectedIntoView() {
   if (active) active.scrollIntoView({ block: "nearest", inline: "center" });
 }
 
-el("view").addEventListener("click", (event) => {
+/* İçerik tıklamaları. Hem #view'e hem filtre kabına bağlı: filtre paneli
+   yığınlama bağlamı sorunu yüzünden #view dışına taşındı ve yalnızca
+   #view'e bağlı kalsaydı lig seçimi tıklamaları hiç ulaşmayacaktı. */
+const onContentClick = (event) => {
   // Yalnızca takım ADINA basıldığında takım sayfasına gidiliyor. Satırın
   // kalanı maça gitmeye devam ediyor. Satır zaten bir <a> olduğu için isim
   // içine ikinci bir <a> konulamıyor (geçersiz HTML); bu yüzden tıklama
@@ -1755,11 +1775,16 @@ el("view").addEventListener("click", (event) => {
     state.week = chips[next];
     return route();
   }
-});
+};
+
+el("view").addEventListener("click", onContentClick);
+el("filter-host").addEventListener("click", onContentClick);
 
 // Takvim dışına tıklayınca kapansın; Esc de kapatsın.
 document.addEventListener("click", (event) => {
-  if (state.filterOpen && !event.insideFilter && !event.target.closest(".filter-wrap")) {
+  // Panel artık .filter-wrap içinde değil; kendisine bakılıyor.
+  if (state.filterOpen && !event.insideFilter
+      && !event.target.closest(".filter-panel, .filter-wrap")) {
     state.filterOpen = false;
     route();
     return;
