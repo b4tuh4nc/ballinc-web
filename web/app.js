@@ -729,16 +729,20 @@ function standingsHTML(data, highlight = null) {
     <tr${r.team_id === highlight ? ' class="me"' : ""}>
       <td class="rank">${r.rank}${arrow(live.get(r.team_id))}</td>
       <td><div class="stand-team"><span class="team-cell" data-team="${esc(r.team_id)}">${crest(r.team_id)}${esc(r.team)}</span>${badge(live.get(r.team_id))}</div></td>
-      <td>${r.played}</td><td>${r.w}</td><td>${r.d}</td><td>${r.l}</td>
-      <td>${r.gf}:${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td>
-      ${hasXG ? `<td>${r.xgf ?? "—"}</td><td>${r.xga ?? "—"}</td>` : ""}
-      <td>${formPills(r.form)}</td><td class="pts">${r.points}</td>
+      <td>${r.played}</td>
+      <td class="c-wdl">${r.w}</td><td class="c-wdl">${r.d}</td><td class="c-wdl">${r.l}</td>
+      <td class="c-goals">${r.gf}:${r.ga}</td><td>${r.gd > 0 ? "+" : ""}${r.gd}</td>
+      ${hasXG ? `<td class="c-xg">${r.xgf ?? "—"}</td><td class="c-xg">${r.xga ?? "—"}</td>` : ""}
+      <td class="c-form">${formPills(r.form)}</td><td class="pts">${r.points}</td>
     </tr>`).join("");
 
   return `<section class="card"><div class="table-scroll"><table>
     <thead><tr>
-      <th>#</th><th>Takım</th><th>O</th><th>G</th><th>B</th><th>M</th>
-      <th>A:Y</th><th>Av</th>${hasXG ? "<th>xG</th><th>xGA</th>" : ""}<th>Form</th><th>P</th>
+      <th>#</th><th>Takım</th><th>O</th>
+      <th class="c-wdl">G</th><th class="c-wdl">B</th><th class="c-wdl">M</th>
+      <th class="c-goals">A:Y</th><th>Av</th>
+      ${hasXG ? '<th class="c-xg">xG</th><th class="c-xg">xGA</th>' : ""}
+      <th class="c-form">Form</th><th>P</th>
     </tr></thead><tbody>${rows}</tbody>
   </table></div>${note}</section>`;
 }

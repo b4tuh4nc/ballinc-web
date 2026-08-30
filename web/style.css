@@ -1767,3 +1767,24 @@ body.cal-open .datestrip { z-index: 60; }
 @media (max-width: 520px) {
   .h2h-row { grid-template-columns: 3.2rem 1fr 3rem 1fr; font-size: .74rem; }
 }
+
+
+/* ─── Puan durumu: dar ekranda sütun eleme ────────────────────────────────
+   Tabloda on iki sütun var ve telefona sığmıyordu. Öncelik sırası: sıra,
+   takım, oynanan, averaj, puan her zaman kalıyor; galibiyet/beraberlik/
+   mağlubiyet, xG ve form önce gidiyor. */
+
+@media (max-width: 760px) {
+  .c-xg, .c-form { display: none; }
+}
+@media (max-width: 560px) {
+  .c-wdl { display: none; }
+}
+@media (max-width: 400px) {
+  .c-goals { display: none; }
+}
+@media (max-width: 560px) {
+  /* Kalan sütunlar dar; takım adına yer açılıyor. */
+  table th, table td { padding-left: .3rem; padding-right: .3rem; }
+  .stand-team .team-cell { font-size: .82rem; }
+}
