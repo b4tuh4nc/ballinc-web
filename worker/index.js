@@ -172,6 +172,46 @@ function buildTimeline(events, finalScore) {
   return out;
 }
 
+/** Kadro. Ek istek gerektirmiyor: yanit zaten geliyordu, geciriyorduk.
+
+    `lineupType` onemli: oynanmis macta "standard" (gercek 11), oynanmamista
+    "predicted" ya da "lastStarting11" -- yani tahmin. Site bunu yaziyor ki
+    kullanici tahmini kadroyu kesin sanmasin. */
+function buildLineup(lineup) {
+  if (!lineup) return null;
+
+  const side = (team) => {
+    if (!team) return null;
+    // starters bazen satir satir dizi diziler halinde geliyor; duzlestiriliyor.
+    const raw = team.starters ?? [];
+    const starters = (Array.isArray(raw[0]) ? raw.flat() : raw)
+      .filter(Boolean)
+      .map((p) => ({
+        n: p.name ?? "",
+        no: p.shirtNumber ?? null,
+        cap: !!p.isCaptain,
+      }));
+    return {
+      formation: team.formation ?? null,
+      coach: team.coach?.name ?? null,
+      starters,
+      subs: (team.subs ?? []).filter(Boolean).map((p) => ({
+        n: p.name ?? "", no: p.shirtNumber ?? null,
+      })),
+      out: (team.unavailable ?? []).filter(Boolean).map((p) => ({
+        n: p.name ?? "",
+        why: p.unavailability?.type ?? null,
+        back: p.unavailability?.expectedReturn ?? null,
+      })),
+    };
+  };
+
+  const home = side(lineup.homeTeam);
+  const away = side(lineup.awayTeam);
+  if (!home && !away) return null;
+  return { type: lineup.lineupType ?? null, home, away };
+}
+
 function buildStats(periods) {
   const groups = periods?.All?.stats ?? [];
   const out = [];
@@ -285,6 +325,7 @@ export default {
       redCards,
       timeline: buildTimeline(events, finalScore),
       stats: buildStats(payload?.content?.stats?.Periods),
+      lineup: buildLineup(payload?.content?.lineup),
     });
 
     const ttl = ongoing ? LIVE_CACHE : DONE_CACHE;

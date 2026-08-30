@@ -885,7 +885,12 @@ function detailSlot(match) {
         + `&away=${encodeURIComponent(match.away.fm)}`
       : null;
   if (!query || !goalProxy) return "";
-  return `<div id="match-detail" data-query="${esc(query)}"></div>`;
+  // Kadro başlıklarında takım adı gerekiyor; yer tutucuda taşınıyor ki
+  // dolduran fonksiyonun maçı yeniden bulmasına gerek kalmasın.
+  const names = JSON.stringify({ home: { name: match.home.name },
+                                 away: { name: match.away.name } });
+  return `<div id="match-detail" data-query="${esc(query)}"
+               data-match="${esc(names)}"></div>`;
 }
 
 /** Dakikalar ortada, ev sahibi olayları solda, deplasman sağda. Hangi tarafın
@@ -991,6 +996,66 @@ function statsHTML(stats) {
   return `<section class="card"><h2>İstatistikler</h2>${rows.join("")}</section>`;
 }
 
+/* Kadrolar. Oynanmamış maçta FotMob tahmini 11'i veriyor; bunu kesin
+   kadro gibi göstermek yanlış olur, o yüzden başlıkta hangisi olduğu
+   yazıyor. */
+const LINEUP_KIND = {
+  standard: null,
+  confirmed: null,
+  predicted: "tahmini kadro",
+  lastStarting11: "son maçın 11'i",
+};
+
+const OUT_REASON = {
+  injury: "sakat",
+  suspension: "cezalı",
+  suspended: "cezalı",
+  national: "milli takımda",
+  other: "yok",
+};
+
+function playerRow(p, side) {
+  const no = p.no ? `<span class="pl-no">${esc(String(p.no))}</span>` : "";
+  const cap = p.cap ? `<span class="pl-cap" title="Kaptan">K</span>` : "";
+  return `<li class="pl ${side}">${no}<span class="pl-name">${esc(p.n)}</span>${cap}</li>`;
+}
+
+function lineupHTML(lineup, match) {
+  if (!lineup?.home?.starters?.length && !lineup?.away?.starters?.length) return "";
+  const note = LINEUP_KIND[lineup.type];
+  const col = (team, side, name) => {
+    if (!team) return "<div></div>";
+    return `<div class="lu-col ${side}">
+      <div class="lu-head">
+        <b>${esc(name)}</b>
+        ${team.formation ? `<span class="lu-form">${esc(team.formation)}</span>` : ""}
+      </div>
+      <ul class="lu-list">${team.starters.map((p) => playerRow(p, side)).join("")}</ul>
+      ${team.subs.length ? `<div class="lu-sub-head">Yedekler</div>
+        <ul class="lu-list subs">${team.subs.map((p) => playerRow(p, side)).join("")}</ul>` : ""}
+      ${team.coach ? `<div class="lu-coach">Teknik direktör · ${esc(team.coach)}</div>` : ""}
+    </div>`;
+  };
+  const missing = (team, name) => {
+    if (!team?.out?.length) return "";
+    return `<div class="lu-out">
+      <b>${esc(name)}</b>
+      <span>${team.out.map((p) => `${esc(p.n)}<i>${
+        esc(OUT_REASON[p.why] ?? p.why ?? "yok")}</i>`).join(", ")}</span>
+    </div>`;
+  };
+  const outs = missing(lineup.home, match.home.name) + missing(lineup.away, match.away.name);
+
+  return `<section class="card">
+    <h2>Kadrolar${note ? ` <span class="badge soft">${esc(note)}</span>` : ""}</h2>
+    <div class="lineups">
+      ${col(lineup.home, "h", match.home.name)}
+      ${col(lineup.away, "a", match.away.name)}
+    </div>
+    ${outs ? `<div class="lu-outs"><div class="lu-out-head">Eksikler</div>${outs}</div>` : ""}
+  </section>`;
+}
+
 let detailBusy = "";
 
 async function fillMatchDetail() {
@@ -1006,7 +1071,9 @@ async function fillMatchDetail() {
     // Sayfa bu arada değişmiş olabilir.
     const still = document.getElementById("match-detail");
     if (!still || still.dataset.query !== query) return;
-    still.innerHTML = timelineHTML(payload.timeline) + statsHTML(payload.stats);
+    still.innerHTML = timelineHTML(payload.timeline)
+      + lineupHTML(payload.lineup, JSON.parse(still.dataset.match))
+      + statsHTML(payload.stats);
   } catch { /* akış gösterilemezse sayfanın geri kalanı çalışmaya devam eder */ }
 }
 

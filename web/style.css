@@ -1657,3 +1657,64 @@ body.cal-open .datestrip { z-index: 60; }
   padding-top: .6rem; margin-top: .2rem;
   border-top: 1px solid var(--border);
 }
+
+
+/* ─── Kadrolar ────────────────────────────────────────────────────────────
+   İki takım yan yana; ev sahibi solda, deplasman sağda — maç akışıyla aynı
+   düzen. Oynanmamış maçta FotMob tahmini 11'i veriyor, başlıkta yazıyor. */
+
+.lineups { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+.lu-col { min-width: 0; }
+.lu-col.a { text-align: right; }
+
+.lu-head {
+  display: flex; align-items: baseline; gap: .4rem;
+  padding-bottom: .4rem; margin-bottom: .4rem;
+  border-bottom: 1px solid var(--border);
+  font-size: .84rem;
+}
+.lu-col.a .lu-head { flex-direction: row-reverse; }
+.lu-form {
+  font-size: .68rem; color: var(--text-muted);
+  padding: .05rem .3rem; border-radius: 4px; background: var(--surface-2);
+}
+
+.lu-list { list-style: none; margin: 0; padding: 0; }
+.pl {
+  display: flex; align-items: center; gap: .4rem;
+  padding: .18rem 0; font-size: .8rem; min-width: 0;
+}
+.pl.a { flex-direction: row-reverse; }
+.pl-no {
+  flex: none; min-width: 1.25rem; text-align: center;
+  font-size: .66rem; font-variant-numeric: tabular-nums; color: var(--text-muted);
+}
+.pl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pl-cap {
+  flex: none; font-size: .58rem; font-weight: 700;
+  padding: 0 .22rem; border-radius: 3px;
+  background: var(--surface-3); color: var(--text-muted);
+}
+.lu-list.subs .pl { opacity: .72; }
+.lu-sub-head, .lu-out-head {
+  margin-top: .6rem; padding-top: .4rem;
+  border-top: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  font-size: .66rem; font-weight: 700; letter-spacing: .05em;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.lu-coach { margin-top: .5rem; font-size: .7rem; color: var(--text-muted); }
+
+.lu-outs { margin-top: .9rem; }
+.lu-out { font-size: .78rem; margin-top: .3rem; }
+.lu-out b { margin-right: .35rem; }
+.lu-out span { color: var(--text-muted); }
+.lu-out i { font-style: normal; font-size: .68rem; opacity: .8; }
+.lu-out i::before { content: " ("; }
+.lu-out i::after { content: ")"; }
+
+.badge.soft { background: var(--surface-2); color: var(--text-muted); font-weight: 600; }
+
+@media (max-width: 520px) {
+  .lineups { gap: .5rem; }
+  .pl { font-size: .74rem; }
+}
