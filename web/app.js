@@ -1056,6 +1056,38 @@ function lineupHTML(lineup, match) {
   </section>`;
 }
 
+/* Karşılıklı geçmiş. Modele katkısı ölçüldü ve yoktu (+%0.01), o yüzden
+   tahminde kullanılmıyor; ama kullanıcının merak ettiği şey. */
+function h2hHTML(h2h, match) {
+  if (!h2h?.matches?.length) return "";
+  const total = h2h.w + h2h.d + h2h.l;
+  const bar = (n, cls, title) => n
+    ? `<div class="h2h-seg ${cls}" style="flex:${n}" title="${title}">${n}</div>` : "";
+  const rows = h2h.matches.map((m) => {
+    const homeWon = m.s[0] > m.s[1], draw = m.s[0] === m.s[1];
+    return `<div class="h2h-row">
+      <span class="h2h-date">${esc(m.d.slice(8, 10))}.${esc(m.d.slice(5, 7))}.${esc(m.d.slice(2, 4))}</span>
+      <span class="h2h-side ${homeWon ? "won" : ""}">${esc(m.h)}</span>
+      <span class="h2h-score ${draw ? "draw" : ""}">${m.s[0]} - ${m.s[1]}</span>
+      <span class="h2h-side r ${!homeWon && !draw ? "won" : ""}">${esc(m.a)}</span>
+      ${m.c ? `<span class="h2h-comp">${esc(m.c)}</span>` : ""}
+    </div>`;
+  }).join("");
+
+  return `<section class="card">
+    <h2>Karşılıklı geçmiş <span class="badge soft">son ${total} maç</span></h2>
+    <div class="h2h-bar">
+      ${bar(h2h.w, "w", `${esc(match.home.name)} ${h2h.w} galibiyet`)}
+      ${bar(h2h.d, "d", `${h2h.d} beraberlik`)}
+      ${bar(h2h.l, "l", `${esc(match.away.name)} ${h2h.l} galibiyet`)}
+    </div>
+    <div class="h2h-legend">
+      <span>${esc(match.home.name)}</span><span>Beraberlik</span><span>${esc(match.away.name)}</span>
+    </div>
+    <div class="h2h-list">${rows}</div>
+  </section>`;
+}
+
 let detailBusy = "";
 
 async function fillMatchDetail() {
@@ -1071,9 +1103,11 @@ async function fillMatchDetail() {
     // Sayfa bu arada değişmiş olabilir.
     const still = document.getElementById("match-detail");
     if (!still || still.dataset.query !== query) return;
+    const match = JSON.parse(still.dataset.match);
     still.innerHTML = timelineHTML(payload.timeline)
-      + lineupHTML(payload.lineup, JSON.parse(still.dataset.match))
-      + statsHTML(payload.stats);
+      + lineupHTML(payload.lineup, match)
+      + statsHTML(payload.stats)
+      + h2hHTML(payload.h2h, match);
   } catch { /* akış gösterilemezse sayfanın geri kalanı çalışmaya devam eder */ }
 }
 

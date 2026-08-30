@@ -212,6 +212,43 @@ function buildLineup(lineup) {
   return { type: lineup.lineupType ?? null, home, away };
 }
 
+/** Karşılıklı geçmiş. Kadro gibi: yanıt zaten geliyordu, geçirmiyorduk.
+
+    `finished` bayrağına güvenilmiyor -- bu uçta her zaman false dönüyor.
+    Skorun varlığı maçın oynandığını gösteriyor. Özet de FotMob'un
+    `summary` dizisinden alınmıyor: hangi sayının ev, hangisinin deplasman
+    olduğu belgelenmemiş; maçlardan saymak hem doğrulanabilir hem de
+    gösterilen listeyle tutarlı. */
+function buildH2H(h2h, homeId) {
+  const list = h2h?.matches ?? [];
+  const played = [];
+  for (const m of list) {
+    const score = m.status?.scoreStr ?? "";
+    const parts = /^(\d+)\s*-\s*(\d+)$/.exec(score.trim());
+    if (!parts) continue;
+    played.push({
+      d: (m.time?.utcTime ?? m.status?.utcTime ?? "").slice(0, 10),
+      h: m.home?.name ?? "",
+      a: m.away?.name ?? "",
+      hid: String(m.home?.id ?? ""),
+      s: [Number(parts[1]), Number(parts[2])],
+      c: m.league?.name ?? null,
+    });
+  }
+  if (!played.length) return null;
+  played.sort((x, y) => y.d.localeCompare(x.d));
+
+  const recent = played.slice(0, 10);
+  let w = 0, d = 0, l = 0;
+  for (const m of recent) {
+    const homeSide = m.hid === String(homeId);
+    const own = homeSide ? m.s[0] : m.s[1];
+    const other = homeSide ? m.s[1] : m.s[0];
+    if (own > other) w += 1; else if (own === other) d += 1; else l += 1;
+  }
+  return { w, d, l, matches: recent };
+}
+
 function buildStats(periods) {
   const groups = periods?.All?.stats ?? [];
   const out = [];
@@ -326,6 +363,8 @@ export default {
       timeline: buildTimeline(events, finalScore),
       stats: buildStats(payload?.content?.stats?.Periods),
       lineup: buildLineup(payload?.content?.lineup),
+      h2h: buildH2H(payload?.content?.h2h,
+                    payload?.general?.homeTeam?.id ?? payload?.header?.teams?.[0]?.id),
     });
 
     const ttl = ongoing ? LIVE_CACHE : DONE_CACHE;

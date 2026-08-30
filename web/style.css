@@ -1718,3 +1718,52 @@ body.cal-open .datestrip { z-index: 60; }
   .lineups { gap: .5rem; }
   .pl { font-size: .74rem; }
 }
+
+
+/* ─── Karşılıklı geçmiş ───────────────────────────────────────────────────
+   Üstte oran çubuğu, altında maçlar. Kazanan taraf vurgulu; beraberlikte
+   skor sarı. */
+
+.h2h-bar { display: flex; gap: 2px; height: 1.5rem; margin-top: .2rem; }
+.h2h-seg {
+  display: grid; place-items: center; min-width: 1.4rem;
+  border-radius: 5px; font-size: .74rem; font-weight: 700; color: #fff;
+}
+.h2h-seg.w { background: var(--home); }
+.h2h-seg.d { background: var(--draw-1x2); color: var(--draw-1x2-text); }
+.h2h-seg.l { background: var(--away); }
+.h2h-legend {
+  display: flex; justify-content: space-between; gap: .5rem;
+  margin-top: .3rem; font-size: .7rem; color: var(--text-muted);
+}
+.h2h-legend span:nth-child(2) { text-align: center; }
+.h2h-legend span:last-child { text-align: right; }
+
+.h2h-list { margin-top: .8rem; }
+.h2h-row {
+  display: grid;
+  grid-template-columns: 3.6rem 1fr 3.4rem 1fr;
+  grid-template-areas: "date home score away" ". comp comp comp";
+  align-items: center; gap: .3rem .5rem;
+  padding: .35rem 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  font-size: .8rem;
+}
+.h2h-row:last-child { border-bottom: 0; }
+.h2h-date { grid-area: date; font-size: .7rem; color: var(--text-muted);
+  font-variant-numeric: tabular-nums; }
+.h2h-side { grid-area: home; min-width: 0; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap; color: var(--text-muted); }
+.h2h-side.r { grid-area: away; text-align: right; }
+.h2h-side.won { color: var(--text); font-weight: 600; }
+.h2h-score {
+  grid-area: score; text-align: center; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  padding: .05rem .3rem; border-radius: 5px; background: var(--surface-2);
+}
+.h2h-score.draw { color: var(--draw-1x2); }
+.h2h-comp { grid-area: comp; font-size: .66rem; color: var(--text-muted); opacity: .8; }
+
+@media (max-width: 520px) {
+  .h2h-row { grid-template-columns: 3.2rem 1fr 3rem 1fr; font-size: .74rem; }
+}
