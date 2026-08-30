@@ -355,7 +355,6 @@ async function viewHome() {
   try { dayIndex = await getJSON("index.json"); } catch { /* eski dağıtım */ }
 
   const today = todayKey();
-  const days = new Set([today]);
 
   // Şerit ve takvim için gün listesi dizinden; dosya indirmeden.
   const counts = new Map();
@@ -380,6 +379,10 @@ async function viewHome() {
         ...(dayIndex.days?.[today]?.leagues ?? []),
       ])
     : new Set(active.map((l) => l.code));
+
+  // Seçili günün oynanmış maçları da listede: geçmiş bir güne bakan
+  // kullanıcı o günün sonuçlarını görmeli, yalnızca bugünü değil.
+  const days = new Set([selected, today]);
 
   const all = [];
   let predictions = dayIndex?.total ?? 0;

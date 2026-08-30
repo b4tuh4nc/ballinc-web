@@ -9,7 +9,7 @@ site son çalışan JSON'la ayakta kalmaya devam eder.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -170,28 +170,51 @@ def attach_fotmob_ids(matches: list[dict]) -> int:
     return hits
 
 
-def build_day_index(by_league: dict, league_meta: list[dict]) -> dict:
+# Sonuç günlerinden kaç günü dizine alıyoruz. Sıfır olsaydı bugün maçları
+# biten bir lig dizine hiç girmezdi: maçlar tahmin listesinden düşüyor,
+# sayfa o ligin dosyasını indirmiyor ve o gün oynanmış maçlar kayboluyordu.
+# Süper Lig, Premier Lig ve Eredivisie'de tam olarak bu oldu.
+RESULT_DAYS_IN_INDEX = 7
+
+
+def build_day_index(by_league: dict, results_by_league: dict) -> dict:
     """Gün → o gün maçı olan yarışmalar ve maç sayısı.
 
-    Tarih site ile AYNI şekilde hesaplanıyor: Türkiye saatine göre gün.
-    UTC'ye göre hesaplansaydı gece yarısını aşan maçlar bir gün kayardı ve
-    sayfa o günün dosyasını hiç indirmezdi.
+    Hem tahminler hem yakın geçmişin sonuçları giriyor. Tarih site ile AYNI
+    şekilde hesaplanıyor: Türkiye saatine göre gün. UTC'ye göre
+    hesaplansaydı gece yarısını aşan maçlar bir gün kayardı ve sayfa o günün
+    dosyasını hiç indirmezdi.
     """
+    def day_of(kickoff: str) -> str:
+        return (datetime.fromisoformat(kickoff.replace("Z", "+00:00"))
+                .astimezone(ZoneInfo(DISPLAY_TZ)).date().isoformat())
+
+    today = datetime.now(ZoneInfo(DISPLAY_TZ)).date()
+    earliest = (today - timedelta(days=RESULT_DAYS_IN_INDEX)).isoformat()
+
     days: dict[str, dict] = {}
+
+    def add(day: str, code: str) -> None:
+        slot = days.setdefault(day, {"n": 0, "leagues": []})
+        slot["n"] += 1
+        if code not in slot["leagues"]:
+            slot["leagues"].append(code)
+
+    predictions = 0
     for code, matches in by_league.items():
         for match in matches:
-            day = (datetime.fromisoformat(match["kickoff"].replace("Z", "+00:00"))
-                   .astimezone(ZoneInfo(DISPLAY_TZ)).date().isoformat())
-            slot = days.setdefault(day, {"n": 0, "leagues": []})
-            slot["n"] += 1
-            if code not in slot["leagues"]:
-                slot["leagues"].append(code)
+            add(day_of(match["kickoff"]), code)
+            predictions += 1
+
+    for code, results in results_by_league.items():
+        for result in results:
+            day = day_of(result["kickoff"])
+            if day >= earliest:
+                add(day, code)
+
     return {
         "days": dict(sorted(days.items())),
-        "total": sum(d["n"] for d in days.values()),
-        # Bugün oynanmış maçlar da günün listesinde duruyor; onların
-        # yarışmaları tahmin listesinde olmayabilir.
-        "codes": [l["code"] for l in league_meta],
+        "total": predictions,
     }
 
 
@@ -325,6 +348,7 @@ def main() -> int:
     market.attach(predictions)
     linked = attach_fotmob_ids(predictions)
     by_league: dict[str, list[dict]] = {}
+    results_by_league: dict[str, list[dict]] = {}
     for p in predictions:
         by_league.setdefault(p["league"], []).append(p)
 
@@ -339,6 +363,7 @@ def main() -> int:
         # kimliğiyle buluyor (FotMob maç kimliği elimizde yok).
         results = build_results(season_df, _past_predictions(season_df, model))
         attach_fotmob_ids(results)      # yerinde ekliyor
+        results_by_league[code] = results
 
         payload = {
             "league": code,
@@ -390,7 +415,8 @@ def main() -> int:
     # Gün dizini: ana sayfa tek bir günü gösteriyor ama yirmi lig dosyasının
     # tamamını indiriyordu (1 MB). Bu dizin hangi günde hangi yarışmanın maçı
     # olduğunu söylüyor; sayfa yalnızca o günün dosyalarını çekiyor.
-    _write(WEB_DATA_DIR / "index.json", build_day_index(by_league, league_meta))
+    _write(WEB_DATA_DIR / "index.json",
+           build_day_index(by_league, results_by_league))
 
     teams = build_teams(df)
     _write(WEB_DATA_DIR / "teams.json", {"teams": teams})
