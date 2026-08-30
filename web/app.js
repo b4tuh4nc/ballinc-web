@@ -348,15 +348,45 @@ async function viewHome() {
   // görünüyor: Avrupa Ligi ve Konferans Ligi henüz başlamadığı için listeden
   // düşüyorlardı ve kupalar grubu eksik görünüyordu.
   const active = meta.leagues.filter((l) => l.upcoming > 0);
-  // Bugün oynanmış maçlar da günün listesinde kalsın; tahmin listesinden
-  // düştükleri için kayboluyorlardı.
-  const days = new Set([todayKey()]);
+  // Ana sayfa tek bir günü gösteriyor ama eskiden yirmi lig dosyasının
+  // tamamını indiriyordu (1 MB). Gün dizini hangi günde hangi yarışmanın
+  // maçı olduğunu söylüyor; yalnızca gerekli dosyalar çekiliyor.
+  let dayIndex = null;
+  try { dayIndex = await getJSON("index.json"); } catch { /* eski dağıtım */ }
+
+  const today = todayKey();
+  const days = new Set([today]);
+
+  // Şerit ve takvim için gün listesi dizinden; dosya indirmeden.
+  const counts = new Map();
+  if (dayIndex) {
+    for (const [day, info] of Object.entries(dayIndex.days ?? {})) {
+      counts.set(day, info.n);
+    }
+  }
+
+  let selected = state.day;
+  if (!selected || (dayIndex && !counts.has(selected))) {
+    selected = counts.has(today) ? today
+      : [...counts.keys()].sort().find((k) => k >= today) ?? [...counts.keys()][0];
+  }
+
+  // Seçili gün + bir önceki gün (gece yarısını aşan maçlar için) + bugün
+  // (oynanmışlar listede kalıyor).
+  const wanted = dayIndex
+    ? new Set([
+        ...(dayIndex.days?.[selected]?.leagues ?? []),
+        ...(dayIndex.days?.[shiftKey(selected, -1)]?.leagues ?? []),
+        ...(dayIndex.days?.[today]?.leagues ?? []),
+      ])
+    : new Set(active.map((l) => l.code));
+
   const all = [];
-  let predictions = 0;
+  let predictions = dayIndex?.total ?? 0;
   for (const league of active) {
-    if (hidden.has(league.code)) continue;
+    if (hidden.has(league.code) || !wanted.has(league.code)) continue;
     const data = await getJSON(`${league.code}.json`);
-    predictions += data.matches.length;
+    if (!dayIndex) predictions += data.matches.length;
     const played = playedOn(data, days);
     const done = new Set(played.map((r) => r.id));
     all.push(...data.matches.filter((m) => !done.has(m.id)));
@@ -398,23 +428,25 @@ async function viewHome() {
     return `${head}${idleNote}<div class="empty">${why}</div>`;
   }
 
-  const counts = new Map();
-  for (const m of all) {
-    const key = dayKey(m.kickoff);
-    counts.set(key, (counts.get(key) ?? 0) + 1);
+  // Dizin yoksa (eski dağıtım) sayım yüklenen maçlardan çıkarılıyor.
+  if (!dayIndex) {
+    for (const m of all) {
+      const key = dayKey(m.kickoff);
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    if (!selected || !counts.has(selected)) {
+      selected = counts.has(today) ? today : [...counts.keys()].sort()[0];
+    }
   }
 
   // Şerit kesintisiz olmalı: maçı olmayan günler de görünsün ki kullanıcı
   // takvimde boşluk olduğunu anlasın.
-  const first = dayKey(all[0].kickoff);
-  const last = dayKey(all[all.length - 1].kickoff);
+  const keys = [...counts.keys()].sort();
   const dates = [];
-  for (let key = first; key <= last; key = shiftKey(key, 1)) dates.push(key);
-
-  const today = todayKey();
-  let selected = state.day;
-  if (!selected || !counts.has(selected)) {
-    selected = counts.has(today) ? today : dates.find((k) => counts.has(k));
+  if (keys.length) {
+    for (let key = keys[0]; key <= keys[keys.length - 1]; key = shiftKey(key, 1)) {
+      dates.push(key);
+    }
   }
 
   let start = state.stripStart;

@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -19,6 +20,7 @@ from pipeline.config import (
     CURRENT_SEASON,
     GOAL_PROXY_URL,
     LEAGUES,
+    DISPLAY_TZ,
     MODELS_DIR,
     TEAM_DISPLAY_NAMES,
     WEB_DATA_DIR,
@@ -166,6 +168,31 @@ def attach_fotmob_ids(matches: list[dict]) -> int:
         if "fm" in match["home"] and "fm" in match["away"]:
             hits += 1
     return hits
+
+
+def build_day_index(by_league: dict, league_meta: list[dict]) -> dict:
+    """Gün → o gün maçı olan yarışmalar ve maç sayısı.
+
+    Tarih site ile AYNI şekilde hesaplanıyor: Türkiye saatine göre gün.
+    UTC'ye göre hesaplansaydı gece yarısını aşan maçlar bir gün kayardı ve
+    sayfa o günün dosyasını hiç indirmezdi.
+    """
+    days: dict[str, dict] = {}
+    for code, matches in by_league.items():
+        for match in matches:
+            day = (datetime.fromisoformat(match["kickoff"].replace("Z", "+00:00"))
+                   .astimezone(ZoneInfo(DISPLAY_TZ)).date().isoformat())
+            slot = days.setdefault(day, {"n": 0, "leagues": []})
+            slot["n"] += 1
+            if code not in slot["leagues"]:
+                slot["leagues"].append(code)
+    return {
+        "days": dict(sorted(days.items())),
+        "total": sum(d["n"] for d in days.values()),
+        # Bugün oynanmış maçlar da günün listesinde duruyor; onların
+        # yarışmaları tahmin listesinde olmayabilir.
+        "codes": [l["code"] for l in league_meta],
+    }
 
 
 def build_teams(df) -> list[dict]:
@@ -360,6 +387,11 @@ def main() -> int:
         "window_days": predict_mod.PREDICT_WINDOW_DAYS,
         "goal_proxy": GOAL_PROXY_URL,
     }
+    # Gün dizini: ana sayfa tek bir günü gösteriyor ama yirmi lig dosyasının
+    # tamamını indiriyordu (1 MB). Bu dizin hangi günde hangi yarışmanın maçı
+    # olduğunu söylüyor; sayfa yalnızca o günün dosyalarını çekiyor.
+    _write(WEB_DATA_DIR / "index.json", build_day_index(by_league, league_meta))
+
     teams = build_teams(df)
     _write(WEB_DATA_DIR / "teams.json", {"teams": teams})
     print(f"  {'takım dizini':12s} {len(teams):3d} takım")
