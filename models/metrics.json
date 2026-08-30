@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-30T20:07:55+00:00",
+  "generated_at": "2026-08-30T20:12:53+00:00",
   "method": "walk-forward: her sezon, kendisinden önceki maçlarla eğitildi",
   "markets": {
     "result": {
@@ -593,6 +593,44 @@
       "single": 0.788,
       "double": 0.928,
       "double_said": 0.9238
+    }
+  ],
+  "elo_gaps": [
+    {
+      "lo": 0,
+      "hi": 40,
+      "n": 11122,
+      "logloss": 1.0741,
+      "baseline_logloss": 1.0792,
+      "skill": 0.0047,
+      "accuracy": 0.4324
+    },
+    {
+      "lo": 40,
+      "hi": 100,
+      "n": 12456,
+      "logloss": 1.0506,
+      "baseline_logloss": 1.0755,
+      "skill": 0.0232,
+      "accuracy": 0.4614
+    },
+    {
+      "lo": 100,
+      "hi": 200,
+      "n": 11100,
+      "logloss": 0.9533,
+      "baseline_logloss": 1.0626,
+      "skill": 0.1028,
+      "accuracy": 0.5764
+    },
+    {
+      "lo": 200,
+      "hi": null,
+      "n": 5240,
+      "logloss": 0.7443,
+      "baseline_logloss": 1.0164,
+      "skill": 0.2677,
+      "accuracy": 0.734
     }
   ],
   "folds": [

@@ -355,6 +355,8 @@ def main() -> int:
         # Modelin kurduğu cümlenin ne kadar tuttuğu: güven dilimi başına
         # ölçülmüş isabet. Site bu rakamı gösteriyor, uydurmuyor.
         "confidence": metrics.get("confidence", []),
+        # Modelin nerede kaybettiği: güç farkına göre kırılım.
+        "elo_gaps": metrics.get("elo_gaps", []),
         "window_days": predict_mod.PREDICT_WINDOW_DAYS,
         "goal_proxy": GOAL_PROXY_URL,
     }

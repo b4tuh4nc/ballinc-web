@@ -56,14 +56,15 @@ def prior_baseline(y_train: np.ndarray, n_test: int, n_classes: int) -> np.ndarr
     return np.tile(counts / counts.sum(), (n_test, 1))
 
 
-def run(df: pd.DataFrame,
-        test_seasons: list[str]) -> tuple[pd.DataFrame, pd.DataFrame, list[dict]]:
+def run(df: pd.DataFrame, test_seasons: list[str]) -> tuple[
+        pd.DataFrame, pd.DataFrame, list[dict], list[dict]]:
     cols = features.feature_columns(df)
     played = df[df["result"].notna()].copy()
     rows: list[dict] = []
     per_league: list[dict] = []
     verdict_probs: list[np.ndarray] = []
     verdict_y: list[np.ndarray] = []
+    verdict_gap: list[np.ndarray] = []
 
     for season in test_seasons:
         start = played.loc[played["season"] == season, "datetime"].min()
@@ -82,6 +83,7 @@ def run(df: pd.DataFrame,
         probs, _ = model.predict_markets(test[cols])
         verdict_probs.append(probs["result"])
         verdict_y.append(test["result"].to_numpy().astype(int))
+        verdict_gap.append((test["home_elo"] - test["away_elo"]).abs().to_numpy())
 
         for label, (target, n_classes, _) in MARKETS.items():
             y_test = test[target].to_numpy()
@@ -125,10 +127,14 @@ def run(df: pd.DataFrame,
         print(f"  ✓ {season}: {len(train)} maç ile eğitildi, {len(test)} maç test edildi "
               f"(rho={model.rho:+.3f})")
 
-    confidence = confidence_table(
-        np.vstack(verdict_probs), np.concatenate(verdict_y)
-    ) if verdict_probs else []
-    return pd.DataFrame(rows), pd.DataFrame(per_league), confidence
+    if verdict_probs:
+        all_p = np.vstack(verdict_probs)
+        all_y = np.concatenate(verdict_y)
+        confidence = confidence_table(all_p, all_y)
+        elo_gaps = elo_gap_table(np.concatenate(verdict_gap), all_p, all_y)
+    else:
+        confidence, elo_gaps = [], []
+    return pd.DataFrame(rows), pd.DataFrame(per_league), confidence, elo_gaps
 
 
 # Site "Barcelona kazanır" gibi bir cümle kuruyor. O cümlenin ne kadar
@@ -167,6 +173,36 @@ def confidence_table(probs: np.ndarray, y: np.ndarray) -> list[dict]:
             "single": round(float(single[m].mean()), 4),
             "double": round(float(survives[m].mean()), 4),
             "double_said": round(float(p_survives[m].mean()), 4),
+        })
+    return out
+
+
+# Modelin kaybı tek bir yerde yoğunlaşıyor: denk maçlarda. Site bunu
+# gösteriyor çünkü "%53 isabet" tek başına yanıltıcı — maçların yarısında
+# model çok iyi, diğer yarısında neredeyse hiçbir şey bilmiyor.
+#
+# Taban olarak DİLİMİN KENDİ sonuç dağılımı kullanılıyor, eğitim priorı
+# değil: soru "bu dilim ne kadar öngörülebilir" değil, "model bu dilimde
+# taban orandan ne kadar iyi".
+ELO_BANDS = [(0, 40), (40, 100), (100, 200), (200, 10_000)]
+
+
+def elo_gap_table(gaps: np.ndarray, probs: np.ndarray, y: np.ndarray) -> list[dict]:
+    out = []
+    for lo, hi in ELO_BANDS:
+        m = (gaps >= lo) & (gaps < hi)
+        if m.sum() < 200:
+            continue
+        p = np.clip(probs[m], 1e-9, 1)
+        yy = y[m]
+        ll = float(-np.mean(np.log(p[np.arange(len(yy)), yy])))
+        share = np.bincount(yy, minlength=3) / len(yy)
+        base = float(-np.mean(np.log(np.clip(share[yy], 1e-9, 1))))
+        out.append({
+            "lo": lo, "hi": None if hi > 9_999 else hi, "n": int(m.sum()),
+            "logloss": round(ll, 4), "baseline_logloss": round(base, 4),
+            "skill": round(1 - ll / base, 4),
+            "accuracy": round(float((p.argmax(axis=1) == yy).mean()), 4),
         })
     return out
 
@@ -226,7 +262,8 @@ def _fmt(df: pd.DataFrame) -> str:
 
 
 def write_metrics(results: pd.DataFrame, summary: pd.DataFrame,
-                  leagues: pd.DataFrame, confidence: list[dict]) -> None:
+                  leagues: pd.DataFrame, confidence: list[dict],
+                  elo_gaps: list[dict]) -> None:
     """Ölçümü models/metrics.json'a yazar; site bunu okuyup gösterir.
 
     Eski projedeki accuracy.json sadece çıplak doğruluk oranı tutuyordu ve
@@ -239,6 +276,7 @@ def write_metrics(results: pd.DataFrame, summary: pd.DataFrame,
         "markets": {},
         "leagues": {},
         "confidence": confidence,
+        "elo_gaps": elo_gaps,
         "folds": json.loads(results.to_json(orient="records")),
     }
     for row in leagues.itertuples(index=False) if not leagues.empty else []:
@@ -284,7 +322,7 @@ def main() -> int:
     df = pd.read_parquet(path) if path.exists() else features.build()
 
     print("Walk-forward backtest (her sezon, kendisinden önceki maçlarla eğitilir)\n")
-    results, per_league, confidence = run(df, args.seasons)
+    results, per_league, confidence, elo_gaps = run(df, args.seasons)
     if results.empty:
         print("Değerlendirilecek sezon yok.")
         return 1
@@ -304,7 +342,7 @@ def main() -> int:
         f"%{SKILL_THRESHOLD * 100:.0f} altındaysa market güvenilir sayılmıyor."
     )
 
-    write_metrics(results, summary, leagues, confidence)
+    write_metrics(results, summary, leagues, confidence, elo_gaps)
     return 0
 
 

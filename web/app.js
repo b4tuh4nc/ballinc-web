@@ -1552,6 +1552,58 @@ async function liveRecordHTML() {
   </section>`;
 }
 
+/** Cümlenin ne kadar tuttuğu. Site "Barcelona kazanır" ya da "açık maç"
+    derken bu ölçüme dayanıyor; rakamı göstermek iddiayı denetlenebilir
+    kılıyor. */
+function confidenceHTML(meta) {
+  const bands = meta.confidence ?? [];
+  if (!bands.length) return "";
+  const rows = bands.map((b) => `
+    <tr><td>%${pct(b.lo)}–${b.hi >= 1 ? "100" : pct(b.hi)}</td>
+      <td>${b.n.toLocaleString("tr-TR")}</td>
+      <td>%${pct(b.single)}</td>
+      <td>%${pct(b.double)}</td></tr>`).join("");
+  return `<section class="card">
+    <h2>Modelin cümlesi ne kadar tutuyor?</h2>
+    <div class="table-scroll"><table class="table-metrics">
+      <thead><tr><th>Modelin güveni</th><th>Maç</th>
+        <th>"Kazanır" tuttu</th><th>"Kaybetmez" tuttu</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="note">Maç sayfasında model, güvenine göre farklı bir cümle
+      kuruyor. Güveni düşükken tek bir sonuç seçmek yaklaşık her iki maçtan
+      birinde yanlış çıkıyor; o yüzden orada "açık maç" deyip
+      söyleyebildiği en güvenilir şeyi ("favori kaybetmez") öne çıkarıyor.
+      Eşikler bu tablodan geliyor, elle seçilmedi.</p>
+  </section>`;
+}
+
+/** Kaybın nerede olduğu. Ortalama isabet tek başına yanıltıcı: maçların
+    yarısında model çok iyi, diğer yarısında neredeyse hiçbir şey bilmiyor. */
+function eloGapHTML(meta) {
+  const bands = meta.elo_gaps ?? [];
+  if (!bands.length) return "";
+  const label = (b) => b.hi === null ? `${b.lo}+` : `${b.lo}–${b.hi}`;
+  const rows = bands.map((b) => `
+    <tr><td>${label(b)}</td>
+      <td>${b.n.toLocaleString("tr-TR")}</td>
+      <td>${(b.skill * 100).toFixed(1)}%</td>
+      <td>%${pct(b.accuracy)}</td></tr>`).join("");
+  return `<section class="card">
+    <h2>Model nerede iyi, nerede değil?</h2>
+    <div class="table-scroll"><table class="table-metrics">
+      <thead><tr><th>Takımlar arası Elo farkı</th><th>Maç</th>
+        <th>Kazanç</th><th>İsabet</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="note">Güçler arasında belirgin fark varsa model çok iyi; denk
+      takımlarda taban orandan neredeyse ayrışamıyor. Bu bir hata değil
+      sınır: denk maçlarda beraberliğin eksik tahmin edildiğini bulup
+      düzelttik, tahmin yalnızca %0.02 iyileşti — yani o maçlar model
+      yanıldığı için değil, gerçekten belirsiz oldukları için zor.
+      Kazanç her dilimde o dilimin <em>kendi</em> taban oranına göre
+      hesaplandı.</p>
+  </section>`;
+}
+
 async function viewModel() {
   const meta = await getJSON("meta.json");
   const live = await liveRecordHTML();
@@ -1582,6 +1634,8 @@ async function viewModel() {
         %53 isabet verir, bu bir başarı değildir. Bu yüzden bir market ancak
         logloss'u baseline'dan belirgin şekilde iyiyse güvenilir sayılıyor.</p>
     </section>
+    ${confidenceHTML(meta)}
+    ${eloGapHTML(meta)}
     <section class="card">
       <h2>Nasıl çalışıyor</h2>
       <p style="margin:0 0 .6rem">Model tek bir şey tahmin ediyor: her takımın o
