@@ -928,7 +928,9 @@ td.pts { font-weight: 700; }
   position: fixed; inset: 0; margin: auto; z-index: 60;
   width: min(26rem, calc(100vw - 2rem));
   height: max-content; max-height: min(80vh, 40rem);
-  overflow-y: auto;
+  /* Başlık ve alttaki düğmeler sabit; yalnızca liste kayıyor. Panelin
+     tamamı kayınca "Hepsini göster" aşağıda kaybolup ulaşılmaz oluyordu. */
+  display: flex; flex-direction: column; overflow: hidden;
   padding: .7rem;
   background: var(--surface);
   border: 1px solid var(--border); border-radius: var(--radius);
@@ -1645,4 +1647,13 @@ body.cal-open .datestrip { z-index: 60; }
 @keyframes moreDrop {
   from { opacity: 0; transform: translateY(-.5rem); }
   to { opacity: 1; transform: translateY(0); }
+}
+
+
+/* Filtre paneli: sabit başlık ve ayak, kayan gövde. */
+.filter-body { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
+.filter-head, .filter-foot { flex: 0 0 auto; }
+.filter-foot {
+  padding-top: .6rem; margin-top: .2rem;
+  border-top: 1px solid var(--border);
 }

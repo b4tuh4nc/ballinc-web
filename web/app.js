@@ -1539,7 +1539,7 @@ function filterPanelHTML(leagues) {
         <span>Ligler <b>${leagues.length - hidden.size}/${leagues.length}</b></span>
         <button class="icon-btn" type="button" data-filter="close" aria-label="Kapat">✕</button>
       </div>
-      ${rows}
+      <div class="filter-body">${rows}</div>
       <div class="filter-foot">
         <button class="cal-today-btn" type="button" data-league-main>Sadece ana ligler</button>
         <button class="cal-today-btn" type="button" data-league-all>Hepsini göster</button>
