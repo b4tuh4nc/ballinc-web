@@ -1217,8 +1217,12 @@ function h2hHTML(h2h, match) {
 }
 
 let detailBusy = "";
-// Sekme değişince aynı maçın verisi yeniden isteniyordu. Yanıt maç
-// başına saklanıyor; canlı maçta zaten 60 saniyede bir tazeleniyor.
+/* Sekme değişince aynı maçın verisi yeniden isteniyordu; yanıt maç başına
+   saklanıyor. Ama devam eden maçta sonsuza kadar saklanamaz: akış ve
+   istatistikler sayfayı açtığın andaki halinde donuyordu. Canlı maçta
+   kayıt 45 saniye sonra bayat sayılıyor -- worker zaten devam eden maçı 30
+   saniye önbellekliyor, yani bu gerçek bir istek maliyeti getirmiyor. */
+const DETAIL_LIVE_TTL = 45_000;
 const detailCache = new Map();
 
 async function fillMatchDetail() {
@@ -1227,17 +1231,22 @@ async function fillMatchDetail() {
   // Anahtar sekmeyi de içeriyor: aynı maçta sekme değişince yeniden
   // çizilmesi gerekiyor.
   const query = `${slot.dataset.query}|${slot.dataset.tab}`;
-  if (detailBusy === query && slot.innerHTML) return;
+  const cached = detailCache.get(slot.dataset.query);
+  const fresh = cached && (!cached.payload?.ongoing
+    || Date.now() - cached.at < DETAIL_LIVE_TTL);
+  // Aynı sekme yeniden çizilmiyor — devam eden maçta kayıt bayatlamışsa
+  // hariç.
+  if (detailBusy === query && slot.innerHTML && fresh) return;
   detailBusy = query;
   try {
-    let payload = detailCache.get(slot.dataset.query);
+    let payload = fresh ? cached.payload : null;
     if (!payload) {
       const response = await fetch(`${goalProxy}?${slot.dataset.query}`,
                                    { cache: "no-store" });
       if (!response.ok) return;
       payload = await response.json();
       if (detailCache.size > 30) detailCache.delete(detailCache.keys().next().value);
-      detailCache.set(slot.dataset.query, payload);
+      detailCache.set(slot.dataset.query, { at: Date.now(), payload });
     }
     // Sayfa bu arada değişmiş olabilir.
     const still = document.getElementById("match-detail");
@@ -2575,6 +2584,9 @@ async function refreshLive() {
     notifyEvents(events);
     await paintGoals();
     retimeLive();
+    // Açık bir maç sayfası varsa akış ve istatistikler de tazelensin;
+    // yalnızca skorun güncellenmesi yetmiyor.
+    fillMatchDetail();
 
     const sig = finishedSignature();
     if (sig !== lastFinishedSig) {
