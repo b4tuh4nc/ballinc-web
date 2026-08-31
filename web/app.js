@@ -1880,7 +1880,13 @@ function setHiddenLeagues(set) {
     bir yığınlama bağlamı veriyor ve panelin z-index'i o bağlamın dışına
     çıkamıyor — maç listesi panelin üstüne biniyordu. */
 function paintFilter(leagues) {
-  el("filter-host").innerHTML = state.filterOpen ? filterPanelHTML(leagues) : "";
+  const host = el("filter-host");
+  // Her seçimde panel yeniden çiziliyor; kaydırma konumu korunmazsa
+  // listenin altındaki bir ligi seçince ekran başa fırlıyordu.
+  const at = host.querySelector(".filter-body")?.scrollTop ?? 0;
+  host.innerHTML = state.filterOpen ? filterPanelHTML(leagues) : "";
+  const body = host.querySelector(".filter-body");
+  if (body && at) body.scrollTop = at;
 }
 
 function filterPanelHTML(leagues) {
