@@ -356,14 +356,29 @@ async function viewHome() {
 
   const today = todayKey();
 
+  /* Dizin biçimi değişebiliyor ve kod ile veri AYRI akışlarda yayınlanıyor:
+     kod saniyeler içinde, veri dakikalar sonra. Aradaki pencerede yeni kod
+     eski dizini okuyor. Biçim doğrudan okunsaydı site o pencerede tamamen
+     boş kalırdı — bir kez öyle oldu. İki biçim de destekleniyor. */
+  const dayLeagues = (day) => {
+    const info = dayIndex?.days?.[day];
+    if (!info) return {};
+    // Eski biçim: {n, leagues:[...]}. Yarışma başına sayı yok, 1 sayılıyor;
+    // şeridin toplamı biraz düşük çıkar ama hiçbir şey kaybolmaz.
+    if (Array.isArray(info.leagues)) {
+      return Object.fromEntries(info.leagues.map((code) => [code, 1]));
+    }
+    return info;
+  };
+
   // Şerit ve takvim için gün listesi dizinden; dosya indirmeden. Sayım
   // YALNIZCA görünür yarışmalardan: filtre açıkken şeritte "18 maç" yazan
   // bir güne gidip boş liste görmek kafa karıştırıcıydı.
   const counts = new Map();
   if (dayIndex) {
-    for (const [day, byLeague] of Object.entries(dayIndex.days ?? {})) {
+    for (const day of Object.keys(dayIndex.days ?? {})) {
       let n = 0;
-      for (const [code, count] of Object.entries(byLeague)) {
+      for (const [code, count] of Object.entries(dayLeagues(day))) {
         if (!hidden.has(code)) n += count;
       }
       if (n) counts.set(day, n);
@@ -378,7 +393,7 @@ async function viewHome() {
 
   // Seçili gün + bir önceki gün (gece yarısını aşan maçlar için) + bugün
   // (oynanmışlar listede kalıyor).
-  const codesOn = (day) => Object.keys(dayIndex?.days?.[day] ?? {});
+  const codesOn = (day) => Object.keys(dayLeagues(day));
   const wanted = dayIndex
     ? new Set([
         ...codesOn(selected),
