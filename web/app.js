@@ -356,11 +356,17 @@ async function viewHome() {
 
   const today = todayKey();
 
-  // Şerit ve takvim için gün listesi dizinden; dosya indirmeden.
+  // Şerit ve takvim için gün listesi dizinden; dosya indirmeden. Sayım
+  // YALNIZCA görünür yarışmalardan: filtre açıkken şeritte "18 maç" yazan
+  // bir güne gidip boş liste görmek kafa karıştırıcıydı.
   const counts = new Map();
   if (dayIndex) {
-    for (const [day, info] of Object.entries(dayIndex.days ?? {})) {
-      counts.set(day, info.n);
+    for (const [day, byLeague] of Object.entries(dayIndex.days ?? {})) {
+      let n = 0;
+      for (const [code, count] of Object.entries(byLeague)) {
+        if (!hidden.has(code)) n += count;
+      }
+      if (n) counts.set(day, n);
     }
   }
 
@@ -372,11 +378,12 @@ async function viewHome() {
 
   // Seçili gün + bir önceki gün (gece yarısını aşan maçlar için) + bugün
   // (oynanmışlar listede kalıyor).
+  const codesOn = (day) => Object.keys(dayIndex?.days?.[day] ?? {});
   const wanted = dayIndex
     ? new Set([
-        ...(dayIndex.days?.[selected]?.leagues ?? []),
-        ...(dayIndex.days?.[shiftKey(selected, -1)]?.leagues ?? []),
-        ...(dayIndex.days?.[today]?.leagues ?? []),
+        ...codesOn(selected),
+        ...codesOn(shiftKey(selected, -1)),
+        ...codesOn(today),
       ])
     : new Set(active.map((l) => l.code));
 

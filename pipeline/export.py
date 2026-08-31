@@ -195,10 +195,11 @@ def build_day_index(by_league: dict, results_by_league: dict) -> dict:
     days: dict[str, dict] = {}
 
     def add(day: str, code: str) -> None:
-        slot = days.setdefault(day, {"n": 0, "leagues": []})
-        slot["n"] += 1
-        if code not in slot["leagues"]:
-            slot["leagues"].append(code)
+        # Yarışma başına sayı: site lig filtresi açıkken gün sayılarını
+        # yalnızca görünür yarışmalardan toplayabilsin diye. Düz bir liste
+        # olsaydı şeritte "18 maç" yazan bir gün, o günün maçları gizlenmiş
+        # bir ligdense boş açılırdı.
+        days.setdefault(day, {})[code] = days.setdefault(day, {}).get(code, 0) + 1
 
     predictions = 0
     for code, matches in by_league.items():
