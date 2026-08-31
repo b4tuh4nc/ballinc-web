@@ -1858,6 +1858,20 @@ let lastHash = null;
    Konumu kendimiz saklıyoruz: yeni bir görünüm en üstten başlıyor, geri
    dönüldüğünde kaldığın yere dönüyorsun. */
 if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+/* Ana sayfada adres "#/" yerine sade kalsın; paylaşılan bağlantı daha
+   temiz görünüyor. İç sayfalar hash ile devam ediyor: yol tabanlı
+   yönlendirme GitHub Pages'te 404 durum kodu gerektiriyor ve o taviz bu
+   kazanca değmez.
+
+   `replaceState` hashchange tetiklemiyor, dolayısıyla yönlendirmeye
+   dokunmuyor; yalnızca adres çubuğunu temizliyor. Kaydırma hafızası
+   ana sayfayı iki anahtarla da tanıyor ("#/" ve ""). */
+function tidyHomeUrl() {
+  if (!location.hash || (location.hash !== "#/" && location.hash !== "#")) return;
+  history.replaceState(null, "", location.pathname + location.search);
+  lastHash = "";
+}
+
 const scrollMemory = new Map();
 
 /** Kullanıcının ana sayfada görmek istediği ligler. Boş küme "hepsi"
@@ -2014,6 +2028,7 @@ async function route() {
       window.scrollTo(0, scrollMemory.get(location.hash) ?? 0);
       lastHash = location.hash;
     }
+    tidyHomeUrl();
     scrollSelectedIntoView();
   } catch (err) {
     view.innerHTML = `<div class="empty">Veri yüklenemedi.<br>
