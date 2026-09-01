@@ -49,7 +49,9 @@ MAIN_DIVISIONS = {
     "SCO": "SC0",
 }
 
-# Bütün sezonları tek dosyada veren ligler.
+# Bütün sezonları tek dosyada veren ligler. Çekya ve Hırvatistan bu kaynakta
+# hiç yok (dosya adları tarandı, hepsi 404) — canlı oran sağlayıcısında da
+# yoklar, yani o iki lig kalıcı olarak piyasa kıyası dışında.
 EXTRA_DIVISIONS = {
     "AUT": "AUT",
     "DEN": "DNK",
