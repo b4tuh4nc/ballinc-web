@@ -1,0 +1,52 @@
+# Maç detayı taraması: xG, kadro piyasa değeri, ilk 11 yaşı, teknik direktör.
+# 2022/23'ten bugüne ~21.700 maç var, istek başına yarım saniye beklendiği
+# için iş parçalara bölünüyor. Önbellek repoda durduğu ve her maç bir kez
+# istendiği için bu iş akışı tamamlanana kadar tekrar tekrar çalıştırılabilir.
+name: Maç detaylarını çek
+on:
+  workflow_dispatch:
+    inputs:
+      budget:
+        description: "Bu çalıştırmadaki azami istek"
+        default: "7000"
+      since:
+        description: "Bu sezondan eskisi taranmasın"
+        default: "2022_2023"
+
+permissions:
+  contents: write
+
+jobs:
+  details:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt
+
+      # Güncel sezonların ham verisi repoda tutulmuyor.
+      - run: python -m pipeline.ingest
+
+      - run: |
+          python -m pipeline.details \
+            --budget ${{ inputs.budget }} \
+            --since ${{ inputs.since }} \
+            --xg-first
+
+      - name: İşle
+        if: always()
+        run: |
+          git config user.name "ballinc-bot"
+          git config user.email "actions@github.com"
+          git add -f data/details
+          if git diff --staged --quiet; then
+            echo "Değişiklik yok."
+          else
+            git commit -m "Maç detayları: tarama parçası"
+            git pull --rebase --autostash origin main
+            git push
+          fi
