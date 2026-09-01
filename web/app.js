@@ -789,11 +789,28 @@ function resultsHTML(data) {
   const ordered = [...weeks.keys()].sort((a, b) => a - b);
   const selected = weeks.has(state.week) ? state.week : ordered[ordered.length - 1];
 
-  const chips = ordered.map((w) => `
-    <button class="week-chip" type="button" data-week="${w}"
-            aria-pressed="${w === selected}">${w === 0 ? "Diğer" : `${w}. Hafta`}</button>`).join("");
-
   const index = ordered.indexOf(selected);
+
+  /* Seçili hafta ortada ve büyük, komşular küçülerek soluklaşıyor. Uzaklık
+     burada hesaplanıp niteliğe yazılıyor: CSS "kaçıncı komşu" diye bir şey
+     bilmiyor ve seçili öğe listenin herhangi bir yerinde olabiliyor. */
+  const chips = ordered.map((w, i) => {
+    const dist = Math.min(Math.abs(i - index), 2);
+    const count = (weeks.get(w) ?? []).length;
+    return `
+    <button class="week-chip" type="button" data-week="${w}"
+            data-dist="${dist}" aria-pressed="${w === selected}">
+      <span class="wc-title">${w === 0 ? "Diğer" : `${w}. Hafta`}</span>
+      <span class="wc-count">${count} maç</span>
+    </button>`;
+  }).join("");
+
+  // Nokta göstergesi: kaç hafta var ve neredeyiz. Çok fazla hafta olunca
+  // noktalar okunmaz hale geliyor, o yüzden 24'ten sonrası gizleniyor.
+  const dots = ordered.length > 1 && ordered.length <= 24
+    ? `<div class="week-dots" aria-hidden="true">${ordered
+        .map((w, i) => `<i class="${i === index ? "on" : ""}"></i>`).join("")}</div>`
+    : "";
   const nav = (dir, label, disabled) => `
     <button class="strip-nav" type="button" data-weeknav="${dir}" ${disabled ? "disabled" : ""}
             aria-label="${label}">${dir < 0 ? "‹" : "›"}</button>`;
@@ -810,6 +827,7 @@ function resultsHTML(data) {
       <div class="weeks" role="group" aria-label="Hafta seçimi">${chips}</div>
       ${nav(1, "Sonraki hafta", index >= ordered.length - 1)}
     </div>
+    ${dots}
     ${days}`;
 }
 

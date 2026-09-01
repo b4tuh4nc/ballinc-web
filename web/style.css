@@ -275,26 +275,69 @@ a.match:hover { background: var(--surface-2); }
 
 /* ─── Hafta seçici ────────────────────────────────────────────────────── */
 
+/* Hafta seçici: seçili hafta ortada, büyük ve vurgulu; komşular uzaklığa
+   göre küçülüp soluklaşıyor. Uzaklık `data-dist` ile geliyor çünkü CSS
+   seçili öğeye olan mesafeyi bilemiyor. */
 .weeks {
-  display: flex; gap: .3rem; overflow-x: auto;
-  padding: .85rem .1rem .2rem;
+  display: flex; align-items: center; gap: .45rem;
+  overflow-x: auto;
+  padding: .9rem .1rem .3rem;
   scrollbar-width: none;
+  scroll-snap-type: x proximity;
 }
 .weeks::-webkit-scrollbar { display: none; }
+
 .week-chip {
   flex-shrink: 0;
-  padding: .42rem .95rem;
-  border-radius: 999px;
+  display: flex; flex-direction: column; align-items: center; gap: .1rem;
+  min-width: 6.2rem;
+  padding: .55rem 1rem;
+  border-radius: 14px;
   border: 1px solid var(--border);
   background: var(--surface);
   color: var(--text-muted);
-  font-size: .8rem; cursor: pointer;
+  cursor: pointer;
   font-variant-numeric: tabular-nums;
+  scroll-snap-align: center;
+  transform-origin: center;
+  transition: transform .18s ease, opacity .18s ease,
+              border-color .18s ease, background .18s ease;
 }
-.week-chip:hover { background: var(--surface-2); color: var(--text); }
+.week-chip .wc-title { font-size: .82rem; font-weight: 620; }
+.week-chip .wc-count { font-size: .64rem; opacity: .75; }
+
+/* Uzaklığa göre küçülme. Seçili olan tam boy ve renkli. */
+.week-chip[data-dist="1"] { transform: scale(.9); opacity: .6; }
+.week-chip[data-dist="2"] { transform: scale(.82); opacity: .38; }
+
+.week-chip:hover { background: var(--surface-2); color: var(--text); opacity: 1; }
+
 .week-chip[aria-pressed="true"] {
-  background: var(--accent); border-color: var(--accent);
-  color: #fff; font-weight: 620;
+  transform: scale(1.06); opacity: 1;
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+/* Nokta göstergesi: kaç hafta var ve neredeyiz. */
+.week-dots {
+  display: flex; justify-content: center; align-items: center; gap: .3rem;
+  margin: .1rem 0 .7rem;
+}
+.week-dots i {
+  width: 5px; height: 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 35%, transparent);
+  transition: width .18s ease, background .18s ease;
+}
+.week-dots i.on { width: 18px; background: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  .week-chip, .week-dots i { transition: none; }
+}
+@media (max-width: 520px) {
+  .week-chip { min-width: 5.4rem; padding: .5rem .7rem; }
+  .week-chip .wc-title { font-size: .76rem; }
 }
 
 /* ─── Maç detayı ──────────────────────────────────────────────────────── */
@@ -846,12 +889,27 @@ td.pts { font-weight: 700; }
   .strip-track { scroll-snap-type: x mandatory; }
   .day-btn { min-width: 4.2rem; scroll-snap-align: center; }
 
-  /* Chevron alt satıra düşüp boşluk yaratıyordu; satırın tamamı zaten
-     dokunulabilir olduğu için gereksiz. */
-  .match { grid-template-columns: 2.6rem minmax(0, 1fr); padding: .6rem .7rem; }
-  .match .chev { display: none; }
-  .match-markets { grid-column: 1 / -1; }
+  /* Chevron kendi başına alt satıra düşüp boşluk yaratıyordu. Gizlemek
+     yerine tahminlerin yanına, aynı satırın sonuna alındı: satırın
+     tıklanabilir olduğunu gösteren ipucu masaüstündeki gibi duruyor. */
+  .match {
+    grid-template-columns: 2.6rem minmax(0, 1fr) .9rem;
+    padding: .6rem .7rem;
+  }
+  .match-teams { grid-column: 2 / -1; }
+  .match-markets { grid-column: 1 / 3; grid-row: 2; }
+  .match .chev {
+    grid-column: 3; grid-row: 2;
+    align-self: center; font-size: 1rem; line-height: 1;
+  }
   .odds-cell { min-width: 0; }
+
+  /* Markets sütunu mobilde satırın tamamına yayılıyor; `align-items:
+     stretch` küçük çipleri de boydan boya esnetiyordu. 1/X/2 kutuları
+     genişlemeye devam ediyor, tek başına duran çipler kendi boyunda. */
+  .match-markets > .pred-chip,
+  .match-markets > .extra-chip,
+  .match-markets > .pill { align-self: flex-start; }
 
   .league-head { padding: .5rem .6rem; }
   .page-head { padding: 1rem 0 .5rem; }
