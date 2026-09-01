@@ -151,14 +151,57 @@ aynı fikirlerin tekrar denenmesini önlemek — hiçbiri modeli iyileştirmedi:
 | Elo sezon devri ayarı | %0.00 | Mevcut 0.75 zaten en iyisi |
 | Maça göre Dixon-Coles rho | %0.00 | 2, 3, 4 kova denendi |
 | Beraberlik kalibrasyonu | +%0.02 | Sapmayı düzeltiyor ama tahmini değil |
+| Fikstür yoğunluğu | +%0.02 | Son 7/14 günde maç sayısı, son Avrupa maçından beri geçen gün |
 
 Avrupa kupalarının kötüleştirmesinin sebebi ölçüldü: kupa rakiplerinin
 %59'u bizim liglerimizde olmayan takımlar, Elo 1500'den başlıyorlar ve
 kendi takımlarımızın reytingine gürültü katıyorlar.
 
+Fikstür yoğunluğu ilginç bir tuzaktı. Ham veride yoğun takımlar daha çok
+puan alıyor gibi görünüyor (son 14 günde rakibinden iki maç fazla oynayan ev
+sahibi 2.12 puan, iki maç az oynayan 1.12), ama bu yorgunluğun tersi değil,
+karıştırıcı değişken: takımlar **iyi oldukları için** yoğun, Avrupa'da
+oynuyorlar. Aynı gruptaki Elo farkı +108'e karşı −123. Elo dilimlere ayrılıp
+sabitlendiğinde etki +0.09 / +0.06 / +0.02 / +0.12 / +0.01 puana iniyor —
+tutarsız ve yorgunluk hipoteziyle ters işaretli. "Üç gün önce Avrupa maçı
+oynamış olmak" da aynı: +0.21 / −0.03 / +0.00 / +0.08, işaret döneksiz
+değil. Yorgunluk etkisi bu veride yok.
+
 Ortak sonuç: **maç sonucu geçmişindeki sinyal tükenmiş.** Elo, xG tabanlı
 hücum/savunma reytingi ve rolling form onu zaten çıkarıyor. Buradan sonrası
 için nitelik olarak farklı veri gerekiyor.
+
+## Model piyasaya karşı
+
+Bu ölçüm neden buradaki her negatif sonucun aynı yere çıktığını açıklıyor.
+
+`football-data.co.uk`'ten 2014'ten bugüne 31.871 maçlık **kapanış oranı**
+indirildi (bkz. `pipeline/sources/histodds.py`). Kapanış oranı bilerek
+seçildi: bahisçinin ilk vuruştan hemen önceki son fiyatı, yani piyasanın
+kadro, sakatlık ve para akışını sindirdikten sonraki görüşü. Bunların
+28.209'unda hem sızıntısız walk-forward model tahminimiz hem piyasa oranı
+var.
+
+| | logloss | isabet |
+|---|---|---|
+| model | 0.9953 | %51.62 |
+| piyasa (kapanış) | **0.9727** | **%53.02** |
+
+Harman ağırlığı erken sezonlarda seçilip geç sezonlarda test edildi: seçilen
+ağırlık **0.00**. Yeniden kalibrasyona izin veren yığınlama testinde modelin
+piyasaya katkısı **+0.0000 logloss**, katsayıları sıfır civarında gürültü.
+15 ligin hepsinde piyasa önde, istisna yok.
+
+Eğitim tazeliği değil: aylık yeniden eğitim (üretimdeki 3 saatlik döngüye
+yakın) aradaki 0.0206'lık farkın yalnızca 0.0005'ini kapatıyor.
+
+Bu, modelin kötü olduğu anlamına gelmiyor — baseline'ı hâlâ %8 geçiyor ve
+gerçek bilgi taşıyor. Anlamı şu: **elimizdeki veriden çıkarılabilecek sinyal
+çıkarılmış durumda**, ve yukarıdaki her eleme aslında bu boşluğu maç
+geçmişiyle kapatma denemesiydi.
+
+Not: sitede yayınlanan `vs_market` karşılaştırması bir ara modeli önde
+gösteriyordu (n=54). Bu ölçüm o örneklemin gürültü olduğunu gösteriyor.
 
 ## Modelin nerede kaybettiği
 
