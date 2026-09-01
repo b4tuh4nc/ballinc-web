@@ -284,7 +284,11 @@ a.match:hover { background: var(--surface-2); }
   padding: .9rem .1rem .3rem;
   scrollbar-width: none;
   scroll-snap-type: x proximity;
+  /* Az hafta varsa şerit kaydırılamıyor ve seçili kart ortalanamıyordu;
+     sola yapışık duruyordu. Kaydırılabilir hale gelince başa dönüyor. */
+  justify-content: center;
 }
+.weeks.scrollable { justify-content: flex-start; }
 .weeks::-webkit-scrollbar { display: none; }
 
 .week-chip {
@@ -306,9 +310,10 @@ a.match:hover { background: var(--surface-2); }
 .week-chip .wc-title { font-size: .82rem; font-weight: 620; }
 .week-chip .wc-count { font-size: .64rem; opacity: .75; }
 
-/* Uzaklığa göre küçülme. Seçili olan tam boy ve renkli. */
-.week-chip[data-dist="1"] { transform: scale(.9); opacity: .6; }
-.week-chip[data-dist="2"] { transform: scale(.82); opacity: .38; }
+/* Uzaklığa göre küçülme. Seçili olan tam boy ve renkli. Solukluk okunaklı
+   kalacak kadar: 0.38'de uzaktaki haftanın yazısı seçilemiyordu. */
+.week-chip[data-dist="1"] { transform: scale(.94); opacity: .78; }
+.week-chip[data-dist="2"] { transform: scale(.89); opacity: .58; }
 
 .week-chip:hover { background: var(--surface-2); color: var(--text); opacity: 1; }
 
