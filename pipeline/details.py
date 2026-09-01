@@ -7,10 +7,22 @@ istekle şunları birden veriyor:
     totalStarterMarketValue   → sahaya çıkan kadronun piyasa değeri
     averageStarterAge         → ilk 11 yaş ortalaması
     coach                     → teknik direktör kimliği (değişim tespiti)
-    unavailable               → sakat/cezalı listesi
+    unavailable               → sakat/cezalı oyuncular, PİYASA DEĞERLERİYLE
+    infoBox.Stadium           → stadyum koordinatı, kapasite (hava durumu için)
+    infoBox.Attendance        → seyirci sayısı
+    infoBox.Referee           → hakem
 
 Yani "kadro değeri", "ilk 11 gücü" ve "teknik direktör değişimi" için ayrı
-bir kaynak (Transfermarkt) gerekmiyor; dördü de aynı istekten çıkıyor.
+bir kaynak (Transfermarkt) gerekmiyor; hepsi aynı istekten çıkıyor.
+
+Eksik oyuncuların DEĞERİ ayrıca önemli: sakatlık daha önce "kaç oyuncu
+eksik" olarak ölçülüp elenmişti (+%0.01), ama o yanlış ölçüydü — yıldız
+oyuncunun yokluğuyla üçüncü kalecininki aynı sayılıyordu.
+
+DİKKAT — sızıntı: `attendance` ve `referee` maç ANINDA belli oluyor, 60 gün
+sonraki bir maç için bilinmiyor. Bunlar doğrudan feature olamaz; yalnızca
+takımın geçmiş ortalaması gibi maç öncesi bilinen türevleri kullanılabilir.
+Stadyum koordinatı ve kapasite ise her zaman bilinir, onlarda sorun yok.
 
 Bu adım pahalı: 42.050 oynanmış maç var. O yüzden
   · sonuç maç başına önbelleğe yazılıyor ve bir daha istenmiyor,
@@ -50,6 +62,9 @@ COLUMNS = [
     "home_value", "away_value",
     "home_age", "away_age",
     "home_coach", "away_coach",
+    "home_out_n", "away_out_n",
+    "home_out_value", "away_out_value",
+    "lat", "lon", "capacity", "attendance", "referee",
 ]
 
 
@@ -90,10 +105,27 @@ def _side(team: dict | None) -> dict:
     coach = team.get("coach") or {}
     if isinstance(coach, list):
         coach = coach[0] if coach else {}
+    out = team.get("unavailable") or []
+    out_value = sum(_number(p.get("marketValue")) or 0.0 for p in out)
     return {
         "value": _number(team.get("totalStarterMarketValue")),
         "age": _number(team.get("averageStarterAge")),
         "coach": str(coach.get("id")) if coach.get("id") else None,
+        "out_n": float(len(out)),
+        "out_value": out_value,
+    }
+
+
+def _venue(content: dict) -> dict:
+    info = (content.get("matchFacts") or {}).get("infoBox") or {}
+    stadium = info.get("Stadium") or {}
+    referee = info.get("Referee") or {}
+    return {
+        "lat": _number(stadium.get("lat")),
+        "lon": _number(stadium.get("long")),
+        "capacity": _number(stadium.get("capacity")),
+        "attendance": _number(info.get("Attendance")),
+        "referee": referee.get("text") if isinstance(referee, dict) else None,
     }
 
 
@@ -119,6 +151,10 @@ def fetch_detail(fotmob_id: str) -> dict | None:
         "home_value": home.get("value"), "away_value": away.get("value"),
         "home_age": home.get("age"), "away_age": away.get("age"),
         "home_coach": home.get("coach"), "away_coach": away.get("coach"),
+        "home_out_n": home.get("out_n"), "away_out_n": away.get("out_n"),
+        "home_out_value": home.get("out_value"),
+        "away_out_value": away.get("out_value"),
+        **_venue(content),
     }
 
 
