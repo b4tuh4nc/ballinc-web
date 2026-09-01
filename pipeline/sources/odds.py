@@ -24,6 +24,9 @@ from pipeline.crosswalk import normalise
 
 BASE_URL = "https://api.the-odds-api.com/v4/sports/{sport}/odds"
 
+# Sağlayıcının yarışma anahtarları. Listede olmayan yarışma için oran
+# çekilmiyor; sağlayıcıda İskoçya, Çekya ve Hırvatistan ligi yok (kontrol
+# edildi), o üçü kalıcı olarak piyasa kıyası dışında.
 SPORT_KEYS = {
     "EPL": "soccer_epl",
     "La_Liga": "soccer_spain_la_liga",
@@ -31,6 +34,17 @@ SPORT_KEYS = {
     "Bundesliga": "soccer_germany_bundesliga",
     "Ligue_1": "soccer_france_ligue_one",
     "TSL": "soccer_turkey_super_league",
+    "UCL": "soccer_uefa_champs_league",
+    "UEL": "soccer_uefa_europa_league",
+    "UECL": "soccer_uefa_europa_conference_league",
+    "NED": "soccer_netherlands_eredivisie",
+    "POR": "soccer_portugal_primeira_liga",
+    "BEL": "soccer_belgium_first_div",
+    "GRE": "soccer_greece_super_league",
+    "DEN": "soccer_denmark_superliga",
+    "AUT": "soccer_austria_bundesliga",
+    "SUI": "soccer_switzerland_superleague",
+    "POL": "soccer_poland_ekstraklasa",
 }
 
 MATCH_THRESHOLD = 0.70

@@ -88,16 +88,14 @@ jobs:
       # kota 11 günde biterdi. İki çekim ayda ~372 istek yapıyor ve akşam
       # maçlarından önceki oranları yakalıyor. Atlanan koşularda diskteki
       # son oranlar kullanılmaya devam ediyor.
+      # Sıklık ve kota kararı market.py'nin içinde: burada saate bakan bir
+      # kontrol vardı ("10 veya 16 ise çek") ama cron üç saatte bir
+      # tetiklediği için o saatler hiç gelmiyordu ve oran çekimi ancak
+      # GitHub'ın gecikmesi tesadüfen denk düşerse çalışıyordu.
       - name: Bahis oranları
         env:
           ODDS_API_KEY: ${{ secrets.ODDS_API_KEY }}
-        run: |
-          HOUR=$(date -u +%H)
-          if [ "$HOUR" = "10" ] || [ "$HOUR" = "16" ]; then
-            python -m pipeline.market
-          else
-            echo "Oran çekimi atlandı (saat $HOUR UTC); mevcut oranlar korunuyor."
-          fi
+        run: python -m pipeline.market
 
       - name: Siteyi üret
         run: python -m pipeline.export
