@@ -170,10 +170,17 @@ def fetch_detail(fotmob_id: str) -> dict | None:
 
 
 def fixture_ids(league: str, season: str) -> pd.DataFrame:
-    """Kanonik match_id → FotMob maç kimliği.
+    """Takım çifti + tarih → FotMob maç kimliği.
 
-    Fikstür ucundan gelen satırlar ham veriyle AYNI dönüşümden geçiriliyor,
-    yoksa kimlikler birbirini tutmazdı.
+    match_id üzerinden eşleştirilemiyor: arşiv sezonları (2024/25 ve öncesi)
+    kanonik şema gelmeden önce yazıldıkları için kaynağın kendi kimliğini
+    taşıyor ("us23065"), canlı sezonlar ise yeni şemayı
+    ("Bundesliga-2025_2026-us117-us136"). Aynı veri setinde iki biçim yan
+    yana duruyor ve bu adım ikisiyle de çalışmak zorunda.
+
+    Takım kimlikleri her iki biçimde de kanonik, o yüzden eşleşme (ev,
+    deplasman) çifti üzerinden yapılıyor; aynı çift sezon içinde birden çok
+    kez oynayabildiği için (bölünmüş formatlı ligler) tarih de taşınıyor.
     """
     df = fotmob.fetch_league_season(league, season)
     if df.empty:
@@ -181,7 +188,8 @@ def fixture_ids(league: str, season: str) -> pd.DataFrame:
     df = df.copy()
     df["fotmob_id"] = df["match_id"].str.removeprefix("fm")
     df = canonicalise(df, league)
-    return df[df["is_result"] == True][["match_id", "fotmob_id"]]  # noqa: E712
+    df = df[df["is_result"] == True]  # noqa: E712
+    return df[["home_id", "away_id", "datetime", "fotmob_id"]]
 
 
 def process(league: str, season: str, budget: int) -> tuple[int, int]:
@@ -196,23 +204,33 @@ def process(league: str, season: str, budget: int) -> tuple[int, int]:
 
     cache = load_cache(league, season)
     have = set(cache["match_id"]) if not cache.empty else set()
-    missing = [m for m in ours["match_id"] if m not in have]
-    if not missing:
+    todo = ours[~ours["match_id"].isin(have)]
+    if todo.empty:
         return 0, 0
+    missing = list(todo["match_id"])
 
     mapping = fixture_ids(league, season)
     spent = 1                                   # fikstür isteği de sayılıyor
     if mapping.empty:
         return spent, len(missing)
-    lookup = dict(zip(mapping["match_id"], mapping["fotmob_id"]))
+
+    # (ev, deplasman) → [(tarih, fotmob_id)]. Aynı çift birden çok kez
+    # oynadıysa tarihi en yakın olan seçiliyor.
+    lookup: dict[tuple[str, str], list] = {}
+    for row in mapping.itertuples(index=False):
+        lookup.setdefault((row.home_id, row.away_id), []).append(
+            (pd.Timestamp(row.datetime), row.fotmob_id))
 
     rows = []
-    for match_id in missing:
+    for row in todo.itertuples(index=False):
         if spent >= budget:
             break
-        fotmob_id = lookup.get(match_id)
-        if not fotmob_id:
+        match_id = row.match_id
+        options = lookup.get((row.home_id, row.away_id))
+        if not options:
             continue
+        when = pd.Timestamp(row.datetime)
+        fotmob_id = min(options, key=lambda o: abs(o[0] - when))[1]
         detail = fetch_detail(fotmob_id)
         spent += 1
         time.sleep(SLEEP)
