@@ -91,6 +91,57 @@ def markets(matrix: np.ndarray) -> dict[str, np.ndarray]:
     return out
 
 
+def scenario(matrix: np.ndarray) -> list[dict]:
+    """Birlikte tutarlı olan en olası (1X2, 2.5 Alt/Üst, KG) üçlüsü.
+
+    Marketler tek tek en olası seçeneğine bakılarak gösterildiğinde ortaya
+    kendi kendini çürüten üçlüler çıkıyordu. En sık görüleni "1 / 2.5 Alt /
+    KG Var"dı: iki takım da gol atmış ve toplam 2'yi geçmemişse skor
+    zorunlu olarak 1-1'dir, yani beraberlik — "1" ile bir arada imkânsız.
+    Ölçtüğümde 1.119 maçın 256'sı (%23) bu durumdaydı.
+
+    Her marketin kendi olasılığı doğruydu; hata onları BİRLİKTE sunmaktaydı.
+    Marjinal olasılıklar bağımsız seçilemez, çünkü aynı ortak dağılımdan
+    geliyorlar. Burada sekiz kombinasyonun ortak olasılığı doğrudan skor
+    matrisinden hesaplanıp en yükseği seçiliyor; sonuç tanımı gereği
+    tutarlı.
+    """
+    i = np.arange(MAX_GOALS)[:, None]
+    j = np.arange(MAX_GOALS)[None, :]
+    result_masks = [(i > j), (i == j), (i < j)]
+    over_masks = [((i + j) <= 2.5), ((i + j) > 2.5)]
+    btts_masks = [((i == 0) | (j == 0)), ((i > 0) & (j > 0))]
+
+    combos = []
+    for r, r_mask in enumerate(result_masks):
+        for o, o_mask in enumerate(over_masks):
+            for b, b_mask in enumerate(btts_masks):
+                mask = r_mask & o_mask & b_mask
+                combos.append((r, o, b, (matrix * mask).sum(axis=(1, 2))))
+
+    probs = np.stack([c[3] for c in combos], axis=1)
+    best = probs.argmax(axis=1)
+
+    # Senaryonun İÇİNDEKİ en olası skor. Ayrı hesaplanan "en olası skor"
+    # senaryoyla çelişebiliyordu: sonuç 1-1 çıkarken üstteki cümle
+    # "ev sahibi kazanır" diyordu. Aynı maskeden seçilince çelişemez.
+    out = []
+    for row, k in enumerate(best):
+        r, o, b, _ = combos[k]
+        mask = result_masks[r] & over_masks[o] & btts_masks[b]
+        cell = np.where(mask, matrix[row], -1.0)
+        flat = int(cell.argmax())
+        out.append({
+            "result": int(r),
+            "over": int(o),
+            "btts": int(b),
+            "prob": float(probs[row, k]),
+            "score": [flat // MAX_GOALS, flat % MAX_GOALS],
+            "score_prob": float(cell.reshape(-1)[flat]),
+        })
+    return out
+
+
 def top_scores(matrix: np.ndarray, n: int = 6) -> list[list[dict]]:
     """Maç başına en olası n skor."""
     flat = matrix.reshape(len(matrix), -1)

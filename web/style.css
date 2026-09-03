@@ -1305,6 +1305,32 @@ body.filter-open { overflow: hidden; }
 
 .pinned-head { color: #f5b301; }
 
+/* Maç satırındaki yıldız. İşaretli değilken soluk duruyor ki listenin
+   ritmini bozmasın; dokunmatikte her zaman görünür, farede satıra gelince
+   belirginleşiyor. */
+.match-star {
+  width: 30px; height: 30px;
+  font-size: .95rem;
+  opacity: .22;
+  transition: opacity .15s ease, color .15s ease;
+  align-self: center;
+}
+.match:hover .match-star { opacity: .55; }
+.match-star.on,
+.match:hover .match-star.on { opacity: 1; color: #f5b301; }
+.match-star:hover { opacity: 1 !important; }
+
+@media (hover: none) {
+  .match-star { opacity: .35; }
+}
+
+/* Başabaş maç: iki taraf da vurgulanmıyor, ikisi de hafifçe işaretleniyor.
+   Yarım puanlık farkla birini favori ilan etmek yanlış bilgi veriyordu. */
+.odds-cell.toss {
+  border-color: color-mix(in srgb, var(--text-muted) 40%, transparent);
+  background: color-mix(in srgb, var(--text-muted) 8%, transparent);
+}
+
 body.search-open { overflow: hidden; }
 
 @media (max-width: 620px) {
@@ -1961,3 +1987,26 @@ body.cal-open .datestrip { z-index: 60; }
   background-clip: content-box;
 }
 ::-webkit-scrollbar-corner { background: transparent; }
+
+
+/* ─── Birlikte tutarlı senaryo ─────────────────────────────────────────── */
+.scenario {
+  margin-top: 1rem; padding-top: .9rem;
+  border-top: 1px solid var(--border);
+}
+.sc-head { font-size: .78rem; color: var(--text-muted); margin-bottom: .5rem; }
+.sc-head b { color: var(--text); }
+.sc-row { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.sc-pill {
+  padding: .3rem .6rem; border-radius: 999px;
+  border: 1px solid var(--border); background: var(--surface-2);
+  font-size: .78rem; font-weight: 560;
+}
+.sc-score {
+  margin-left: auto;
+  font-size: 1.05rem; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+@media (max-width: 480px) {
+  .sc-score { margin-left: 0; }
+}

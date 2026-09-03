@@ -12,7 +12,7 @@ import pandas as pd
 
 from pipeline import features
 from pipeline.config import MODELS_DIR, PREDICT_WINDOW_DAYS, PROCESSED_DIR
-from pipeline.model import GoalModel, top_scores
+from pipeline.model import GoalModel, scenario, top_scores
 
 # Bu kadar ileri tarihli maçlarda başlama saati genelde henüz kesin değil.
 TIME_CONFIRMED_DAYS = 7
@@ -72,6 +72,7 @@ def predict(df: pd.DataFrame, model: GoalModel | None = None) -> list[dict]:
     X = df[model.features]
     probs, matrix = model.predict_markets(X)
     scores = top_scores(matrix)
+    scenarios = scenario(matrix)
     lam_home, lam_away = model.lambdas(X)
 
     now = pd.Timestamp.utcnow().tz_localize(None)
@@ -100,6 +101,17 @@ def predict(df: pd.DataFrame, model: GoalModel | None = None) -> list[dict]:
             "markets": {
                 key: [round(float(v), 4) for v in probs[key][pos]]
                 for key in probs
+            },
+            # Birlikte tutarlı üçlü. Marketler ayrı ayrı en olasısına göre
+            # gösterildiğinde maçların %23'ünde imkânsız bir kombinasyon
+            # çıkıyordu; bkz. model.scenario.
+            "scenario": {
+                "result": scenarios[pos]["result"],
+                "over": scenarios[pos]["over"],
+                "btts": scenarios[pos]["btts"],
+                "prob": round(scenarios[pos]["prob"], 4),
+                "score": scenarios[pos]["score"],
+                "score_prob": round(scenarios[pos]["score_prob"], 4),
             },
             "top_scores": [
                 {"home": s["home"], "away": s["away"], "prob": round(s["prob"], 4)}

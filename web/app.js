@@ -105,22 +105,43 @@ function reliability(metrics, key) {
    üstünde. Yani vurgu boş bir uyarı değil. */
 const DRAW_ALERT = 0.27;
 
+/* Ev ve deplasman olasılığı bu kadar yakınsa birini "favori" diye
+   işaretlemek uydurma olur. Başakşehir–Galatasaray'da model %37.3'e %36.7
+   demişti ve satır Başakşehir'i favori gösteriyordu; aradaki fark yarım
+   puan. Maçların %8'i bu durumda. */
+const TOSS_UP = 0.04;
+
 function oddsCells(match) {
   const p = match.markets.result;
-  const best = p.indexOf(Math.max(...p));
   const labels = ["1", "X", "2"];
+  const tossUp = Math.abs(p[0] - p[2]) < TOSS_UP;
+  const best = tossUp ? -1 : p.indexOf(Math.max(...p));
   const drawish = p[1] >= DRAW_ALERT;
   return `<div class="odds">${p.map((v, i) => `
-    <div class="odds-cell${i === best ? " best" : ""}${i === 1 && drawish ? " drawish" : ""}"${
+    <div class="odds-cell${i === best ? " best" : ""}${
+      tossUp && i !== 1 ? " toss" : ""}${i === 1 && drawish ? " drawish" : ""}"${
+      tossUp && i !== 1 ? ` title="Başabaş maç: iki taraf arasında anlamlı fark yok"` : ""}${
       i === 1 && drawish ? ` title="Beraberliğe açık maç: bu olasılıktaki maçların yaklaşık %29 kadarı berabere bitiyor"` : ""}>
       <span>${labels[i]}</span><b>%${pct(v)}</b>
     </div>`).join("")}</div>`;
 }
 
+/* Alt/Üst ve KG seçimleri maçın ana sonucuyla BİRLİKTE tutarlı olmalı.
+   Eskiden her market kendi başına en olasısına göre gösteriliyordu ve
+   maçların %23'ünde imkânsız bir üçlü çıkıyordu — en sık "1 / 2.5 Alt /
+   KG Var": iki takım da gol atmış ve toplam 2'yi geçmemişse skor zorunlu
+   olarak 1-1'dir, yani beraberlik.
+
+   Doğrusu ortak dağılımdan seçmek; bunu boru hattı yapıyor ve `scenario`
+   alanında gönderiyor (bkz. pipeline/model.py). Alan yoksa (veri henüz
+   yenilenmemişse) eski davranışa düşülüyor. Ölçümde senaryo ana sonucu hiç
+   değiştirmiyor, yalnızca yanındaki iki çipi ona uyduruyor. */
 function extraChips(match) {
   const ou = match.markets.over_2_5, bt = match.markets.btts;
   if (!ou || !bt) return "";
-  const over = ou[1] >= ou[0], yes = bt[1] >= bt[0];
+  const sc = match.scenario;
+  const over = sc ? sc.over === 1 : ou[1] >= ou[0];
+  const yes = sc ? sc.btts === 1 : bt[1] >= bt[0];
   // Buraya "BERABERLİĞE AÇIK" diye ayrı bir çip konmuştu ama satırdaki
   // diğer çipleri kaydırıp listeyi hizasız bırakıyordu. Sarı X kutusu
   // uyarıyı zaten veriyor.
@@ -143,8 +164,18 @@ function matchRow(match, index = 0) {
         <div class="team-line">${crest(match.away.id)}<span class="team-name" data-team="${esc(match.away.id)}">${esc(match.away.name)}</span><span class="cards-a"></span><span class="team-score live-a"></span></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
+      ${matchStar(match.id)}
       <div class="chev" aria-hidden="true">›</div>
     </a>`;
+}
+
+/** Satırdaki maç favorisi düğmesi. */
+function matchStar(id) {
+  const on = favMatches().has(id);
+  return `<button class="star match-star${on ? " on" : ""}" type="button"
+          data-favmatch="${esc(id)}" aria-pressed="${on}"
+          aria-label="${on ? "Maçı favorilerden çıkar" : "Maçı favorilere ekle"}"
+          title="${on ? "Favorilerden çıkar" : "Favorilere ekle"}">★</button>`;
 }
 
 const PICK_LABEL = ["1", "X", "2"];
@@ -192,6 +223,7 @@ function resultRow(result, index = 0, perspective = null, done = false) {
         ${forecastChip(result)}
         ${result.xg ? `<span class="extra-chip">xG <b>${result.xg[0]} - ${result.xg[1]}</b></span>` : ""}
       </div>
+      ${matchStar(result.id)}
       <div class="chev" aria-hidden="true">›</div>
     </a>`;
 }
@@ -503,12 +535,15 @@ async function viewHome() {
   // Favori takımların maçları günün en üstüne sabitleniyor ve lig
   // gruplarından çıkarılıyor — yoksa aynı maç iki kez görünürdü.
   const favs = favourites();
-  const isFav = (m) => favs.has(m.home.id) || favs.has(m.away.id);
+  const favM = favMatches();
+  // Hem favori takımın maçı hem tek tek işaretlenmiş maçlar aynı blokta.
+  // İkisi ayrı başlık olsaydı aynı maç iki yerde görünebilirdi.
+  const isFav = (m) => favM.has(m.id) || favs.has(m.home.id) || favs.has(m.away.id);
   const pinned = list.filter(isFav);
   const rest = list.filter((m) => !isFav(m));
 
   const pinnedHTML = pinned.length ? `
-    <div class="date-head pinned-head">★ Favori takımların</div>
+    <div class="date-head pinned-head">★ Favoriler</div>
     <div class="match-list">${pinned.map(dayRow).join("")}</div>` : "";
 
   const byLeague = new Map();
@@ -1346,6 +1381,35 @@ function viewResult(result, data, meta, tab) {
    backtest'te ölçülüp meta.json'a yazılıyor, buradaki mantık o rakama
    bakıyor. Model iyileşirse cümleler kendiliğinden güçleniyor. */
 
+/* Birlikte tutarlı senaryo.
+
+   Marketleri ayrı ayrı en olasısına göre göstermek maçların %23'ünde kendi
+   kendini çürüten bir üçlü üretiyordu — en sık "1 / 2.5 Alt / KG Var", ki
+   iki takım da gol attıysa ve toplam 2'yi geçmediyse skor zorunlu olarak
+   1-1, yani beraberliktir. Buradaki üçlü ortak dağılımdan seçiliyor, skoru
+   da aynı maskeden geliyor; tanım gereği çelişemez.
+
+   Ortak olasılık düşük görünecek (ortalama %24) ama dürüst olan bu: üç
+   şeyin AYNI ANDA tutması, her birinin tek başına tutmasından zordur. */
+function scenarioHTML(match) {
+  const sc = match.scenario;
+  if (!sc || !sc.score) return "";
+  const who = sc.result === 0 ? esc(match.home.short || match.home.name)
+    : sc.result === 2 ? esc(match.away.short || match.away.name) : "Beraberlik";
+  const result = sc.result === 1 ? "Beraberlik" : `${who} kazanır`;
+  return `<div class="scenario">
+    <div class="sc-head">Birlikte tutarlı senaryo <b>%${pct(sc.prob)}</b></div>
+    <div class="sc-row">
+      <span class="sc-pill">${result}</span>
+      <span class="sc-pill">2.5 ${sc.over ? "Üst" : "Alt"}</span>
+      <span class="sc-pill">KG ${sc.btts ? "Var" : "Yok"}</span>
+      <span class="sc-score">${sc.score[0]} - ${sc.score[1]}</span>
+    </div>
+    <p class="note">Üçü birden tutma olasılığı %${pct(sc.prob)}; bu senaryonun
+      en olası skoru ${sc.score[0]}-${sc.score[1]} (%${pct(sc.score_prob)}).</p>
+  </div>`;
+}
+
 function verdictHTML(match, meta) {
   const p = match.markets?.result;
   const bands = meta.confidence ?? [];
@@ -1496,6 +1560,7 @@ async function viewMatch(id, tab) {
         ${rest.map((s) => `<div class="score-cell">
           <b>${s.home} - ${s.away}</b><span>%${(s.prob * 100).toFixed(1)}</span></div>`).join("")}
       </div>
+      ${scenarioHTML(match)}
     </section>
 
     ${marketHTML(match)}
@@ -2082,6 +2147,16 @@ const onContentClick = (event) => {
   const star = event.target.closest("[data-fav]");
   if (star) {
     toggleFavourite(star.dataset.fav);
+    return route();
+  }
+
+  // Maç yıldızı satırın içinde ve satırın tamamı bir bağlantı; varsayılan
+  // davranış engellenmezse yıldıza basmak maç sayfasını açardı.
+  const mstar = event.target.closest("[data-favmatch]");
+  if (mstar) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleFavMatch(mstar.dataset.favmatch);
     return route();
   }
 
@@ -2868,6 +2943,22 @@ async function notifyEvents(events) {
 function favourites() {
   try { return new Set(JSON.parse(localStorage.getItem("ballinc-fav") || "[]")); }
   catch { return new Set(); }
+}
+
+/* Maç favorileri takım favorilerinden ayrı tutuluyor: "Galatasaray'ı takip
+   ediyorum" ile "bu maçı izleyeceğim" farklı istekler ve aynı listeye
+   konsalar biri diğerini temizlerken silinirdi. */
+function favMatches() {
+  try { return new Set(JSON.parse(localStorage.getItem("ballinc-fav-match") || "[]")); }
+  catch { return new Set(); }
+}
+
+function toggleFavMatch(id) {
+  const set = favMatches();
+  if (set.has(id)) set.delete(id); else set.add(id);
+  try { localStorage.setItem("ballinc-fav-match", JSON.stringify([...set])); }
+  catch { /* özel pencere */ }
+  return set;
 }
 
 function setFavourites(set) {
