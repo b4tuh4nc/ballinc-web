@@ -158,13 +158,12 @@ function matchRow(match, index = 0) {
     <a class="match" style="--i:${index}"${live ? ` data-live="${live}"` : ""}
        data-fmday="${fotmobDay(match.kickoff)}"
        href="#/mac/${encodeURIComponent(match.id)}">
-      <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}</div>
+      <div class="match-time"><span class="clock">${timeIn(match.kickoff)}</span>${tbd}${matchStar(match.id)}</div>
       <div class="match-teams">
         <div class="team-line">${crest(match.home.id)}<span class="team-name" data-team="${esc(match.home.id)}">${esc(match.home.name)}</span><span class="cards-h"></span><span class="team-score live-h"></span></div>
         <div class="team-line">${crest(match.away.id)}<span class="team-name" data-team="${esc(match.away.id)}">${esc(match.away.name)}</span><span class="cards-a"></span><span class="team-score live-a"></span></div>
       </div>
       <div class="match-markets">${oddsCells(match)}${extraChips(match)}</div>
-      ${matchStar(match.id)}
       <div class="chev" aria-hidden="true">›</div>
     </a>`;
 }
@@ -207,7 +206,7 @@ function resultRow(result, index = 0, perspective = null, done = false) {
         // saati yerine durumu yazmak ayrımı netleştiriyor. Canlı veriyle
         // güncellenen satırlar da aynı sözcüğü kullanıyor.
         ? `<span class="clock">BİTTİ</span>`
-        : timeIn(result.kickoff)}</div>
+        : timeIn(result.kickoff)}${matchStar(result.id)}</div>
       <div class="match-teams">
         <div class="team-line${hg < ag ? " dim" : ""}">
           ${crest(result.home.id)}<span class="team-name" data-team="${esc(result.home.id)}">${esc(result.home.name)}</span>
@@ -223,7 +222,6 @@ function resultRow(result, index = 0, perspective = null, done = false) {
         ${forecastChip(result)}
         ${result.xg ? `<span class="extra-chip">xG <b>${result.xg[0]} - ${result.xg[1]}</b></span>` : ""}
       </div>
-      ${matchStar(result.id)}
       <div class="chev" aria-hidden="true">›</div>
     </a>`;
 }
