@@ -87,8 +87,11 @@ def _number(value) -> float | None:
 
 
 def _xg(content: dict) -> tuple[float | None, float | None]:
-    groups = ((content.get("stats") or {}).get("Periods", {})
-              .get("All", {}).get("stats") or [])
+    # Her kademede `or {}` şart: FotMob eksik bölümü anahtarsız değil, anahtar
+    # var ama değeri `null` olarak veriyor. `.get("All", {})` o durumda
+    # varsayılanı değil None'ı döndürüyor ve zincir kırılıyor.
+    periods = ((content.get("stats") or {}).get("Periods") or {})
+    groups = ((periods.get("All") or {}).get("stats") or [])
     for group in groups:
         for stat in group.get("stats", []):
             if stat.get("key") != "expected_goals":
@@ -120,6 +123,8 @@ def _venue(content: dict) -> dict:
     info = (content.get("matchFacts") or {}).get("infoBox") or {}
     stadium = info.get("Stadium") or {}
     referee = info.get("Referee") or {}
+    if not isinstance(stadium, dict):
+        stadium = {}
     return {
         "lat": _number(stadium.get("lat")),
         "lon": _number(stadium.get("long")),
@@ -142,10 +147,16 @@ def fetch_detail(fotmob_id: str) -> dict | None:
     except ValueError:
         return None
 
-    home_xg, away_xg = _xg(content)
-    lineup = content.get("lineup") or {}
-    home = _side(lineup.get("homeTeam"))
-    away = _side(lineup.get("awayTeam"))
+    # Tek bir bozuk maç 5.000 isteklik işi öldürmemeli: ayrıştırma hatası
+    # o maçı atlamakla sonuçlanır, işi durdurmakla değil.
+    try:
+        home_xg, away_xg = _xg(content)
+        lineup = content.get("lineup") or {}
+        home = _side(lineup.get("homeTeam"))
+        away = _side(lineup.get("awayTeam"))
+        venue = _venue(content)
+    except Exception:
+        return None
     return {
         "home_xg": home_xg, "away_xg": away_xg,
         "home_value": home.get("value"), "away_value": away.get("value"),
@@ -154,7 +165,7 @@ def fetch_detail(fotmob_id: str) -> dict | None:
         "home_out_n": home.get("out_n"), "away_out_n": away.get("out_n"),
         "home_out_value": home.get("out_value"),
         "away_out_value": away.get("out_value"),
-        **_venue(content),
+        **venue,
     }
 
 

@@ -34,11 +34,20 @@ jobs:
       # Güncel sezonların ham verisi repoda tutulmuyor.
       - run: python -m pipeline.ingest
 
-      - run: |
-          python -m pipeline.details \
-            --budget ${{ inputs.budget }} \
-            --since ${{ inputs.since }} \
-            --xg-first
+      # Lig listesi YAML ifadesiyle değil kabukta ekleniyor. İfadeli hali
+      # sessizce boş üretmişti: paralel çalıştırılan dört parça da bütün
+      # ligleri taramaya kalktı, yani aynı işi dört kez yaptılar.
+      - env:
+          LEAGUES: ${{ inputs.leagues }}
+          BUDGET: ${{ inputs.budget }}
+          SINCE: ${{ inputs.since }}
+        run: |
+          ARGS="--budget $BUDGET --since $SINCE --xg-first"
+          if [ -n "$LEAGUES" ]; then
+            ARGS="$ARGS --leagues $LEAGUES"
+          fi
+          echo "komut: python -m pipeline.details $ARGS"
+          python -m pipeline.details $ARGS
 
       - name: İşle
         if: always()
