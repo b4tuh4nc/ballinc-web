@@ -12,6 +12,9 @@ on:
       since:
         description: "Bu sezondan eskisi taranmasın"
         default: "2022_2023"
+      leagues:
+        description: "Yalnızca bu yarışmalar (boşluklu; boş = hepsi)"
+        default: ""
 
 permissions:
   contents: write
@@ -45,8 +48,14 @@ jobs:
           git add -f data/details
           if git diff --staged --quiet; then
             echo "Değişiklik yok."
-          else
-            git commit -m "Maç detayları: tarama parçası"
-            git pull --rebase --autostash origin main
-            git push
+            exit 0
           fi
+          git commit -m "Maç detayları: tarama parçası"
+          # Parçalar paralel çalışıyor ve hepsi aynı dala yazıyor. İlk push'un
+          # reddedilmesi beklenen bir durum, hata değil.
+          for i in 1 2 3 4 5 6; do
+            git pull --rebase --autostash origin main && git push && exit 0
+            echo "push $i. denemede olmadı, tekrar..."
+            sleep $((RANDOM % 20 + 5))
+          done
+          echo "push başarısız"; exit 1
