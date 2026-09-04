@@ -309,15 +309,20 @@ const DAY_TABS = [
    Sayılar günün dizininden geliyor, ligin dosyasını indirmeden; gizli bir
    lig de şeritte görünüyor (yoksa geri açmanın yolu kalmazdı). */
 function leagueStripHTML(meta, dayCounts, hidden) {
-  const byCode = Object.fromEntries(meta.leagues.map((l) => [l.code, l]));
-  const codes = Object.keys(dayCounts)
-    .filter((c) => byCode[c])
-    .sort((a, b) => (byCode[a].tier ?? 0) - (byCode[b].tier ?? 0)
-      || byCode[a].name.localeCompare(byCode[b].name, "tr"));
+  // Şerit sabit: beş büyük lig + Süper Lig (tier 0) ve Avrupa kupaları
+  // (tier 1). Önce "o gün maçı olan ligler" gösteriliyordu ama içerik her
+  // gün değişince şerit bir kontrol olmaktan çıkıp habere dönüşüyordu —
+  // aynı ligi iki gün üst üste aynı yerde bulamıyordun. Besleyici ligler
+  // (tier 2) "Diğer ligler" panelinde.
+  const main = meta.leagues.filter((l) => (l.tier ?? 0) <= 1);
+  const codes = main.map((l) => l.code);
   if (!codes.length) return "";
+  const byCode = Object.fromEntries(meta.leagues.map((l) => [l.code, l]));
 
   const off = codes.filter((c) => hidden.has(c)).length;
-  const rest = meta.leagues.length - codes.length;
+  // Rozet: bugün maçı olan besleyici lig sayısı, toplamı değil.
+  const rest = meta.leagues.filter(
+    (l) => (l.tier ?? 0) === 2 && dayCounts[l.code]).length;
 
   // Yalnızca logo: adlarla birlikte 12 çip sayfanın başını araç çubuğuna
   // çeviriyordu. Ad ve maç sayısı erişilebilir etikette duruyor, üzerine
@@ -325,8 +330,9 @@ function leagueStripHTML(meta, dayCounts, hidden) {
   const chips = codes.map((code) => {
     const league = byCode[code];
     const on = !hidden.has(code);
-    const label = `${league.name} · ${dayCounts[code]} maç`;
-    return `<button class="lchip${on ? "" : " off"}" type="button"
+    const n = dayCounts[code] ?? 0;
+    const label = n ? `${league.name} · ${n} maç` : `${league.name} · bugün maç yok`;
+    return `<button class="lchip${on ? "" : " off"}${n ? "" : " idle"}" type="button"
             data-toggle-league="${esc(code)}" aria-pressed="${on}"
             title="${esc(label)}${on ? " — gizle" : " — göster"}"
             aria-label="${esc(label)}">
@@ -340,9 +346,9 @@ function leagueStripHTML(meta, dayCounts, hidden) {
       ${off ? `<button class="lchip act" type="button" data-league-all
                 title="Gizlediğin ${off} ligi geri getir">Gizlenenleri aç
                 <b class="lc-n">${off}</b></button>` : ""}
-      ${rest ? `<button class="lchip act" type="button" data-filter="toggle"
-                title="Bugün maçı olmayan ${rest} lig">Diğer ligler
-                <b class="lc-n">${rest}</b></button>` : ""}
+      <button class="lchip act" type="button" data-filter="toggle"
+              title="${rest ? `Bugün ${rest} diğer ligde maç var` : "Diğer ligler"}">Diğer ligler
+        ${rest ? `<b class="lc-n">${rest}</b>` : ""}</button>
     </div>
   </div>`;
 }

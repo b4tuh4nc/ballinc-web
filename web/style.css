@@ -2175,6 +2175,11 @@ body.cal-open .datestrip { z-index: 60; }
 }
 .lchip.off:hover { opacity: .65; }
 
+/* Bugün maçı olmayan lig: gizli değil, sadece boş. Gizliden ayrılsın diye
+   rengi duruyor, yalnızca hafifçe soluk. */
+.lchip.idle { opacity: .55; }
+.lchip.idle:hover { opacity: .85; }
+
 /* Sonlandırıcı düğmeler eylem, lig değil: hap biçiminde ve KELİMELİ.
    Önce "⟳ 4" ve "+8" yazıyorlardı; ne yaptıkları tahmin edilemiyordu. */
 .lchip.act {
