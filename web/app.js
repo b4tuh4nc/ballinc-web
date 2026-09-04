@@ -338,9 +338,11 @@ function leagueStripHTML(meta, dayCounts, hidden) {
     <div class="lstrip-track">${chips}</div>
     <div class="lstrip-end">
       ${off ? `<button class="lchip act" type="button" data-league-all
-                title="Gizlenen ${off} ligi geri göster">⟳ ${off}</button>` : ""}
+                title="Gizlediğin ${off} ligi geri getir">Gizlenenleri aç
+                <b class="lc-n">${off}</b></button>` : ""}
       ${rest ? `<button class="lchip act" type="button" data-filter="toggle"
-                title="Bugün maçı olmayan ${rest} lig">+${rest}</button>` : ""}
+                title="Bugün maçı olmayan ${rest} lig">Diğer ligler
+                <b class="lc-n">${rest}</b></button>` : ""}
     </div>
   </div>`;
 }

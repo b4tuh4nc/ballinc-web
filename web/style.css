@@ -2133,7 +2133,7 @@ body.cal-open .datestrip { z-index: 60; }
    çubuğuna çeviriyordu; ad artık erişilebilir etikette. Şerit tarih
    şeridinin ALTINDA çünkü içeriği seçili güne bağlı. */
 .lstrip {
-  display: flex; align-items: center; gap: .5rem;
+  display: flex; flex-wrap: wrap; align-items: center; gap: .5rem;
   margin: .6rem 0 .15rem;
   padding: 0 .15rem;
 }
@@ -2175,20 +2175,33 @@ body.cal-open .datestrip { z-index: 60; }
 }
 .lchip.off:hover { opacity: .65; }
 
-/* Sonlandırıcı düğmeler metin taşıdığı için yuvarlak değil hap biçiminde. */
+/* Sonlandırıcı düğmeler eylem, lig değil: hap biçiminde ve KELİMELİ.
+   Önce "⟳ 4" ve "+8" yazıyorlardı; ne yaptıkları tahmin edilemiyordu. */
 .lchip.act {
   width: auto; height: 46px;
-  padding: 0 .95rem;
+  gap: .4rem;
+  display: inline-flex; align-items: center;
+  padding: 0 .85rem;
   background: var(--surface-2);
   color: var(--text-muted);
   font-size: .8rem; font-weight: 600;
+  white-space: nowrap;
+}
+.lchip.act .lc-n {
+  padding: .05rem .35rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+  font-size: .72rem; font-variant-numeric: tabular-nums;
 }
 .lchip.act:hover { color: var(--text); }
 
 @media (max-width: 620px) {
   .lchip { width: 40px; height: 40px; }
   .lchip img { width: 24px; height: 24px; }
-  .lchip.act { height: 40px; font-size: .78rem; padding: 0 .7rem; }
+  .lchip.act { height: 40px; font-size: .74rem; padding: 0 .65rem; gap: .3rem; }
+  /* Dar ekranda eylem düğmeleri kendi satırına iniyor; şeridi sıkıştırıp
+     logoları ezmelerindense alta geçmeleri iyi. */
+  .lstrip-end { margin-left: 0; width: 100%; justify-content: flex-end; }
 }
 
   /* Dar ekranda adları kısaltmak yerine şerit kaydırılıyor: kısaltılmış
