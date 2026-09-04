@@ -331,11 +331,11 @@ function leagueStripHTML(meta, dayCounts, hidden) {
     const on = !hidden.has(code);
     const n = dayCounts[code] ?? 0;
     const label = n ? `${league.name} · ${n} maç` : `${league.name} · bugün maç yok`;
-    return `<button class="lchip${on ? "" : " off"}${n ? "" : " idle"}" type="button"
+    return `<button class="lchip${on ? "" : " off"}" type="button"
             data-toggle-league="${esc(code)}" aria-pressed="${on}"
             title="${esc(label)}${on ? " — gizle" : " — göster"}"
-            aria-label="${esc(label)}">
-      ${leagueLogo(code)}
+            aria-label="${esc(label)}${on ? "" : " — gizli"}">
+      ${leagueLogo(code)}${n ? `<b class="lc-n">${n}</b>` : ""}
     </button>`;
   }).join("");
 

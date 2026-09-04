@@ -2165,20 +2165,49 @@ body.cal-open .datestrip { z-index: 60; }
 .lchip img { width: 28px; height: 28px; object-fit: contain; }
 .lchip:hover { border-color: var(--text-muted); }
 
-/* Gizlenmiş lig: soluk ve renksiz — kapalı olduğu bir bakışta anlaşılsın,
-   ama geri açılabilir olduğu da belli olsun. */
+/* Kapalı lig.
+
+   Önce hem kapalı hem "bugün maçı yok" durumu soluklukla anlatılıyordu ve
+   ikisi birbirine karışıyordu — Şampiyonlar Ligi'nin açık mı kapalı mı
+   olduğu anlaşılmıyordu. Artık SOLUKLUK YALNIZCA KAPALI demek, üstelik tek
+   başına da taşımıyor: gri tonlama, kesikli çerçeve ve köşede bir ✕ var.
+   "Bugün maçı yok" ise hiç soluklaştırılmıyor; o bilgi zaten rozetin
+   yokluğundan ve etiketten anlaşılıyor. */
+.lchip { position: relative; }
+
 .lchip.off {
-  opacity: .3;
+  opacity: .45;
   filter: grayscale(1);
   border-style: dashed;
   background: none;
 }
-.lchip.off:hover { opacity: .65; }
+.lchip.off::after {
+  content: "✕";
+  position: absolute; right: -2px; bottom: -2px;
+  width: 15px; height: 15px;
+  display: grid; place-items: center;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: .58rem; line-height: 1;
+}
+.lchip.off:hover { opacity: .8; }
 
-/* Bugün maçı olmayan lig: gizli değil, sadece boş. Gizliden ayrılsın diye
-   rengi duruyor, yalnızca hafifçe soluk. */
-.lchip.idle { opacity: .55; }
-.lchip.idle:hover { opacity: .85; }
+/* Açık ve bugün maçı olan lig: köşede maç sayısı. Açık olmanın olumlu ve
+   okunur bir işareti — kapalıyı yokluktan değil, varlıktan ayırıyor. */
+.lchip .lc-n {
+  position: absolute; right: -3px; bottom: -3px;
+  min-width: 16px; height: 16px;
+  display: grid; place-items: center;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--accent);
+  border: 2px solid var(--bg);
+  color: #fff;
+  font-size: .6rem; font-weight: 700; font-variant-numeric: tabular-nums;
+}
+.lchip.off .lc-n { display: none; }
 
 /* Sonlandırıcı düğmeler eylem, lig değil: hap biçiminde ve KELİMELİ.
    Önce "⟳ 4" ve "+8" yazıyorlardı; ne yaptıkları tahmin edilemiyordu. */
@@ -2192,7 +2221,15 @@ body.cal-open .datestrip { z-index: 60; }
   font-size: .8rem; font-weight: 600;
   white-space: nowrap;
 }
+/* Eylem düğmesindeki rozet satır içinde kalıyor: yukarıdaki köşe rozeti
+   kuralı .lchip'in tamamına uyduğu için buradaki sayı da köşeye fırlıyordu. */
 .lchip.act .lc-n {
+  position: static;
+  min-width: 0; height: auto;
+  border: 0;
+  background: color-mix(in srgb, var(--text-muted) 22%, transparent);
+  color: inherit;
+  font-weight: 600;
   padding: .05rem .35rem;
   border-radius: 999px;
   background: color-mix(in srgb, var(--text-muted) 22%, transparent);
