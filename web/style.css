@@ -760,6 +760,36 @@ td.pts { font-weight: 700; }
 .league-head img { width: 19px; height: 19px; object-fit: contain; }
 .lh-name { font-size: .86rem; font-weight: 640; }
 .lh-count { margin-left: auto; font-size: .74rem; color: var(--text-muted); }
+
+/* Lig başlığındaki durum çubukları: her maç bir dikey çizgi. */
+.lh-bars {
+  margin-left: auto; margin-right: .2rem;
+  display: flex; align-items: center; gap: 3px;
+  max-width: 45%; overflow: hidden;
+}
+.lh-bars i {
+  width: 3px; height: 15px; border-radius: 2px;
+  background: var(--draw);
+  flex-shrink: 0;
+}
+.lh-bars i.next { background: #2fa76b; }   /* oynanmadı */
+.lh-bars i.live { background: #e0a01a; }   /* oynanıyor */
+.lh-bars i.done { background: #c9403a; }   /* bitti */
+
+@media (prefers-reduced-motion: no-preference) {
+  .lh-bars i.live { animation: livePulse 1.4s ease-in-out infinite; }
+}
+
+/* Görsel bilgi ekran okuyucuya da metin olarak veriliyor. */
+.lh-sr {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip-path: inset(50%); white-space: nowrap;
+}
+
+@media (max-width: 620px) {
+  .lh-bars i { width: 2.5px; height: 11px; }
+}
 .league-head .chev { font-size: 1rem; color: var(--text-muted); }
 
 /* Lig başlığındaki yıldız. Maç sayısı `margin-left:auto` ile sağa

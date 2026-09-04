@@ -308,6 +308,39 @@ function dayTabsHTML() {
   <div class="daytab-empty" hidden></div>`;
 }
 
+/* Lig başlığındaki durum çubukları: her maç bir dikey çizgi.
+
+   Yeşil oynanmadı, sarı oynanıyor, kırmızı bitti. Sayı yazmaktan daha çok
+   şey söylüyor — "2 maç" bir ligin gününün bittiğini de, henüz
+   başlamadığını da aynı şekilde gösteriyordu.
+
+   Çubuklar filtreden bağımsız: "Canlı" sekmesindeyken bile ligin o günkü
+   tamamını özetliyorlar, yoksa özet olmaktan çıkarlardı. */
+function paintBars(head, rows) {
+  const bars = head.querySelector(".lh-bars");
+  if (!bars) return;
+  let live = 0, done = 0, next = 0;
+  for (let i = 0; i < bars.children.length; i += 1) {
+    const row = rows[i];
+    const cls = !row ? "next"
+      : row.classList.contains("is-live") ? "live"
+      : row.classList.contains("is-done") ? "done" : "next";
+    bars.children[i].className = cls;
+    if (cls === "live") live += 1;
+    else if (cls === "done") done += 1;
+    else next += 1;
+  }
+  // Renk tek başına erişilebilir değil; aynı bilgi metin olarak da duruyor.
+  const parts = [];
+  if (next) parts.push(`${next} oynanmadı`);
+  if (live) parts.push(`${live} oynanıyor`);
+  if (done) parts.push(`${done} bitti`);
+  const label = `${rows.length} maç · ${parts.join(" · ")}`;
+  head.title = label;
+  const sr = head.querySelector(".lh-sr");
+  if (sr) sr.textContent = label;
+}
+
 function applyDayFilter() {
   const root = el("view");
   const bar = root?.querySelector(".daytabs");
@@ -324,7 +357,8 @@ function applyDayFilter() {
     if (list.closest(".carry")) continue;
 
     let shown = 0;
-    for (const row of list.querySelectorAll(".match")) {
+    const rows = [...list.querySelectorAll(".match")];
+    for (const row of rows) {
       const live = row.classList.contains("is-live");
       const done = row.classList.contains("is-done");
       counts.all += 1;
@@ -348,11 +382,7 @@ function applyDayFilter() {
     if (head?.classList.contains("league-head") ||
         head?.classList.contains("pinned-head")) {
       head.hidden = shown === 0;
-      const badge = head.querySelector(".lh-count");
-      if (badge) {
-        const total = Number(badge.dataset.total ?? shown);
-        badge.textContent = `${active === "all" ? total : shown} maç`;
-      }
+      paintBars(head, rows);
     }
   }
 
@@ -665,7 +695,9 @@ async function viewHome() {
          href="#/lig/${encodeURIComponent(code)}">
         ${leagueLogo(code)}
         <span class="lh-name">${esc(names[code] ?? code)}</span>
-        <span class="lh-count" data-total="${matches.length}">${matches.length} maç</span>
+        <span class="lh-bars" aria-hidden="true">${
+          matches.map(() => "<i></i>").join("")}</span>
+        <span class="lh-sr"></span>
         ${leagueStar(code)}
         <span class="chev" aria-hidden="true">›</span>
       </a>
