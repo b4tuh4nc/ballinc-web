@@ -319,14 +319,18 @@ function leagueStripHTML(meta, dayCounts, hidden) {
   const off = codes.filter((c) => hidden.has(c)).length;
   const rest = meta.leagues.length - codes.length;
 
+  // Yalnızca logo: adlarla birlikte 12 çip sayfanın başını araç çubuğuna
+  // çeviriyordu. Ad ve maç sayısı erişilebilir etikette duruyor, üzerine
+  // gelince de görünüyor.
   const chips = codes.map((code) => {
     const league = byCode[code];
     const on = !hidden.has(code);
+    const label = `${league.name} · ${dayCounts[code]} maç`;
     return `<button class="lchip${on ? "" : " off"}" type="button"
             data-toggle-league="${esc(code)}" aria-pressed="${on}"
-            title="${esc(league.name)}${on ? " — gizle" : " — göster"}">
-      ${leagueLogo(code)}<span class="lc-name">${esc(league.name)}</span>
-      <b class="lc-n">${dayCounts[code]}</b>
+            title="${esc(label)}${on ? " — gizle" : " — göster"}"
+            aria-label="${esc(label)}">
+      ${leagueLogo(code)}
     </button>`;
   }).join("");
 
@@ -642,7 +646,7 @@ async function viewHome() {
       <div class="page-title"><h1>Yaklaşan maçlar</h1></div>
       <p class="sub">Önümüzdeki ${meta.window_days} günün maçları · ${predictions} tahmin ·
         <a href="#/model">model ne kadar isabetli?</a></p>
-      ${leagueStripHTML(meta, dayLeagues(selected), hidden)}
+
     </div>`;
 
   if (!all.length) {
@@ -744,6 +748,7 @@ async function viewHome() {
     ${head}
     ${idleNote}
     ${dateStripHTML(dates, selected, start, counts)}
+    ${leagueStripHTML(meta, dayLeagues(selected), hidden)}
     ${dayTabsHTML()}
     ${carryHTML}
     ${pinnedHTML}
