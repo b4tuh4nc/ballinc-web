@@ -2038,3 +2038,61 @@ body.cal-open .datestrip { z-index: 60; }
 @media (max-width: 480px) {
   .sc-score { margin-left: 0; }
 }
+
+/* ─── Gün listesi durum sekmeleri ──────────────────────────────────────── */
+/* Filtre saf DOM işi olduğu için `hidden` kullanılıyor; ama .match,
+   .match-list ve .league-head kendi display değerlerini tanımlıyor ve
+   tarayıcının varsayılan [hidden] kuralını eziyorlar. */
+.match[hidden], .match-list[hidden], .league-head[hidden],
+.date-head[hidden], .daytab-empty[hidden] { display: none !important; }
+
+.daytabs {
+  display: flex; gap: .35rem;
+  margin: .9rem 0 .2rem;
+  padding: .28rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 11px;
+}
+.daytab {
+  flex: 1;
+  display: flex; align-items: center; justify-content: center; gap: .38rem;
+  padding: .45rem .5rem;
+  border: 0; border-radius: 8px;
+  background: none; color: var(--text-muted);
+  font-size: .82rem; font-weight: 600; cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.daytab:hover { color: var(--text); }
+.daytab.on { background: var(--surface); color: var(--text); box-shadow: 0 1px 2px rgb(0 0 0 / .18); }
+
+.dt-count {
+  min-width: 1.35rem; padding: 0 .3rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 18%, transparent);
+  font-size: .7rem; font-variant-numeric: tabular-nums;
+}
+.daytab.on .dt-count { background: color-mix(in srgb, var(--accent) 22%, transparent); color: var(--accent); }
+
+/* Canlı sekmesindeki nokta yalnızca gerçekten maç varken atıyor. */
+.dt-dot {
+  width: 6px; height: 6px; border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 50%, transparent);
+}
+.daytabs.has-live .dt-dot { background: var(--live, #e5484d); }
+@media (prefers-reduced-motion: no-preference) {
+  .daytabs.has-live .dt-dot { animation: livePulse 1.6s ease-in-out infinite; }
+}
+@keyframes livePulse { 50% { opacity: .35; } }
+
+.daytab-empty {
+  padding: 1.6rem .8rem;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: .86rem;
+}
+
+@media (max-width: 620px) {
+  .daytab { font-size: .78rem; padding: .42rem .35rem; gap: .3rem; }
+  .dt-count { min-width: 1.2rem; font-size: .66rem; }
+}

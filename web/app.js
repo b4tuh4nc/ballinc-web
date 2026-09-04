@@ -279,6 +279,108 @@ function matchListHTML(matches, played = []) {
 /** Maçları güne göre filtrelemek için kaydırılabilir gün seçici.
     Maçı olmayan günler devre dışı gösteriliyor — kullanıcı boş bir güne
     tıklayıp "site bozuk" sanmasın. */
+/* Gün listesinde durum sekmeleri: tümü / canlı / sıradaki.
+
+   Filtre saf DOM işi, yeniden çizim yok. Sebebi: canlı veri zaten her
+   yoklamada satırlara `.is-live` ve `.is-done` sınıflarını basıyor, yani
+   sınıflandırma bedava. Sekmeye basmak veri indirmiyor, HTML üretmiyor,
+   sadece satırları gizleyip sayaçları tazeliyor.
+
+   Sayaçlar da bu yüzden kendiliğinden güncel kalıyor: applyLive() her
+   yoklamadan sonra applyDayFilter()'ı çağırıyor, bir maç başladığında
+   "Canlı" sayısı sekmede kendi kendine artıyor. */
+const DAY_TABS = [
+  { key: "all", label: "Tümü" },
+  { key: "live", label: "Canlı" },
+  { key: "next", label: "Sıradaki" },
+];
+
+function dayTabsHTML() {
+  const active = state.dayTab ?? "all";
+  return `<div class="daytabs" role="tablist" aria-label="Maç durumu">
+    ${DAY_TABS.map((t) => `
+      <button class="daytab${t.key === active ? " on" : ""}" type="button"
+              role="tab" aria-selected="${t.key === active}" data-daytab="${t.key}">
+        ${t.key === "live" ? '<span class="dt-dot"></span>' : ""}${t.label}
+        <span class="dt-count" data-count="${t.key}">0</span>
+      </button>`).join("")}
+  </div>
+  <div class="daytab-empty" hidden></div>`;
+}
+
+function applyDayFilter() {
+  const root = el("view");
+  const bar = root?.querySelector(".daytabs");
+  if (!bar) return;
+
+  const active = state.dayTab ?? "all";
+  const counts = { all: 0, live: 0, next: 0 };
+  let shownTotal = 0;
+  let leaguesShown = 0;
+
+  for (const list of root.querySelectorAll(".match-list")) {
+    // Önceki günden devam edenler bloğu revealCarry() tarafından yönetiliyor;
+    // ikimiz de `hidden` yazsak birbirimizi ezerdik.
+    if (list.closest(".carry")) continue;
+
+    let shown = 0;
+    for (const row of list.querySelectorAll(".match")) {
+      const live = row.classList.contains("is-live");
+      const done = row.classList.contains("is-done");
+      counts.all += 1;
+      if (live) counts.live += 1;
+      else if (!done) counts.next += 1;
+
+      const ok = active === "all" ? true
+        : active === "live" ? live
+        : !live && !done;
+      row.hidden = !ok;
+      if (ok) shown += 1;
+    }
+    list.hidden = shown === 0;
+    shownTotal += shown;
+    if (shown > 0) leaguesShown += 1;
+
+    // Grubu boşalan lig başlığı da gizleniyor, yoksa altı boş başlıklar
+    // kalırdı. Sayısı da görünen kadarını yazıyor: "5 maç" yazan bir başlığın
+    // altında iki satır durması kafa karıştırıcıydı.
+    const head = list.previousElementSibling;
+    if (head?.classList.contains("league-head") ||
+        head?.classList.contains("pinned-head")) {
+      head.hidden = shown === 0;
+      const badge = head.querySelector(".lh-count");
+      if (badge) {
+        const total = Number(badge.dataset.total ?? shown);
+        badge.textContent = `${active === "all" ? total : shown} maç`;
+      }
+    }
+  }
+
+  for (const button of bar.querySelectorAll("[data-daytab]")) {
+    const on = button.dataset.daytab === active;
+    button.classList.toggle("on", on);
+    button.setAttribute("aria-selected", String(on));
+  }
+  for (const node of bar.querySelectorAll("[data-count]")) {
+    node.textContent = counts[node.dataset.count] ?? 0;
+  }
+  bar.classList.toggle("has-live", counts.live > 0);
+
+  const dayHead = root.querySelector(".date-head[data-daylabel]");
+  if (dayHead) {
+    dayHead.textContent =
+      `${dayHead.dataset.daylabel} · ${shownTotal} maç · ${leaguesShown} lig`;
+  }
+
+  const empty = root.querySelector(".daytab-empty");
+  if (empty) {
+    empty.hidden = shownTotal > 0;
+    empty.textContent = active === "live"
+      ? "Şu anda oynanan maç yok."
+      : "Bu güne ait sıradaki maç kalmadı.";
+  }
+}
+
 function dateStripHTML(dates, selected, start, counts) {
   const window7 = dates.slice(start, start + STRIP_DAYS);
   const buttons = window7.map((key) => {
@@ -563,7 +665,7 @@ async function viewHome() {
          href="#/lig/${encodeURIComponent(code)}">
         ${leagueLogo(code)}
         <span class="lh-name">${esc(names[code] ?? code)}</span>
-        <span class="lh-count">${matches.length} maç</span>
+        <span class="lh-count" data-total="${matches.length}">${matches.length} maç</span>
         ${leagueStar(code)}
         <span class="chev" aria-hidden="true">›</span>
       </a>
@@ -573,9 +675,11 @@ async function viewHome() {
     ${head}
     ${idleNote}
     ${dateStripHTML(dates, selected, start, counts)}
+    ${dayTabsHTML()}
     ${carryHTML}
     ${pinnedHTML}
-    <div class="date-head">${esc(dayLabel(list[0].kickoff))} · ${list.length} maç ·
+    <div class="date-head" data-daylabel="${esc(dayLabel(list[0].kickoff))}">${
+      esc(dayLabel(list[0].kickoff))} · ${list.length} maç ·
       ${new Set(list.map((m) => m.league)).size} lig</div>
     ${groups}`;
 }
@@ -1936,6 +2040,7 @@ async function viewModel() {
 const state = {
   day: null, stripStart: null, week: null,
   calOpen: false, calMonth: null, calCtx: null, filterOpen: false,
+  dayTab: "all",
 };
 
 let lastHash = null;
@@ -2158,6 +2263,13 @@ const onContentClick = (event) => {
 
   // Maç yıldızı satırın içinde ve satırın tamamı bir bağlantı; varsayılan
   // davranış engellenmezse yıldıza basmak maç sayfasını açardı.
+  // Sekme değişimi route() çağırmıyor: amaç anında tepki vermek.
+  const tab = event.target.closest("[data-daytab]");
+  if (tab) {
+    state.dayTab = tab.dataset.daytab;
+    return applyDayFilter();
+  }
+
   const lstar = event.target.closest("[data-favleague]");
   if (lstar) {
     event.preventDefault();
@@ -2672,6 +2784,8 @@ function applyLive() {
       clock.textContent = "BİTTİ";
     }
   }
+  // Sınıflar tazelendi; sekme sayaçları ve gizleme ona göre yeniden kurulur.
+  applyDayFilter();
 }
 
 /** Önceki günden devam eden maçlardan yalnızca gerçekten oynananları açar. */
