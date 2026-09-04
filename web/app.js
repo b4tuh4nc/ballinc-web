@@ -550,13 +550,21 @@ async function viewHome() {
     byLeague.get(m.league).push(m);
   }
   const names = Object.fromEntries(meta.leagues.map((l) => [l.code, l.name]));
+  // Favori ligler önce, sonra o gün ilk maçı oynayandan başlayarak sırayla.
+  const favL = favLeagues();
   const groups = [...byLeague.entries()]
-    .sort(([, a], [, b]) => a[0].kickoff.localeCompare(b[0].kickoff))
+    .sort(([ca, a], [cb, b]) => {
+      const fa = favL.has(ca), fb = favL.has(cb);
+      if (fa !== fb) return fa ? -1 : 1;
+      return a[0].kickoff.localeCompare(b[0].kickoff);
+    })
     .map(([code, matches]) => `
-      <a class="league-head" href="#/lig/${encodeURIComponent(code)}">
+      <a class="league-head${favL.has(code) ? " is-fav" : ""}"
+         href="#/lig/${encodeURIComponent(code)}">
         ${leagueLogo(code)}
         <span class="lh-name">${esc(names[code] ?? code)}</span>
         <span class="lh-count">${matches.length} maç</span>
+        ${leagueStar(code)}
         <span class="chev" aria-hidden="true">›</span>
       </a>
       <div class="match-list">${matches.map(dayRow).join("")}</div>`).join("");
@@ -2150,6 +2158,14 @@ const onContentClick = (event) => {
 
   // Maç yıldızı satırın içinde ve satırın tamamı bir bağlantı; varsayılan
   // davranış engellenmezse yıldıza basmak maç sayfasını açardı.
+  const lstar = event.target.closest("[data-favleague]");
+  if (lstar) {
+    event.preventDefault();
+    event.stopPropagation();
+    toggleFavLeague(lstar.dataset.favleague);
+    return route();
+  }
+
   const mstar = event.target.closest("[data-favmatch]");
   if (mstar) {
     event.preventDefault();
@@ -2946,6 +2962,30 @@ function favourites() {
 /* Maç favorileri takım favorilerinden ayrı tutuluyor: "Galatasaray'ı takip
    ediyorum" ile "bu maçı izleyeceğim" farklı istekler ve aynı listeye
    konsalar biri diğerini temizlerken silinirdi. */
+/* Lig favorileri: hangi liglerin GÖRÜNECEĞİ ayrı bir şey (lig filtresi),
+   burada seçilen hangilerinin ÖNCE geleceği. İkisi ayrı istek olduğu için
+   ayrı anahtarlarda duruyor. */
+function favLeagues() {
+  try { return new Set(JSON.parse(localStorage.getItem("ballinc-fav-league") || "[]")); }
+  catch { return new Set(); }
+}
+
+function toggleFavLeague(code) {
+  const set = favLeagues();
+  if (set.has(code)) set.delete(code); else set.add(code);
+  try { localStorage.setItem("ballinc-fav-league", JSON.stringify([...set])); }
+  catch { /* özel pencere */ }
+  return set;
+}
+
+function leagueStar(code) {
+  const on = favLeagues().has(code);
+  return `<button class="star league-star${on ? " on" : ""}" type="button"
+          data-favleague="${esc(code)}" aria-pressed="${on}"
+          aria-label="${on ? "Ligi favorilerden çıkar" : "Ligi favorilere ekle"}"
+          title="${on ? "Favorilerden çıkar" : "Favorilere ekle"}">★</button>`;
+}
+
 function favMatches() {
   try { return new Set(JSON.parse(localStorage.getItem("ballinc-fav-match") || "[]")); }
   catch { return new Set(); }
