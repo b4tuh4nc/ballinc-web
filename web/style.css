@@ -2126,3 +2126,73 @@ body.cal-open .datestrip { z-index: 60; }
   .daytab { font-size: .78rem; padding: .42rem .35rem; gap: .3rem; }
   .dt-count { min-width: 1.2rem; font-size: .66rem; }
 }
+
+/* ─── Bağlamsal lig şeridi ─────────────────────────────────────────────── */
+/* Filtre artık panel değil, sayfada duran bir şerit: yalnızca seçili gün
+   maçı olan ligler, dokununca gizlenir. */
+.lstrip {
+  display: flex; align-items: center; gap: .4rem;
+  margin: .75rem 0 .1rem;
+}
+.lstrip-track {
+  display: flex; gap: .35rem;
+  overflow-x: auto; scrollbar-width: none;
+  padding: .15rem .1rem;
+  scroll-snap-type: x proximity;
+}
+.lstrip-track::-webkit-scrollbar { display: none; }
+.lstrip-end {
+  position: relative;
+  display: flex; gap: .35rem; margin-left: auto; flex-shrink: 0;
+}
+/* Şerit kaydırılabilir; son çip sert kesilince "kırık" görünüyordu.
+   Soldaki soluklaşma devamının olduğunu belli ediyor. */
+.lstrip-end::before {
+  content: ""; position: absolute; right: 100%; top: 0; bottom: 0; width: 24px;
+  background: linear-gradient(to right, transparent, var(--bg));
+  pointer-events: none;
+}
+
+.lchip {
+  flex-shrink: 0;
+  display: inline-flex; align-items: center; gap: .35rem;
+  padding: .32rem .6rem;
+  border: 1px solid var(--border); border-radius: 999px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: .78rem; font-weight: 560; cursor: pointer;
+  scroll-snap-align: start;
+  transition: opacity .14s ease, background .14s ease, border-color .14s ease;
+}
+.lchip img { width: 15px; height: 15px; object-fit: contain; }
+.lchip .lc-n {
+  min-width: 1.1rem; padding: 0 .25rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 18%, transparent);
+  font-size: .68rem; font-variant-numeric: tabular-nums; font-weight: 620;
+}
+.lchip:hover { background: var(--surface-2); }
+
+/* Gizlenmiş lig: sönük ama okunur — geri açılabilir olduğu belli olsun. */
+.lchip.off {
+  opacity: .38;
+  background: none;
+  border-style: dashed;
+}
+.lchip.off .lc-name { text-decoration: line-through; }
+.lchip.off:hover { opacity: .7; }
+
+.lchip.act {
+  padding: .32rem .55rem;
+  color: var(--text-muted);
+  background: var(--surface-2);
+}
+.lchip.act:hover { color: var(--text); }
+
+@media (max-width: 620px) {
+  .lchip { font-size: .73rem; padding: .3rem .5rem; gap: .28rem; }
+  .lchip img { width: 14px; height: 14px; }
+  /* Dar ekranda adları kısaltmak yerine şerit kaydırılıyor: kısaltılmış
+     adlar ("Danimarka Sü…") logodan daha az bilgi veriyordu. */
+  .lc-name { max-width: 7.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+}

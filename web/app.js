@@ -295,6 +295,52 @@ const DAY_TABS = [
   { key: "next", label: "Sıradaki" },
 ];
 
+/* Bağlamsal lig şeridi.
+
+   Eskiden filtre "⚙ Ligler 20/20" düğmesiydi: bir ligi gizlemek için aç →
+   ızgarada bul → dokun → kapat, dört adım. Oysa asıl istenen şey neredeyse
+   her zaman "şu gün bu ligi görmeyeyim".
+
+   Şerit yalnızca SEÇİLİ GÜN maçı olan ligleri gösteriyor — o gün maçı
+   olmayan on ligi listelemek yer harcamaktan başka bir işe yaramıyordu.
+   Dokunmak tek adımda gizliyor, çip sönükleşerek geri alınabilir olduğunu
+   belli ediyor. Kalan ligler için panel "+N" girişinde duruyor.
+
+   Sayılar günün dizininden geliyor, ligin dosyasını indirmeden; gizli bir
+   lig de şeritte görünüyor (yoksa geri açmanın yolu kalmazdı). */
+function leagueStripHTML(meta, dayCounts, hidden) {
+  const byCode = Object.fromEntries(meta.leagues.map((l) => [l.code, l]));
+  const codes = Object.keys(dayCounts)
+    .filter((c) => byCode[c])
+    .sort((a, b) => (byCode[a].tier ?? 0) - (byCode[b].tier ?? 0)
+      || byCode[a].name.localeCompare(byCode[b].name, "tr"));
+  if (!codes.length) return "";
+
+  const off = codes.filter((c) => hidden.has(c)).length;
+  const rest = meta.leagues.length - codes.length;
+
+  const chips = codes.map((code) => {
+    const league = byCode[code];
+    const on = !hidden.has(code);
+    return `<button class="lchip${on ? "" : " off"}" type="button"
+            data-toggle-league="${esc(code)}" aria-pressed="${on}"
+            title="${esc(league.name)}${on ? " — gizle" : " — göster"}">
+      ${leagueLogo(code)}<span class="lc-name">${esc(league.name)}</span>
+      <b class="lc-n">${dayCounts[code]}</b>
+    </button>`;
+  }).join("");
+
+  return `<div class="lstrip">
+    <div class="lstrip-track">${chips}</div>
+    <div class="lstrip-end">
+      ${off ? `<button class="lchip act" type="button" data-league-all
+                title="Gizlenen ${off} ligi geri göster">⟳ ${off}</button>` : ""}
+      ${rest ? `<button class="lchip act" type="button" data-filter="toggle"
+                title="Bugün maçı olmayan ${rest} lig">+${rest}</button>` : ""}
+    </div>
+  </div>`;
+}
+
 function dayTabsHTML() {
   const active = state.dayTab ?? "all";
   return `<div class="daytabs" role="tablist" aria-label="Maç durumu">
@@ -581,9 +627,6 @@ async function viewHome() {
   }
   noteLiveDays(all);
   all.sort((a, b) => a.kickoff.localeCompare(b.kickoff));
-  const shown = meta.leagues.length
-    - meta.leagues.filter((l) => hidden.has(l.code)).length;
-
   const idle = meta.leagues.filter((l) => l.upcoming === 0);
   const idleNote = idle.length ? `
     <p class="note">${idle.map((l) => esc(l.name)).join(", ")} için bu sezon
@@ -599,13 +642,7 @@ async function viewHome() {
       <div class="page-title"><h1>Yaklaşan maçlar</h1></div>
       <p class="sub">Önümüzdeki ${meta.window_days} günün maçları · ${predictions} tahmin ·
         <a href="#/model">model ne kadar isabetli?</a></p>
-      <div class="filter-wrap">
-        <button class="filter-btn" type="button" data-filter="toggle"
-                aria-expanded="${state.filterOpen}">
-          <span class="f-icon" aria-hidden="true">⚙</span>
-          Ligler <b>${shown}/${meta.leagues.length}</b>
-        </button>
-      </div>
+      ${leagueStripHTML(meta, dayLeagues(selected), hidden)}
     </div>`;
 
   if (!all.length) {
