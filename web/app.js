@@ -319,7 +319,6 @@ function leagueStripHTML(meta, dayCounts, hidden) {
   if (!codes.length) return "";
   const byCode = Object.fromEntries(meta.leagues.map((l) => [l.code, l]));
 
-  const off = codes.filter((c) => hidden.has(c)).length;
   // Rozet: bugün maçı olan besleyici lig sayısı, toplamı değil.
   const rest = meta.leagues.filter(
     (l) => (l.tier ?? 0) === 2 && dayCounts[l.code]).length;
@@ -343,9 +342,6 @@ function leagueStripHTML(meta, dayCounts, hidden) {
   return `<div class="lstrip">
     <div class="lstrip-track">${chips}</div>
     <div class="lstrip-end">
-      ${off ? `<button class="lchip act" type="button" data-league-all
-                title="Gizlediğin ${off} ligi geri getir">Gizlenenleri aç
-                <b class="lc-n">${off}</b></button>` : ""}
       <button class="lchip act" type="button" data-filter="toggle"
               title="${rest ? `Bugün ${rest} diğer ligde maç var` : "Diğer ligler"}">Diğer ligler
         ${rest ? `<b class="lc-n">${rest}</b>` : ""}</button>
