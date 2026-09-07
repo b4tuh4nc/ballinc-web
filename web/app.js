@@ -1179,6 +1179,29 @@ function matchTabs(base, tab) {
   return `<nav class="tabs match-tabs">${items}</nav>`;
 }
 
+/** Worker sorgusu: maç detayını hangi adresle isteyeceğimiz. */
+function detailQuery(match) {
+  const live = liveData.get(liveKey(match) ?? "");
+  if (live?.matchId) return `matchId=${encodeURIComponent(live.matchId)}`;
+  if (match.home?.fm && match.away?.fm) {
+    return `date=${fotmobDay(match.kickoff)}&home=${encodeURIComponent(match.home.fm)}`
+      + `&away=${encodeURIComponent(match.away.fm)}`;
+  }
+  return null;
+}
+
+/* Tahmin sayfasındaki H2H yuvası. Maç akışı/istatistik yuvasıyla AYNI
+   worker yanıtını kullanıyor ve yanıt önbellekli, yani bu blok ek istek
+   doğurmuyor. */
+function h2hSlot(match) {
+  const query = detailQuery(match);
+  if (!query || !goalProxy) return "";
+  const names = JSON.stringify({ home: { name: match.home.name },
+                                 away: { name: match.away.name } });
+  return `<div id="match-h2h" data-query="${esc(query)}"
+               data-match="${esc(names)}"></div>`;
+}
+
 function detailSlot(match, tab) {
   const live = liveData.get(liveKey(match) ?? "");
   const query = live?.matchId
@@ -1467,11 +1490,14 @@ const DETAIL_LIVE_TTL = 45_000;
 const detailCache = new Map();
 
 async function fillMatchDetail() {
-  const slot = document.getElementById("match-detail");
+  // İki yuva var: maç sekmesindeki akış/istatistik ve tahmin sekmesindeki
+  // H2H. İkisi aynı worker yanıtından besleniyor.
+  const slot = document.getElementById("match-detail")
+    || document.getElementById("match-h2h");
   if (!slot || !goalProxy) return;
   // Anahtar sekmeyi de içeriyor: aynı maçta sekme değişince yeniden
   // çizilmesi gerekiyor.
-  const query = `${slot.dataset.query}|${slot.dataset.tab}`;
+  const query = `${slot.dataset.query}|${slot.dataset.tab ?? "h2h"}`;
   const cached = detailCache.get(slot.dataset.query);
   const fresh = cached && (!cached.payload?.ongoing
     || Date.now() - cached.at < DETAIL_LIVE_TTL);
@@ -1490,9 +1516,15 @@ async function fillMatchDetail() {
       detailCache.set(slot.dataset.query, { at: Date.now(), payload });
     }
     // Sayfa bu arada değişmiş olabilir.
-    const still = document.getElementById("match-detail");
-    if (!still || `${still.dataset.query}|${still.dataset.tab}` !== query) return;
+    const still = document.getElementById("match-detail")
+      || document.getElementById("match-h2h");
+    if (!still
+        || `${still.dataset.query}|${still.dataset.tab ?? "h2h"}` !== query) return;
     const match = JSON.parse(still.dataset.match);
+    if (still.id === "match-h2h") {
+      still.innerHTML = h2hHTML(payload.h2h, match);
+      return;
+    }
     // Kadro ayrı sekmede; "Maç" sekmesi olan biteni ve istatistikleri
     // gösteriyor. Veri tek çağrıda geldiği için sekme değiştirmek yeni
     // istek doğurmuyor -- worker yanıtı zaten önbellekli.
@@ -1596,6 +1628,79 @@ function scenarioHTML(match) {
     <p class="note">Üçü birden tutma olasılığı %${pct(sc.prob)}; bu senaryonun
       en olası skoru ${sc.score[0]}-${sc.score[1]} (%${pct(sc.score_prob)}).</p>
   </div>`;
+}
+
+/* Tahmin özeti: dört kutu.
+
+   Önce her market kendi kartındaydı ve sayfa uzuyordu — "Model ne diyor?",
+   "En olası skor", "2.5 Alt/Üst", "Karşılıklı Gol" alt alta dört bölüm.
+   Oysa hepsi tek bir gol beklentisi modelinden çıkıyor; ayrı ayrı sunmak
+   onları bağımsız iddialar gibi gösteriyordu.
+
+   Dördü de senaryodan besleniyor, yani birbiriyle tutarlı: alt/üst ve KG
+   seçimleri maçın sonucuyla BİRLİKTE en olası olan üçlüden geliyor
+   (bkz. pipeline/model.py scenario). */
+function predictionTiles(match, meta) {
+  const p = match.markets.result;
+  const sc = match.scenario;
+  const [lh, la] = match.lambdas ?? [];
+
+  const tossUp = Math.abs(p[0] - p[2]) < TOSS_UP;
+  const favHome = p[0] >= p[2];
+  const fav = favHome ? match.home : match.away;
+  const pFav = favHome ? p[0] : p[2];
+
+  const sonuc = tossUp
+    ? `<div class="pt-main">Açık maç</div>
+       <div class="pt-sub">iki taraf arasında anlamlı fark yok</div>`
+    : `<div class="pt-main">${esc(fav.short || fav.name)}</div>
+       <div class="pt-sub">${pFav >= 0.5 ? "kazanır" : "favori"} · <b>%${pct(pFav)}</b></div>`;
+
+  const skor = sc?.score
+    ? `<div class="pt-main num">${sc.score[0]} - ${sc.score[1]}</div>
+       <div class="pt-sub">%${pct(sc.score_prob)} · beklenen gol
+         <b>${lh?.toFixed(2) ?? "—"}</b> – <b>${la?.toFixed(2) ?? "—"}</b></div>`
+    : "";
+
+  const ou = match.markets.over_2_5;
+  const over = sc ? sc.over === 1 : ou[1] >= ou[0];
+  const bt = match.markets.btts;
+  const yes = sc ? sc.btts === 1 : bt[1] >= bt[0];
+
+  const tile = (title, body) =>
+    `<section class="ptile"><h3>${title}</h3>${body}</section>`;
+
+  return `<div class="pgrid">
+    ${tile("Sonuç", sonuc + `<div class="pt-mini">${
+      ["1", "X", "2"].map((l, i) =>
+        `<span${i === (favHome ? 0 : 2) && !tossUp ? ' class="on"' : ""}>${l} %${pct(p[i])}</span>`
+      ).join("")}</div>`)}
+    ${skor ? tile("En olası skor", skor) : ""}
+    ${tile("2.5 Alt / Üst", `<div class="pt-main">${over ? "ÜST" : "ALT"}</div>
+       <div class="pt-sub"><b>%${pct(over ? ou[1] : ou[0])}</b> ihtimal</div>`)}
+    ${tile("Karşılıklı gol", `<div class="pt-main">${yes ? "VAR" : "YOK"}</div>
+       <div class="pt-sub"><b>%${pct(yes ? bt[1] : bt[0])}</b> ihtimal</div>`)}
+  </div>`;
+}
+
+/* Ölçülmüş isabet, tek cümle. Eskiden bu bilgi üç ayrı kartın içine
+   dağılmıştı; sayfayı sadeleştirirken atmak yerine tek yere toplandı,
+   çünkü sitenin bütün iddiası ölçülmüş olmasına dayanıyor. */
+function measuredNote(match, meta) {
+  const p = match.markets?.result;
+  const bands = meta.confidence ?? [];
+  if (!p || !bands.length) return "";
+  const conf = Math.max(...p);
+  const band = bands.find((b) => conf >= b.lo && conf < b.hi) ?? bands.at(-1);
+  const favHome = p[0] >= p[2];
+  const fav = favHome ? match.home : match.away;
+  const safe = (favHome ? p[0] : p[2]) + p[1];
+  return `<p class="note measured">Geriye dönük ölçümde bu güvendeki
+    ${band.n.toLocaleString("tr-TR")} maçta tek sonuç seçmek
+    <b>%${pct(band.single)}</b> tuttu.
+    ${band.single < 0.60 ? `Model burada net konuşamıyor; söyleyebildiği en
+      güvenilir şey <b>${esc(fav.short || fav.name)} kaybetmez</b>
+      (%${pct(safe)}, ölçümde %${pct(band.double)}).` : ""}</p>`;
 }
 
 function verdictHTML(match, meta) {
@@ -1728,32 +1833,22 @@ async function viewMatch(id, tab) {
 
   const prediction = `
     ${tbd}
-    ${verdictHTML(match, meta)}
+    ${predictionTiles(match, meta)}
+    ${measuredNote(match, meta)}
 
-    <section class="card">
-      <h2>En olası skor ${info?.reliable
-        ? `<span class="badge">1X2 ölçüldü · baseline'dan %${(info.skill * 100).toFixed(1)} iyi</span>` : ""}</h2>
-      <div class="headline">
-        <div>
-          <div class="headline-score">${top.home} - ${top.away}</div>
-          <div class="headline-meta">%${(top.prob * 100).toFixed(1)} olasılık</div>
-        </div>
-        <div class="headline-meta">
-          Beklenen gol<br>
-          <b>${lh.toFixed(2)}</b> ${esc(match.home.short || match.home.name)} ·
-          <b>${la.toFixed(2)}</b> ${esc(match.away.short || match.away.name)}
-        </div>
-      </div>
-      <div class="scores" style="margin-top:.9rem">
-        ${rest.map((s) => `<div class="score-cell">
+    <details class="more-scores">
+      <summary>Diğer olası skorlar${info?.reliable
+        ? ` · 1X2 ölçüldü, baseline'dan %${(info.skill * 100).toFixed(1)} iyi` : ""}</summary>
+      <div class="scores">
+        ${[top, ...rest].map((s) => `<div class="score-cell">
           <b>${s.home} - ${s.away}</b><span>%${(s.prob * 100).toFixed(1)}</span></div>`).join("")}
       </div>
       ${scenarioHTML(match)}
-    </section>
+    </details>
 
     ${marketHTML(match)}
 
-    ${SIDE_MARKETS.map((m) => barsHTML(match.markets[m.key], m, meta.metrics)).join("")}
+    ${h2hSlot(match)}
 
     <section class="card">
       <h2>Takım karşılaştırması</h2>

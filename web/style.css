@@ -2246,7 +2246,78 @@ body.cal-open .datestrip { z-index: 60; }
   .lstrip-end { margin-left: 0; width: 100%; justify-content: flex-end; }
 }
 
-  /* Dar ekranda adları kısaltmak yerine şerit kaydırılıyor: kısaltılmış
-     adlar ("Danimarka Sü…") logodan daha az bilgi veriyordu. */
-  .lc-name { max-width: 7.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* ─── Maç sayfası: tahmin kutuları ─────────────────────────────────────── */
+/* Dört market dört ayrı karttı ve sayfa uzuyordu. Hepsi tek bir gol
+   beklentisi modelinden çıktığı için tek ızgarada duruyorlar. */
+.pgrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .6rem;
+  margin: 1rem 0 .5rem;
+}
+.ptile {
+  display: flex; flex-direction: column; gap: .2rem;
+  padding: .9rem .95rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  min-width: 0;
+}
+.ptile h3 {
+  margin: 0 0 .35rem;
+  font-size: .72rem; font-weight: 620;
+  letter-spacing: .04em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+.pt-main {
+  font-size: 1.25rem; font-weight: 700; line-height: 1.15;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.pt-main.num { font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.pt-sub { font-size: .78rem; color: var(--text-muted); }
+.pt-sub b { color: var(--text); font-weight: 640; }
+
+.pt-mini {
+  display: flex; gap: .3rem; margin-top: .55rem;
+}
+.pt-mini span {
+  flex: 1;
+  padding: .22rem .1rem;
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text-muted);
+  font-size: .68rem; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.pt-mini span.on {
+  background: var(--accent-soft); color: var(--accent); font-weight: 640;
+}
+
+.note.measured { margin: .1rem 0 .9rem; }
+
+/* Diğer skorlar varsayılan olarak kapalı: sayfanın işi ilk bakışta bir
+   cevap vermek, olasılık tablosu ikincil. */
+.more-scores {
+  margin: 0 0 .9rem;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--surface);
+}
+.more-scores > summary {
+  padding: .7rem .95rem;
+  cursor: pointer;
+  font-size: .82rem; font-weight: 600;
+  color: var(--text-muted);
+  list-style: none;
+}
+.more-scores > summary::-webkit-details-marker { display: none; }
+.more-scores > summary::before { content: "▸ "; }
+.more-scores[open] > summary::before { content: "▾ "; }
+.more-scores > summary:hover { color: var(--text); }
+.more-scores > .scores,
+.more-scores > .scenario { padding: 0 .95rem .95rem; }
+
+@media (max-width: 420px) {
+  .pgrid { gap: .5rem; }
+  .ptile { padding: .75rem .8rem; }
+  .pt-main { font-size: 1.1rem; }
 }
