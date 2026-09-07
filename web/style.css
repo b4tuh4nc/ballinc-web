@@ -2277,6 +2277,14 @@ body.cal-open .datestrip { z-index: 60; }
 .pt-sub { font-size: .78rem; color: var(--text-muted); }
 .pt-sub b { color: var(--text); font-weight: 640; }
 
+/* Ölçümde taban oranı geçmeyen market: kutu bunu söylemek zorunda, yoksa
+   olmayan bir güven veriyor. */
+.pt-weak {
+  margin-top: .35rem;
+  font-size: .68rem; line-height: 1.3;
+  color: var(--warn);
+}
+
 .pt-mini {
   display: flex; gap: .3rem; margin-top: .55rem;
 }

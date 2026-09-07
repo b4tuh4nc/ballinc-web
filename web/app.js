@@ -139,15 +139,22 @@ function oddsCells(match) {
 function extraChips(match) {
   const ou = match.markets.over_2_5, bt = match.markets.btts;
   if (!ou || !bt) return "";
-  const sc = match.scenario;
-  const over = sc ? sc.over === 1 : ou[1] >= ou[0];
-  const yes = sc ? sc.btts === 1 : bt[1] >= bt[0];
+  // Satırda yan marketlerden yalnızca BİRİ gösteriliyor: modelin daha
+  // kararlı olduğu (%50'den en uzak) olan. İkisi birden 1X2 ile yan yana
+  // durunca kendi kendini çürüten üçlüler çıkıyordu ("1 / Alt / KG Var" —
+  // iki takım da gol atıp toplam 2'yi geçmediyse skor zorunlu olarak 1-1,
+  // yani beraberlik). Tek yan market hiçbir sonuçla çelişemez.
+  const ouEdge = Math.abs(ou[1] - 0.5);
+  const btEdge = Math.abs(bt[1] - 0.5);
+  const showOU = ouEdge >= btEdge;
+  const over = ou[1] >= ou[0];
+  const yes = bt[1] >= bt[0];
   // Buraya "BERABERLİĞE AÇIK" diye ayrı bir çip konmuştu ama satırdaki
   // diğer çipleri kaydırıp listeyi hizasız bırakıyordu. Sarı X kutusu
   // uyarıyı zaten veriyor.
-  return `<div class="extra">
-    <span class="extra-chip">2.5 ${over ? "ÜST" : "ALT"} <b>%${pct(over ? ou[1] : ou[0])}</b></span>
-    <span class="extra-chip">KG ${yes ? "VAR" : "YOK"} <b>%${pct(yes ? bt[1] : bt[0])}</b></span>
+  return `<div class="extra">${showOU
+    ? `<span class="extra-chip">2.5 ${over ? "ÜST" : "ALT"} <b>%${pct(over ? ou[1] : ou[0])}</b></span>`
+    : `<span class="extra-chip">KG ${yes ? "VAR" : "YOK"} <b>%${pct(yes ? bt[1] : bt[0])}</b></span>`}
   </div>`;
 }
 
@@ -1662,13 +1669,32 @@ function predictionTiles(match, meta) {
          <b>${lh?.toFixed(2) ?? "—"}</b> – <b>${la?.toFixed(2) ?? "—"}</b></div>`
     : "";
 
-  const ou = match.markets.over_2_5;
-  const over = sc ? sc.over === 1 : ou[1] >= ou[0];
-  const bt = match.markets.btts;
-  const yes = sc ? sc.btts === 1 : bt[1] >= bt[0];
-
   const tile = (title, body) =>
     `<section class="ptile"><h3>${title}</h3>${body}</section>`;
+
+  /* Yan marketlerde MARJİNAL kazanan gösteriliyor, senaryonunki değil.
+
+     Senaryo üçlünün ortak olasılığını en büyütüyor ve bunu yaparken
+     marjinali %50'nin altında kalan bir seçeneği seçebiliyor: maçların
+     %26'sında oluyordu ve kutu "ÜST %48" gibi kendi kendini çürüten bir
+     şey yazıyordu. Kutu tek bir markete cevap veriyor, o yüzden cevabı da
+     o marketin kendi olasılığı olmalı. Birlikte tutarlı üçlü, aşağıdaki
+     "senaryo" bloğunda ayrıca ve açıkça duruyor.
+
+     Ayrıca bu iki market ölçümde taban oranı geçmiyor (over_2_5 %1.5,
+     btts %0.3 — eşik %2). Kutu bunu söylemek zorunda, yoksa olmayan bir
+     güven veriyor. */
+  const side = (title, probs, labels, key) => {
+    const win = probs[1] >= probs[0] ? 1 : 0;
+    const info = reliability(meta.metrics, key);
+    return tile(title, `
+      <div class="pt-main">${labels[win]}</div>
+      <div class="pt-sub"><b>%${pct(probs[win])}</b> ihtimal ·
+        ${labels[1 - win].toLowerCase()} %${pct(probs[1 - win])}</div>
+      ${info && !info.reliable
+        ? `<div class="pt-weak" title="Geriye dönük ölçümde bu market taban orandan ayrışmadı">
+             ölçümde taban orandan ayrışmıyor</div>` : ""}`);
+  };
 
   return `<div class="pgrid">
     ${tile("Sonuç", sonuc + `<div class="pt-mini">${
@@ -1676,10 +1702,8 @@ function predictionTiles(match, meta) {
         `<span${i === (favHome ? 0 : 2) && !tossUp ? ' class="on"' : ""}>${l} %${pct(p[i])}</span>`
       ).join("")}</div>`)}
     ${skor ? tile("En olası skor", skor) : ""}
-    ${tile("2.5 Alt / Üst", `<div class="pt-main">${over ? "ÜST" : "ALT"}</div>
-       <div class="pt-sub"><b>%${pct(over ? ou[1] : ou[0])}</b> ihtimal</div>`)}
-    ${tile("Karşılıklı gol", `<div class="pt-main">${yes ? "VAR" : "YOK"}</div>
-       <div class="pt-sub"><b>%${pct(yes ? bt[1] : bt[0])}</b> ihtimal</div>`)}
+    ${side("2.5 Alt / Üst", match.markets.over_2_5, ["ALT", "ÜST"], "over_2_5")}
+    ${side("Karşılıklı gol", match.markets.btts, ["YOK", "VAR"], "btts")}
   </div>`;
 }
 
