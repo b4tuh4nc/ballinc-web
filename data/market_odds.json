@@ -1,6 +1,6 @@
 {
   "fetched_at": "2026-09-08T11:09:09+00:00",
-  "quota_remaining": "423",
+  "quota_remaining": 423,
   "leagues": {
     "AUT": "2026-09-07T19:08:39+00:00",
     "SUI": "2026-09-06T10:49:21+00:00",
@@ -746,20 +746,6 @@
       ],
       "bookmakers": 17,
       "margin": 0.0684
-    },
-    "NED|fm9908|fm6433": {
-      "market": [
-        0.5221,
-        0.2275,
-        0.2503
-      ],
-      "best_odds": [
-        1.83,
-        4.3,
-        3.84
-      ],
-      "bookmakers": 5,
-      "margin": 0.0544
     },
     "NED|fm8464|fm10218": {
       "market": [
