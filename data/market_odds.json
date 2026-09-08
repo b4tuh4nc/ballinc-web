@@ -1,6 +1,6 @@
 {
   "fetched_at": "2026-09-07T19:08:39+00:00",
-  "quota_remaining": "425",
+  "quota_remaining": 425,
   "leagues": {
     "AUT": "2026-09-07T19:08:39+00:00",
     "SUI": "2026-09-06T10:49:21+00:00",
@@ -19,20 +19,6 @@
     "UCL": "2026-09-07T19:08:39+00:00"
   },
   "odds": {
-    "Serie_A|us99|us96": {
-      "market": [
-        0.3291,
-        0.3098,
-        0.3611
-      ],
-      "best_odds": [
-        3.02,
-        3.23,
-        2.84
-      ],
-      "bookmakers": 24,
-      "margin": 0.0533
-    },
     "EPL|us71|us249": {
       "market": [
         0.477,
@@ -172,34 +158,6 @@
       ],
       "bookmakers": 18,
       "margin": 0.0631
-    },
-    "La_Liga|us142|us152": {
-      "market": [
-        0.3717,
-        0.3379,
-        0.2904
-      ],
-      "best_odds": [
-        2.72,
-        2.92,
-        3.45
-      ],
-      "bookmakers": 21,
-      "margin": 0.0495
-    },
-    "La_Liga|us207|us140": {
-      "market": [
-        0.2792,
-        0.2752,
-        0.4456
-      ],
-      "best_odds": [
-        3.65,
-        3.62,
-        2.22
-      ],
-      "bookmakers": 21,
-      "margin": 0.0537
     },
     "Serie_A|us265|us110": {
       "market": [
@@ -649,20 +607,6 @@
       "bookmakers": 15,
       "margin": 0.0935
     },
-    "POL|fm8023|fm8243": {
-      "market": [
-        0.4937,
-        0.2584,
-        0.2479
-      ],
-      "best_odds": [
-        2.0,
-        3.75,
-        4.25
-      ],
-      "bookmakers": 20,
-      "margin": 0.0879
-    },
     "La_Liga|us138|us146": {
       "market": [
         0.4174,
@@ -1026,20 +970,6 @@
       ],
       "bookmakers": 9,
       "margin": 0.1202
-    },
-    "POR|fm7842|fm158085": {
-      "market": [
-        0.3858,
-        0.276,
-        0.3382
-      ],
-      "best_odds": [
-        2.66,
-        3.6,
-        2.98
-      ],
-      "bookmakers": 20,
-      "margin": 0.0871
     },
     "POR|fm8348|fm9772": {
       "market": [
