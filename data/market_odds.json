@@ -34,34 +34,6 @@
       "bookmakers": 19,
       "margin": 0.0516
     },
-    "Serie_A|us111|us243": {
-      "market": [
-        0.7559,
-        0.1617,
-        0.0824
-      ],
-      "best_odds": [
-        1.31,
-        6.25,
-        14.5
-      ],
-      "bookmakers": 24,
-      "margin": 0.0521
-    },
-    "Ligue_1|us164|us161": {
-      "market": [
-        0.149,
-        0.1827,
-        0.6683
-      ],
-      "best_odds": [
-        7.2,
-        5.5,
-        1.47
-      ],
-      "bookmakers": 23,
-      "margin": 0.0544
-    },
     "EPL|us83|us245": {
       "market": [
         0.7166,
@@ -201,34 +173,6 @@
       ],
       "bookmakers": 19,
       "margin": 0.0592
-    },
-    "POR|fm9773|fm9772": {
-      "market": [
-        0.3507,
-        0.2819,
-        0.3674
-      ],
-      "best_odds": [
-        2.8,
-        3.5,
-        2.72
-      ],
-      "bookmakers": 20,
-      "margin": 0.0857
-    },
-    "La_Liga|us146|us140": {
-      "market": [
-        0.3451,
-        0.2825,
-        0.3724
-      ],
-      "best_odds": [
-        2.94,
-        3.5,
-        2.66
-      ],
-      "bookmakers": 21,
-      "margin": 0.0583
     },
     "Ligue_1|us210|us178": {
       "market": [
