@@ -163,6 +163,8 @@ def attach_fotmob_ids(matches: list[dict]) -> int:
             team_id = match[side]["id"]
             if str(team_id).startswith("fm"):
                 match[side]["fm"] = str(team_id).removeprefix("fm")
+            elif str(team_id).startswith("nt"):
+                match[side]["fm"] = str(team_id).removeprefix("nt")
             elif team_id in entries:
                 match[side]["fm"] = entries[team_id]["fotmob_id"]
         if "fm" in match["home"] and "fm" in match["away"]:
@@ -256,8 +258,13 @@ def build_teams(df) -> list[dict]:
                 entry["alt"] = alts
             # FotMob kimligi: canli veri isimle degil kimlikle geliyor, favori
             # takimin bildirimi de bu esleme uzerinden bulunuyor.
-            fm = (str(team_id).removeprefix("fm") if str(team_id).startswith("fm")
-                  else (entries.get(team_id) or {}).get("fotmob_id"))
+            if str(team_id).startswith("fm"):
+                fm = str(team_id).removeprefix("fm")
+            elif str(team_id).startswith("nt"):
+                fm = str(team_id).removeprefix("nt")
+            else:
+                fm = (entries.get(team_id) or {}).get("fotmob_id")
+                
             if fm:
                 entry["fm"] = str(fm)
             teams[team_id] = entry
