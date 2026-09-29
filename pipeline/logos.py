@@ -69,6 +69,7 @@ def canonical_team_ids() -> dict[str, str]:
     # kaynak olduğu ligler, hem de yedek kaynaktan gelip Understat'ta hiç
     # görünmemiş yeni çıkan takımlar. İkisini de taramak gerekiyor, yoksa
     # ligden çıkıp çıkan takımlar logosuz kalıyor.
+    # Ayrıca 'nt' önekli milli takım kimlikleri de FotMob id'sidir.
     for league in LEAGUES:
         for season in seasons_for(league):
             path = raw_path(league, season)
@@ -77,8 +78,11 @@ def canonical_team_ids() -> dict[str, str]:
             raw = pd.read_parquet(path)
             for column in ("home_id", "away_id"):
                 for team_id in raw[column].unique():
-                    if str(team_id).startswith("fm"):
-                        mapping[team_id] = str(team_id).removeprefix("fm")
+                    team_id_str = str(team_id)
+                    if team_id_str.startswith("fm"):
+                        mapping[team_id_str] = team_id_str.removeprefix("fm")
+                    elif team_id_str.startswith("nt"):
+                        mapping[team_id_str] = team_id_str.removeprefix("nt")
     return mapping
 
 

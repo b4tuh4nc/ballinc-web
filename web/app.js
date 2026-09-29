@@ -316,19 +316,16 @@ const DAY_TABS = [
    Sayılar günün dizininden geliyor, ligin dosyasını indirmeden; gizli bir
    lig de şeritte görünüyor (yoksa geri açmanın yolu kalmazdı). */
 function leagueStripHTML(meta, dayCounts, hidden) {
-  // Şerit sabit: beş büyük lig + Süper Lig (tier 0) ve Avrupa kupaları
-  // (tier 1). Önce "o gün maçı olan ligler" gösteriliyordu ama içerik her
-  // gün değişince şerit bir kontrol olmaktan çıkıp habere dönüşüyordu —
-  // aynı ligi iki gün üst üste aynı yerde bulamıyordun. Besleyici ligler
-  // (tier 2) "Diğer ligler" panelinde.
+  // Şerit sabit: beş büyük lig + Süper Lig (tier 0) ve Avrupa kupaları (tier 1).
   const main = meta.leagues.filter((l) => (l.tier ?? 0) <= 1);
   const codes = main.map((l) => l.code);
   if (!codes.length) return "";
   const byCode = Object.fromEntries(meta.leagues.map((l) => [l.code, l]));
 
-  // Rozet: bugün maçı olan besleyici lig sayısı, toplamı değil.
+  // Rozet: bugün maçı olan besleyici lig ve milli takım yarışması sayısı.
   const rest = meta.leagues.filter(
-    (l) => (l.tier ?? 0) === 2 && dayCounts[l.code]).length;
+    (l) => ((l.tier ?? 0) >= 2) && dayCounts[l.code]).length;
+
 
   // Yalnızca logo: adlarla birlikte 12 çip sayfanın başını araç çubuğuna
   // çeviriyordu. Ad ve maç sayısı erişilebilir etikette duruyor, üzerine
@@ -2312,7 +2309,7 @@ function filterPanelHTML(leagues) {
       <div class="filter-grid">${found.map(cell).join("")}</div>`;
   };
   const rows = group(0, "Ligler") + group(1, "Avrupa kupaları")
-    + group(2, "Diğer ligler");
+    + group(2, "Diğer ligler") + group(3, "Milli Takımlar");
   // Bulanık katman panelle AYNI yığınlama bağlamında olmalı; kök seviyeye
   // koyulursa .page-head'in kendi bağlamı yüzünden panelin altında kalıyor
   // ve panelin kendisi de bulanıklaşıyor (takvimde aynı hatayı yapmıştım).
@@ -2655,7 +2652,7 @@ async function paintNav() {
       <div class="more-grid">${rows.map(card).join("")}</div>`;
   };
   el("more-panel").innerHTML = `<div class="wrap">
-    ${section(1, "Avrupa kupaları")}${section(2, "Diğer ligler")}</div>`;
+    ${section(1, "Avrupa kupaları")}${section(2, "Diğer ligler")}${section(3, "Milli Takımlar")}</div>`;
 
   const onHome = !parts.length;
   const homeItem = `<a class="drawer-item"${onHome ? ' aria-current="page"' : ""} href="#/">
@@ -2679,7 +2676,8 @@ async function paintNav() {
   el("drawer-nav").innerHTML = homeItem
     + group(0, "Ligler")
     + group(1, "Avrupa kupaları")
-    + group(2, "Diğer ligler");
+    + group(2, "Diğer ligler")
+    + group(3, "Milli Takımlar");
 
   goalProxy = meta.goal_proxy || "";
 

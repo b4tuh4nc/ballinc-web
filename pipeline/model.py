@@ -28,12 +28,12 @@ from scipy.stats import poisson
 from pipeline.config import MAX_GOALS
 
 DEFAULT_PARAMS = dict(
-    n_estimators=350,
+    n_estimators=400,
     learning_rate=0.03,
-    max_depth=3,
+    max_depth=4,        # 3→4: daha derin ağaçlar milli takım örüntülerini yakalar
     subsample=0.8,
     colsample_bytree=0.7,
-    min_child_weight=25,
+    min_child_weight=20,  # 25→20: milli takım verisi daha seyrek, daha esnek
     reg_lambda=3.0,
     objective="count:poisson",
     random_state=42,
