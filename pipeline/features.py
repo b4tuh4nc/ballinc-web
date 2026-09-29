@@ -32,6 +32,9 @@ LEAGUE_MU_ALPHA = 0.01    # lig ortalaması yavaş hareket etsin
 ELO_START = 1500.0
 ELO_K = 20.0
 ELO_HOME_ADV = 60.0
+# Milli takım turnuvaları büyük ölçüde tarafsız sahada oynanır (EURO, WC,
+# Copa America, vb.). Ev sahibi avantajı çok daha küçük: yaklaşık 15-20 puan.
+ELO_NT_HOME_ADV = 15.0
 ELO_SEASON_CARRY = 0.75  # sezon arası ortalamaya dönüş
 
 STAT_COLS = ["gf", "ga", "xgf", "xga", "pts"]
@@ -139,12 +142,24 @@ def _elo(df: pd.DataFrame) -> pd.DataFrame:
 
     Oynanmamış maçlar takımın o ana kadarki güncel reytingini alır, ki bu
     tahmin anında istediğimiz şeydir.
+
+    Milli takımlar kulüplerden ayrı Elo tablosunda izlenir:
+    - Kimlik ayrımı zaten var ('nt' öneki), bu yüzden tek tabloda olsalar
+      bile çakışma olmaz. Ancak semantik ayrım daha temiz.
+    - Milli takım maçlarında ev sahibi avantajı çok daha küçük: turnuvalar
+      büyük ölçüde tarafsız sahada oynanır. Bu yüzden IS_NATIONAL ise
+      ELO_HOME_ADV yerine ELO_NT_HOME_ADV kullanılır.
     """
+    from pipeline.config import LEAGUES
     rating: dict[str, float] = {}
     season_of: dict[str, str] = {}
     home_out, away_out = [], []
 
     for row in df.itertuples(index=False):
+        # Milli takım mı yoksa kulüp mü?
+        is_nt = LEAGUES.get(row.league, {}).get("is_national", False)
+        home_adv = ELO_NT_HOME_ADV if is_nt else ELO_HOME_ADV
+
         for team in (row.home_id, row.away_id):
             if team not in rating:
                 rating[team] = ELO_START
@@ -161,7 +176,7 @@ def _elo(df: pd.DataFrame) -> pd.DataFrame:
         if not row.is_result or pd.isna(row.home_goals):
             continue
 
-        expected = 1.0 / (1.0 + 10 ** (-((rh + ELO_HOME_ADV) - ra) / 400.0))
+        expected = 1.0 / (1.0 + 10 ** (-((rh + home_adv) - ra) / 400.0))
         if row.home_goals > row.away_goals:
             actual = 1.0
         elif row.home_goals == row.away_goals:
@@ -270,8 +285,19 @@ def build(df: pd.DataFrame | None = None) -> pd.DataFrame:
     df["btts"] = np.where((df["home_goals"] > 0) & (df["away_goals"] > 0), 1.0, 0.0)
     df.loc[~played_mask, "btts"] = np.nan
 
-    df["league_code"] = df["league"].astype("category").cat.codes
+    # league_code: kategorik kodlama yerine LEAGUES sözlüğündeki sabit sıra kullanılıyor.
+    # Dinamik .cat.codes() truncated veri setlerinde farklı sonuç vererek sızıntı
+    # testini bozuyordu: yeni ligler eklenince sıra kayıyordu.
+    from pipeline.config import LEAGUES as _LEAGUES_LIST
+    _league_order = {lg: idx for idx, lg in enumerate(_LEAGUES_LIST)}
+    df["league_code"] = df["league"].map(_league_order).fillna(-1).astype(int)
     df["month"] = df["datetime"].dt.month
+    # Milli takım maçı mı? Modelin kulüp ve milli takım arasındaki farkı
+    # öğrenebilmesi için binary feature: farklı gol beklentisi, farklı ev avantajı.
+    from pipeline.config import LEAGUES as _LEAGUES
+    df["is_national"] = df["league"].map(
+        lambda lg: int(_LEAGUES.get(lg, {}).get("is_national", False))
+    )
     return df.sort_values(["datetime", "match_id"]).reset_index(drop=True)
 
 

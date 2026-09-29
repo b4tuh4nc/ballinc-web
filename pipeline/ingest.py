@@ -17,6 +17,7 @@ from pipeline.config import (
     ARCHIVE_SEASONS,
     FOTMOB_PRIMARY_LEAGUES,
     LEAGUES,
+    NATIONAL_LEAGUES,
     RAW_DIR,
     SEASONS,
     UNDERSTAT_LEAGUES,
@@ -187,6 +188,49 @@ def ingest_fotmob(leagues: list[str], seasons: list[str]) -> int:
     return failures
 
 
+def ingest_national(leagues: list[str]) -> int:
+    """Milli takım yarışmaları — yıl bazlı sezonlarla FotMob'dan çeker.
+
+    Kulüp liglerinden farkı: sezon parametresi "2024/2025" yerine "2024" gibi
+    tek yıl. Arşiv mantığı aynı: mevcut dosya varsa yeniden çekilmiyor.
+    """
+    from pipeline.config import INTERNATIONAL_SEASONS
+    failures = 0
+    archived = 0
+    for league in leagues:
+        for year in INTERNATIONAL_SEASONS.get(league, []):
+            path = raw_path(league, year)
+            if path.exists():
+                archived += 1
+                continue
+            label = f"{league} {year}"
+            try:
+                df = fotmob.fetch_international_season(league, year)
+            except Exception as exc:
+                if path.exists():
+                    print(f"  ! {label:24s} tazelenemedi, mevcut veri korundu "
+                          f"({type(exc).__name__}: {exc})")
+                else:
+                    print(f"  ✗ {label:24s} {type(exc).__name__}: {exc}")
+                    failures += 1
+                continue
+
+            if df.empty:
+                print(f"  · {label:24s} turnuva henüz açılmamış veya verisi yok, atlandı")
+                continue
+
+            df = canonicalise(df, league)
+            teams = len(set(df["home_id"]) | set(df["away_id"]))
+            played = int(df["is_result"].sum())
+            _write_atomic(df, path)
+            print(f"  ✓ {label:24s} {len(df):3d} maç, {teams:2d} takım  "
+                  f"({played:3d} oynanmış, xG yok)")
+            import time; time.sleep(1.0)
+    if archived:
+        print(f"  · {archived} turnuva yılı yerinde, yeniden çekilmedi")
+    return failures
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Ham maç verisini çeker")
     parser.add_argument("--leagues", nargs="*", default=None,
@@ -198,6 +242,7 @@ def main() -> int:
     wanted = set(args.leagues) if args.leagues else None
     us = [l for l in UNDERSTAT_LEAGUES if wanted is None or l in wanted]
     fm = [l for l in FOTMOB_PRIMARY_LEAGUES if wanted is None or l in wanted]
+    nt = [l for l in NATIONAL_LEAGUES if wanted is None or l in wanted]
 
     failures = 0
     if us:
@@ -210,6 +255,9 @@ def main() -> int:
         for league in fm:
             failures += ingest_fotmob([league],
                                       args.seasons or seasons_for(league))
+    if nt:
+        print(f"\nFotMob (Milli Takımlar) → {RAW_DIR}")
+        failures += ingest_national(nt)
 
     if failures:
         print(f"\n{failures} lig-sezon çekilemedi.")
@@ -220,3 +268,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+

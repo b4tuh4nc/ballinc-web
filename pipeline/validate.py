@@ -62,10 +62,12 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
     #    bu kontrol aynı yanlış sabitle "geçti" diyordu.
     teams = set(df["home_id"]) | set(df["away_id"])
     lo, hi = TEAM_COUNT_RANGE
-    if not (lo <= len(teams) <= hi):
-        rep.error(f"{tag}: {len(teams)} takım — beklenen aralık {lo}-{hi} dışında")
-
+    # Milli takım turnuvaları çok daha az takım içerebilir (4-24 arası grup
+    # aşaması + eleme), kulüp ligleri 8-40 arasında. Uluslararası format için
+    # kontrol atlıyoruz.
     fmt = league_format(league)
+    if fmt not in ("cup", "international") and not (lo <= len(teams) <= hi):
+        rep.error(f"{tag}: {len(teams)} takım — beklenen aralık {lo}-{hi} dışında")
 
     # 3. Yapısal tutarlılık: çift devreli ligde maç sayısı takım sayısından
     #    tek başına belirlenir. Fazla maç = lig dışı maç sızmış; eksik maç =
@@ -73,6 +75,8 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
     #    tek başına belirlenir. Split ve kupa formatlarında böyle bir formül
     #    yok: şampiyonluk grubu maç sayısını değiştiriyor, kupada takımlar
     #    eşit sayıda maç bile oynamıyor.
+    #    Uluslararası turnuvalarda da kupa gibi: grup + eleme, takımlar farklı
+    #    sayıda maç oynuyor.
     if fmt == "double":
         want = expected_matches(len(teams))
         if len(df) != want:
@@ -133,9 +137,26 @@ def check_league_season(df: pd.DataFrame, league: str, season: str, rep: Report)
             rep.warn(f"{tag}: {missing} oynanmış maçta xG yok")
 
     # 9. Tarih aralığı sezonla uyumlu mu
-    start_year = int(season.split("_")[0])
-    earliest = pd.Timestamp(f"{start_year}-06-01")
-    latest = pd.Timestamp(f"{start_year + 1}-08-31")
+    #    Uluslararası turnuvalar: sezon tek yıl (örn. "2024")
+    #    Kulüp ligleri: sezon "2026_2027" formatında
+    if "_" in season:
+        start_year = int(season.split("_")[0])
+        fmt = league_format(league)
+        if fmt == "international":
+            # Dünya Kupası elemeleri ve UEFA Nations League uzun sürer
+            # Örneğin WCQ 2021_2022 elemeleri 2021 başından 2022 sonuna kadar.
+            earliest = pd.Timestamp(f"{start_year - 1}-01-01")
+            latest = pd.Timestamp(f"{start_year + 3}-12-31")
+        else:
+            earliest = pd.Timestamp(f"{start_year}-06-01")
+            latest = pd.Timestamp(f"{start_year + 1}-08-31")
+    else:
+        # Uluslararası: turnuva yılı (örn. "2024") ancak EURO 2020 gibi
+        # istisnalar var (COVID nedeniyle bir yıl ertelendi, 2021'de oynandı).
+        # Geniş bir pencere kullanıyoruz: yıl-1 ile yıl+2 arası.
+        year = int(season)
+        earliest = pd.Timestamp(f"{year - 1}-01-01")
+        latest = pd.Timestamp(f"{year + 2}-06-30")
     out = df[(df["datetime"] < earliest) | (df["datetime"] > latest)]
     if len(out):
         rep.error(f"{tag}: {len(out)} maç sezon tarih aralığı dışında")
