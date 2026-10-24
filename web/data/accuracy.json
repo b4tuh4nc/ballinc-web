@@ -1,36 +1,36 @@
 {
-  "generated_at": "2026-10-24T10:49:07+00:00",
-  "total": 2886,
+  "generated_at": "2026-10-24T15:50:56+00:00",
+  "total": 2922,
   "markets": {
     "result": {
       "label": "1X2",
-      "n": 962,
-      "accuracy": 0.5333,
-      "baseline_accuracy": 0.4449,
-      "logloss": 0.9736,
+      "n": 974,
+      "accuracy": 0.5308,
+      "baseline_accuracy": 0.4435,
+      "logloss": 0.9753,
       "since": "2026-08-27"
     },
     "over_2_5": {
       "label": "2.5 Alt/Üst",
-      "n": 962,
-      "accuracy": 0.6029,
-      "baseline_accuracy": 0.6216,
-      "logloss": 0.6686,
+      "n": 974,
+      "accuracy": 0.6006,
+      "baseline_accuracy": 0.6191,
+      "logloss": 0.6694,
       "since": "2026-08-27"
     },
     "btts": {
       "label": "KG Var/Yok",
-      "n": 962,
-      "accuracy": 0.5759,
-      "baseline_accuracy": 0.58,
-      "logloss": 0.6822,
+      "n": 974,
+      "accuracy": 0.5739,
+      "baseline_accuracy": 0.578,
+      "logloss": 0.6826,
       "since": "2026-08-27"
     }
   },
   "vs_market": {
-    "n": 742,
-    "model_logloss": 0.9682,
-    "market_logloss": 0.9308,
+    "n": 749,
+    "model_logloss": 0.9683,
+    "market_logloss": 0.9306,
     "model_better": false,
     "since": "2026-08-27"
   }
