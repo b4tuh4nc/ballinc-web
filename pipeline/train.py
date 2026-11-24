@@ -29,8 +29,14 @@ def main() -> int:
         return 1
 
     print(f"{len(played)} oynanmış maç, {len(cols)} feature ile eğitiliyor...")
+    # Zamansal ağırlıklandırma (Time-decay): Güncel maçlara daha yüksek ağırlık vererek adaptasyonu artır
+    import numpy as np
+    days_ago = (played["datetime"].max() - played["datetime"]).dt.total_seconds() / 86400.0
+    sample_weights = np.exp(-0.0005 * days_ago).to_numpy()
+
     model = GoalModel().fit(
-        played[cols], played["home_goals"].to_numpy(), played["away_goals"].to_numpy()
+        played[cols], played["home_goals"].to_numpy(), played["away_goals"].to_numpy(),
+        sample_weight=sample_weights,
     )
     model.save(MODELS_DIR)
 

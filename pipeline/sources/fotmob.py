@@ -190,3 +190,63 @@ def fetch_league_season(league: str, season: str) -> pd.DataFrame:
     df["is_result"] = df["is_result"].astype(bool)
     df["has_xg"] = False
     return df.sort_values("datetime").reset_index(drop=True)
+
+
+def fetch_international_season(league: str, year: str) -> pd.DataFrame:
+    """Milli takım turnuvası — yıl bazlı sezon parametresiyle FotMob'dan çeker.
+
+    Kulüp ligleri '2026/2027' sezon formatı kullanırken milli takım
+    turnuvaları '2024', '2026' gibi tek yıl kullanır. Bu fonksiyon o farkı
+    kapsüller ve takım kimliklerine 'nt' öneki ekler: milli takım kimliği
+    kulüp kimliğiyle çakışmamalı (farklı Elo geçmişi, farklı form, farklı
+    model girdileri).
+
+    drop_non_league uygulanmıyor — milli takım turnuvası zaten kupa formatında,
+    ve turnuvaya katılan her milli takım eşit sayıda maç oynamıyor.
+    """
+    lid = league_id(league)
+    fotmob_season = year.replace("_", "/")
+    payload = _get(BASE_URL, {"id": lid, "season": fotmob_season})
+
+    available = payload.get("allAvailableSeasons") or []
+    if not available:
+        raise FotmobError(
+            f"lig {lid} ({league}) için sezon listesi boş — erişim engellenmiş olabilir"
+        )
+    if fotmob_season not in available:
+        return pd.DataFrame(columns=COLUMNS)
+
+    returned = (payload.get("details") or {}).get("selectedSeason")
+    if returned and returned != fotmob_season:
+        raise FotmobError(f"{fotmob_season} istendi ama {returned} döndü")
+
+    matches = (payload.get("fixtures") or {}).get("allMatches") or []
+    if not matches:
+        return pd.DataFrame(columns=COLUMNS)
+
+    _, rounds = teams_and_rounds(matches)
+    rows = []
+    for m in matches:
+        r = _row(m, league, year)
+        if r is None:
+            continue
+        # Milli takım kimliğine 'nt' öneki ekle (kulüp 'fm' önekinden ayrı)
+        r["home_id"] = "nt" + str(m["home"]["id"])
+        r["away_id"] = "nt" + str(m["away"]["id"])
+        r["match_id"] = f"{league}-{year}-{r['home_id']}-{r['away_id']}"
+        key = (str(m["home"]["id"]), str(m["away"]["id"]))
+        r["round"] = rounds.get(key)
+        rows.append(r)
+
+    if not rows:
+        return pd.DataFrame(columns=COLUMNS)
+
+    df = pd.DataFrame(rows, columns=COLUMNS).drop_duplicates(subset=["match_id"])
+    for col in ("home_goals", "away_goals", "home_xg", "away_xg"):
+        df[col] = pd.to_numeric(df[col], errors="coerce").astype("float64")
+    df["is_result"] = df["is_result"].astype(bool)
+    df["has_xg"] = False
+    df["season"] = year  # Uluslararası: sezon = turnuva yılı
+
+    return df.sort_values("datetime").reset_index(drop=True)
+

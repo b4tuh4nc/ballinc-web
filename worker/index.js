@@ -27,7 +27,8 @@ const DETAILS = "https://www.fotmob.com/api/data/matchDetails?matchId=";
 const BY_DATE = "https://www.fotmob.com/api/data/matches?date=";
 
 const LIVE_CACHE = 30;      // devam eden maç
-const DONE_CACHE = 21600;   // bitmiş maç: bir daha değişmiyor
+const DONE_CACHE = 21600;   // bitmiş maç
+const TIMELINE_CACHE_VERSION = "v2";
 
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -100,34 +101,46 @@ async function resolveMatchId(date, home, away) {
   return null;
 }
 
-/** Olay akışı. Skor alanı olayın ÖNCESİNİ gösterdiği için gol sonrası skor
-    bir sonraki olaydan okunuyor; son golde maçın kendi skoruna düşülüyor. */
-function buildTimeline(events, finalScore) {
-  const scoreAfter = (index) => {
-    for (let i = index + 1; i < events.length; i += 1) {
-      const e = events[i];
-      if (Number.isInteger(e.homeScore) && Number.isInteger(e.awayScore)) {
-        return [e.homeScore, e.awayScore];
-      }
-    }
-    return finalScore;
-  };
+/** Olay akışı. Skorları baştan (0-0) kronolojik olarak artırarak hesaplar;
+    böylece canlı maçlarda gelecek olay eksikliği veya yanlış sıra skoru bozamaz. */
+export function buildTimeline(events) {
+  const sortedEvents = [...events].sort((a, b) => {
+    const ma = Number(a.time) || 0;
+    const mb = Number(b.time) || 0;
+    if (ma !== mb) return ma - mb;
+    const aa = Number(a.overloadTime) || 0;
+    const ab = Number(b.overloadTime) || 0;
+    return aa - ab;
+  });
 
+  let runningHome = 0;
+  let runningAway = 0;
   const out = [];
-  events.forEach((e, index) => {
+
+  sortedEvents.forEach((e) => {
     const at = { m: e.time ?? null, add: e.overloadTime || 0 };
     const who = { home: !!e.isHome, name: e.nameStr ?? e.player?.name ?? "" };
 
     switch (e.type) {
-      case "Goal":
+      case "Goal": {
+        // FotMob's isHome identifies the side credited with the goal, even
+        // when the named player scored an own goal. Prefer its authoritative
+        // post-goal score so same-minute events cannot display stale scores.
+        const score = Array.isArray(e.newScore) && e.newScore.length >= 2
+          && e.newScore.slice(0, 2).every(Number.isFinite)
+          ? e.newScore.slice(0, 2) : null;
+        if (score) [runningHome, runningAway] = score;
+        else if (e.isHome) runningHome += 1;
+        else runningAway += 1;
         out.push({
           ...at, ...who, t: "gol",
           own: !!e.ownGoal,
           pen: /penalty/i.test(e.goalDescription ?? ""),
           assist: e.assistStr ?? null,
-          score: scoreAfter(index),
+          score: score ?? [runningHome, runningAway],
         });
         break;
+      }
       case "Card":
         out.push({
           ...at, ...who, t: "kart",
@@ -143,19 +156,20 @@ function buildTimeline(events, finalScore) {
         });
         break;
       case "Half":
+        if (Number.isFinite(e.homeScore) && Number.isFinite(e.awayScore)) {
+          runningHome = e.homeScore;
+          runningAway = e.awayScore;
+        }
         out.push({
           m: e.time ?? null, t: "devre",
           label: e.halfStrShort ?? "",
-          score: [e.homeScore ?? 0, e.awayScore ?? 0],
+          score: [runningHome, runningAway],
         });
         break;
       case "AddedTime":
         out.push({ m: e.time ?? null, t: "uzatma", mins: e.minutesAddedInput ?? null });
         break;
       case "VAR": {
-        // Karar hem anahtar hem de FotMob'un kendi metniyle geçiyor: site
-        // anahtarı Türkçeye çeviriyor, tanımadığı bir karar gelirse metne
-        // düşüyor. Böylece yeni bir karar türü çıkınca bilgi kaybolmuyor.
         const decision = e.VAR?.decision ?? {};
         out.push({
           ...at, ...who, t: "var",
@@ -166,7 +180,7 @@ function buildTimeline(events, finalScore) {
         break;
       }
       default:
-        break;   // Comment ve tanımadığımız tipler atlanıyor
+        break;
     }
   });
   return out;
@@ -298,6 +312,31 @@ export default {
 
     const num = (v, max) => new RegExp(`^\\d{1,${max}}$`).test(v);
 
+    // GÜNLÜK CANLI / BİTEN SONUÇ LİSTESİ
+    // Tarayıcı FotMob'un doğrudan liste ucunu CORS nedeniyle çağıramıyor.
+    // Worker tarih listesini sunarken aynı CORS ve önbellek kurallarını uygular.
+    if (!matchId && date && !home && !away) {
+      if (!num(date, 8) || date.length !== 8) {
+        return new Response("geçersiz tarih", { status: 400, headers: cors });
+      }
+      const key = `date:${date}`;
+      const cached = memoryGet(key);
+      if (cached) {
+        return new Response(cached, {
+          headers: { "Content-Type": "application/json; charset=utf-8", ...cors },
+        });
+      }
+      const response = await upstream(BY_DATE + date);
+      if (!response.ok) {
+        return new Response(`kaynak hatası: ${response.status}`, { status: 502, headers: cors });
+      }
+      const body = await response.text();
+      memorySet(key, body, LIVE_CACHE);
+      return new Response(body, {
+        headers: { "Content-Type": "application/json; charset=utf-8", ...cors },
+      });
+    }
+
     if (!num(matchId, 12)) {
       // Maç kimliği yoksa tarih + takım kimlikleriyle çözülüyor.
       if (!(num(date, 8) && date.length === 8 && num(home, 10) && num(away, 10))) {
@@ -319,7 +358,9 @@ export default {
     }
 
     const cache = caches.default;
-    const cacheKey = new Request(`https://ballinc-proxy/match/${matchId}`, request);
+    const cacheKey = new Request(
+      `https://ballinc-proxy/${TIMELINE_CACHE_VERSION}/match/${matchId}`, request,
+    );
     const hit = await cache.match(cacheKey);
     if (hit) {
       const copy = new Response(hit.body, hit);
@@ -340,11 +381,6 @@ export default {
     const ongoing = !!facts.events?.ongoing;
 
     const goalEvents = events.filter((e) => e.type === "Goal");
-    const finalScore = [
-      goalEvents.filter((e) => (e.ownGoal ? !e.isHome : e.isHome)).length,
-      goalEvents.filter((e) => (e.ownGoal ? e.isHome : !e.isHome)).length,
-    ];
-
     const goals = goalEvents.map((e) => ({
       name: e.nameStr ?? e.player?.name ?? "",
       minute: e.timeStr ?? e.time,
@@ -369,7 +405,7 @@ export default {
       ongoing,
       goals,
       redCards,
-      timeline: buildTimeline(events, finalScore),
+      timeline: buildTimeline(events),
       stats: buildStats(payload?.content?.stats?.Periods),
       lineup: buildLineup(payload?.content?.lineup),
       h2h: buildH2H(payload?.content?.h2h,

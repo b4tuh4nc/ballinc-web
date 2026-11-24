@@ -108,6 +108,7 @@ def _past_predictions(season_df: pd.DataFrame, model: GoalModel) -> dict[str, di
         return {}
 
     probs, _ = model.predict_markets(played[model.features])
+    lam_home, lam_away = model.lambdas(played[model.features])
     out = {}
     for pos, row in enumerate(played.itertuples(index=False)):
         result = probs["result"][pos]
@@ -116,6 +117,11 @@ def _past_predictions(season_df: pd.DataFrame, model: GoalModel) -> dict[str, di
             "probs": [round(float(v), 4) for v in result],
             "pick": pick,
             "hit": bool(pick == int(row.result)),
+            "markets": {
+                "over_2_5": [round(float(v), 4) for v in probs["over_2_5"][pos]],
+                "btts": [round(float(v), 4) for v in probs["btts"][pos]],
+            },
+            "lambdas": [round(float(lam_home[pos]), 3), round(float(lam_away[pos]), 3)],
         }
     return out
 
@@ -132,8 +138,12 @@ def build_results(season_df: pd.DataFrame, predictions: dict | None = None) -> l
     for row in played.itertuples():
         round_no = getattr(row, "round", None)
         forecast = (predictions or {}).get(row.match_id)
+        markets = forecast.pop("markets", None) if forecast else None
+        lambdas = forecast.pop("lambdas", None) if forecast else None
         out.append({
             "forecast": forecast,
+            "markets": markets,
+            "lambdas": lambdas,
             "id": row.match_id,
             "kickoff": row.datetime.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "round": int(round_no) if pd.notna(round_no) else None,
@@ -163,6 +173,8 @@ def attach_fotmob_ids(matches: list[dict]) -> int:
             team_id = match[side]["id"]
             if str(team_id).startswith("fm"):
                 match[side]["fm"] = str(team_id).removeprefix("fm")
+            elif str(team_id).startswith("nt"):
+                match[side]["fm"] = str(team_id).removeprefix("nt")
             elif team_id in entries:
                 match[side]["fm"] = entries[team_id]["fotmob_id"]
         if "fm" in match["home"] and "fm" in match["away"]:
@@ -256,8 +268,13 @@ def build_teams(df) -> list[dict]:
                 entry["alt"] = alts
             # FotMob kimligi: canli veri isimle degil kimlikle geliyor, favori
             # takimin bildirimi de bu esleme uzerinden bulunuyor.
-            fm = (str(team_id).removeprefix("fm") if str(team_id).startswith("fm")
-                  else (entries.get(team_id) or {}).get("fotmob_id"))
+            if str(team_id).startswith("fm"):
+                fm = str(team_id).removeprefix("fm")
+            elif str(team_id).startswith("nt"):
+                fm = str(team_id).removeprefix("nt")
+            else:
+                fm = (entries.get(team_id) or {}).get("fotmob_id")
+                
             if fm:
                 entry["fm"] = str(fm)
             teams[team_id] = entry
@@ -309,7 +326,19 @@ def _warn_if_stale(df) -> None:
     Sureye bakmak yetmiyor -- 4.5 saatlik veri bile mac kaybettirebiliyor.
     Dogrudan asil arizaya bakiliyor: baslamis ama sonucu olmayan mac var mi?
     """
-    season = df[df["season"] == CURRENT_SEASON]
+    from pipeline.config import INTERNATIONAL_SEASONS, LEAGUES as _LEAGUES
+    # Kulüp ligleri için CURRENT_SEASON, milli takım için kendi sezon listesi
+    int_seasons = set()
+    for code, cfg in _LEAGUES.items():
+        if cfg.get("is_national"):
+            seasons_list = INTERNATIONAL_SEASONS.get(code, [])
+            if seasons_list:
+                int_seasons.add(seasons_list[-1])
+
+    season = df[
+        (df["season"] == CURRENT_SEASON) |
+        (df["season"].isin(int_seasons))
+    ]
     cutoff = (pd.Timestamp.utcnow().tz_localize(None)
               - pd.Timedelta(hours=predict_mod.LIVE_WINDOW_HOURS))
     orphan = season[(season["datetime"] < cutoff) & (~season["is_result"].astype(bool))]
@@ -356,7 +385,25 @@ def main() -> int:
     league_metrics = metrics.get("leagues", {})
     league_meta = []
     for code, cfg in LEAGUES.items():
-        season_df = df[(df["league"] == code) & (df["season"] == CURRENT_SEASON)]
+        # Uluslararası turnuvalar kendi sezon listesini kullanıyor (yıl bazlı).
+        # Kulüp ligleri her zaman CURRENT_SEASON kullanıyor.
+        if cfg.get("is_national"):
+            from pipeline.config import INTERNATIONAL_SEASONS
+            int_seasons = INTERNATIONAL_SEASONS.get(code, [])
+            if int_seasons:
+                # En yakın geçmiş veya gelecek turnuva
+                active_season = int_seasons[-1]
+            else:
+                active_season = None
+            season_df = (
+                df[(df["league"] == code) & (df["season"] == active_season)]
+                if active_season else df[df["league"] == code].head(0)
+            )
+            current_season_label = season_label(active_season) if active_season else "—"
+        else:
+            season_df = df[(df["league"] == code) & (df["season"] == CURRENT_SEASON)]
+            current_season_label = season_label(CURRENT_SEASON)
+
         matches = by_league.get(code, [])
 
         # Oynanmış maçlara da FotMob takım kimliği: maç sayfasındaki olay
@@ -370,7 +417,7 @@ def main() -> int:
             "league": code,
             "name": cfg["name"],
             "flag": cfg["flag"],
-            "season": season_label(CURRENT_SEASON),
+            "season": current_season_label,
             "has_xg": cfg.get("has_xg", True),
             # Bu ligde modelin geriye dönük ölçülmüş performansı. Lig
             # kalitesi hakkında varsayım yapmak yerine rakamı gösteriyoruz.
@@ -389,10 +436,12 @@ def main() -> int:
             "name": cfg["name"],
             "flag": cfg["flag"],
             # 0/yok: üst çubukta gösterilen ana ligler. 1: Avrupa kupaları.
-            # 2: kupalara takım gönderen ligler. Yirmi yarışmayı üst çubuğa
-            # dizmek kullanılamaz olurdu; ikisi de menüden ulaşılabiliyor.
+            # 2: kupalara takım gönderen ligler. 3: milli takım yarışmaları.
+            # Yirmi yarışmayı üst çubuğa dizmek kullanılamaz olurdu; ikisi de
+            # menüden ulaşılabiliyor.
             "tier": cfg.get("tier", 0),
             "has_xg": cfg.get("has_xg", True),
+            "is_national": bool(cfg.get("is_national", False)),
             "upcoming": len(matches),
             "played": int(season_df["is_result"].sum()),
         })
