@@ -3325,23 +3325,34 @@ function liveDays() {
   // kullanılıyor ve orada tarih tireli biçimde duruyor. Aynı adı paylaşınca
   // şeridin günleri de çekilmeye çalışılıyor, canlı veri hiç gelmiyordu.
   const days = new Set();
+  for (const day of extraLiveDays) days.add(day);
   for (const node of document.querySelectorAll("[data-fmday]")) {
     if (node.dataset.fmday) days.add(node.dataset.fmday);
   }
   if (!days.size) days.add(todayKey().replaceAll("-", ""));
-  return [...days].slice(0, 3);   // makul üst sınır
+  return [...days].slice(-7);   // geçmiş günler sonucu gecikmeden tamamlasın
 }
 
 async function fetchLive() {
   const liveUrl = goalProxy
     ? `${goalProxy}?date=`
     : LIVE_URL;
-  const payloads = await Promise.all(
-    liveDays().map((day) =>
-      fetch(liveUrl + day, { cache: "no-store" })
-        .then((r) => (r.ok ? r.json() : null))
-        .catch(() => null)),
-  );
+  const payloads = await Promise.all(liveDays().map(async (day) => {
+    if (goalProxy) {
+      try {
+        const proxyResponse = await fetch(liveUrl + day, { cache: "no-store" });
+        if (proxyResponse.ok) return await proxyResponse.json();
+      } catch {
+        // Proxy geçici olarak erişilemezse doğrudan liste kaynağına düş.
+      }
+    }
+    try {
+      const response = await fetch(LIVE_URL + day, { cache: "no-store" });
+      return response.ok ? await response.json() : null;
+    } catch {
+      return null;
+    }
+  }));
   if (payloads.every((p) => !p)) throw new Error("canlı veri alınamadı");
 
   const map = new Map();
