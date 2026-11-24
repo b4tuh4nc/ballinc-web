@@ -40,6 +40,10 @@ class UnderstatError(RuntimeError):
     pass
 
 
+class UnderstatUnavailableError(UnderstatError):
+    pass
+
+
 def _get_json(url: str, retries: int = 3, backoff: float = 2.0) -> Any:
     last = None
     for attempt in range(retries):
@@ -52,7 +56,7 @@ def _get_json(url: str, retries: int = 3, backoff: float = 2.0) -> Any:
             last = f"{type(exc).__name__}: {exc}"
         if attempt < retries - 1:
             time.sleep(backoff * (attempt + 1))
-    raise UnderstatError(f"{url} alınamadı ({last})")
+    raise UnderstatUnavailableError(f"{url} alınamadı ({last})")
 
 
 def _num(value: Any) -> float | None:

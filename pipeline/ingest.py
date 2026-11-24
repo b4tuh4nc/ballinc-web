@@ -107,15 +107,21 @@ def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
                 archived += 1
                 continue
             label = f"{league} {season_label(season)}"
+            understat_unavailable = False
             try:
                 df = understat.fetch_league_season(league, season)
+            except understat.UnderstatUnavailableError as exc:
+                print(f"  ! {label:24s} Understat erişilemiyor, FotMob yedeği "
+                      f"deneniyor ({exc})")
+                df = None
+                understat_unavailable = True
             except understat.UnderstatError as exc:
                 print(f"  ✗ {label:24s} {exc}")
                 failures += 1
                 continue
 
             source = "Understat"
-            if df.empty:
+            if df is None or df.empty:
                 # Understat sezon başında fikstürü geç yayınlayabiliyor
                 # (Bundesliga 26/27 böyleydi). Oynanmamış maçlarda xG zaten
                 # yok, dolayısıyla FotMob'dan gelen fikstür hiçbir şey
@@ -124,11 +130,21 @@ def ingest_understat(leagues: list[str], seasons: list[str]) -> int:
                     df = fotmob.fetch_league_season(league, season)
                     source = "FotMob (yedek)"
                 except Exception as exc:
-                    print(f"  · {label:24s} fikstür yok, yedek kaynak da "
-                          f"başarısız ({type(exc).__name__})")
+                    if understat_unavailable:
+                        print(f"  ✗ {label:24s} Understat ve FotMob yedeği "
+                              f"başarısız ({type(exc).__name__}: {exc})")
+                        failures += 1
+                    else:
+                        print(f"  · {label:24s} fikstür yok, yedek kaynak da "
+                              f"başarısız ({type(exc).__name__})")
                     continue
                 if df.empty:
-                    print(f"  · {label:24s} fikstür henüz yayınlanmamış, atlandı")
+                    if understat_unavailable:
+                        print(f"  ✗ {label:24s} Understat erişilemiyor ve "
+                              "FotMob yedeğinde fikstür yok")
+                        failures += 1
+                    else:
+                        print(f"  · {label:24s} fikstür henüz yayınlanmamış, atlandı")
                     continue
 
             df = canonicalise(df, league)
