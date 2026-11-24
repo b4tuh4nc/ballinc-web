@@ -28,13 +28,14 @@ from scipy.stats import poisson
 from pipeline.config import MAX_GOALS
 
 DEFAULT_PARAMS = dict(
-    n_estimators=400,
-    learning_rate=0.03,
-    max_depth=4,        # 3→4: daha derin ağaçlar milli takım örüntülerini yakalar
+    n_estimators=350,
+    learning_rate=0.025,
+    max_depth=3,          # 3: aşırı öğrenmeyi (overfitting) engelleyen optimal ağaç derinliği
     subsample=0.8,
     colsample_bytree=0.7,
-    min_child_weight=20,  # 25→20: milli takım verisi daha seyrek, daha esnek
-    reg_lambda=3.0,
+    min_child_weight=25,  # Yaprak başına min ağırlık: uç skorları ezberlemeyi önler
+    reg_alpha=0.5,        # L1 regularizasyon (gürültülü öznitelikleri sıfırlar)
+    reg_lambda=4.5,       # L2 regularizasyon (yaprak ağırlıklarını dengeler)
     objective="count:poisson",
     random_state=42,
 )
@@ -64,6 +65,20 @@ def score_matrix(lam_home: np.ndarray, lam_away: np.ndarray, rho: float) -> np.n
     tau[:, 1, 0] = 1.0 + lam_away * rho
     tau[:, 1, 1] = 1.0 - rho
     matrix = np.clip(matrix * tau, 1e-12, None)
+
+    # Ridge Mantığı Entegrasyonu (Dinamik Beraberlik Güçlendirici):
+    # XGBoost'un bulduğu xG'ler arasındaki fark ne kadar küçükse (maç ne kadar başa başsa),
+    # beraberlik ihtimalini o kadar fazla güçlendiriyoruz. 
+    # Fark 0 ise maks güçlendirme, fark açıldıkça güçlendirme azalır ve 1.0'a (etkisiz) düşer.
+    diff = np.abs(lam_home - lam_away)
+    
+    # Fark 0 iken 1.70 katı, fark 0.6 iken 1.0 katı (etkisiz) olacak lineer bir çarpan.
+    dynamic_boost = np.clip(1.20 - (diff * (0.20 / 0.60)), 1.0, 1.20)
+    
+    idx = np.arange(MAX_GOALS)
+    # Numpy broadcasting: matrix[:, idx, idx] shape'i (N, MAX_GOALS)
+    # dynamic_boost shape'i (N,), bunu (N, 1) yapıp çaprazlara çarpıyoruz.
+    matrix[:, idx, idx] *= dynamic_boost[:, None]
 
     return matrix / matrix.sum(axis=(1, 2), keepdims=True)
 
@@ -188,10 +203,10 @@ class GoalModel:
         self.rho = 0.0
         self.features: list[str] = []
 
-    def fit(self, X: pd.DataFrame, home_goals, away_goals) -> "GoalModel":
+    def fit(self, X: pd.DataFrame, home_goals, away_goals, sample_weight: np.ndarray | None = None) -> "GoalModel":
         self.features = list(X.columns)
-        self.home.fit(X, home_goals)
-        self.away.fit(X, away_goals)
+        self.home.fit(X, home_goals, sample_weight=sample_weight)
+        self.away.fit(X, away_goals, sample_weight=sample_weight)
         lam_home, lam_away = self.lambdas(X)
         self.rho = fit_rho(lam_home, lam_away,
                            np.asarray(home_goals), np.asarray(away_goals))
@@ -204,10 +219,16 @@ class GoalModel:
             np.clip(self.away.predict(X), *LAMBDA_CLIP),
         )
 
-    def predict_markets(self, X: pd.DataFrame) -> tuple[dict[str, np.ndarray], np.ndarray]:
+    def predict_markets(self, X: pd.DataFrame, market_probs: np.ndarray | None = None,
+                        market_weight: float = 0.35) -> tuple[dict[str, np.ndarray], np.ndarray]:
         lam_home, lam_away = self.lambdas(X)
         matrix = score_matrix(lam_home, lam_away, self.rho)
-        return markets(matrix), matrix
+        m = markets(matrix)
+        if market_probs is not None:
+            # Piyasa konsensüsü füzyonu: %65 Model + %35 Piyasa Konsensüsü
+            m["result"] = (1.0 - market_weight) * m["result"] + market_weight * market_probs
+            m["result"] = m["result"] / m["result"].sum(axis=1, keepdims=True)
+        return m, matrix
 
     # ─── Kalıcılık ───────────────────────────────────────────────────────
     # Pickle değil JSON: pickle xgboost sürümü değişince sessizce bozulur,

@@ -198,9 +198,11 @@ def ingest_national(leagues: list[str]) -> int:
     failures = 0
     archived = 0
     for league in leagues:
-        for year in INTERNATIONAL_SEASONS.get(league, []):
+        years = INTERNATIONAL_SEASONS.get(league, [])
+        for year in years:
             path = raw_path(league, year)
-            if path.exists():
+            is_latest = (year == years[-1])
+            if path.exists() and not is_latest:
                 archived += 1
                 continue
             label = f"{league} {year}"

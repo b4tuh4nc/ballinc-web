@@ -108,6 +108,7 @@ def _past_predictions(season_df: pd.DataFrame, model: GoalModel) -> dict[str, di
         return {}
 
     probs, _ = model.predict_markets(played[model.features])
+    lam_home, lam_away = model.lambdas(played[model.features])
     out = {}
     for pos, row in enumerate(played.itertuples(index=False)):
         result = probs["result"][pos]
@@ -116,6 +117,11 @@ def _past_predictions(season_df: pd.DataFrame, model: GoalModel) -> dict[str, di
             "probs": [round(float(v), 4) for v in result],
             "pick": pick,
             "hit": bool(pick == int(row.result)),
+            "markets": {
+                "over_2_5": [round(float(v), 4) for v in probs["over_2_5"][pos]],
+                "btts": [round(float(v), 4) for v in probs["btts"][pos]],
+            },
+            "lambdas": [round(float(lam_home[pos]), 3), round(float(lam_away[pos]), 3)],
         }
     return out
 
@@ -132,8 +138,12 @@ def build_results(season_df: pd.DataFrame, predictions: dict | None = None) -> l
     for row in played.itertuples():
         round_no = getattr(row, "round", None)
         forecast = (predictions or {}).get(row.match_id)
+        markets = forecast.pop("markets", None) if forecast else None
+        lambdas = forecast.pop("lambdas", None) if forecast else None
         out.append({
             "forecast": forecast,
+            "markets": markets,
+            "lambdas": lambdas,
             "id": row.match_id,
             "kickoff": row.datetime.strftime("%Y-%m-%dT%H:%M:%SZ"),
             "round": int(round_no) if pd.notna(round_no) else None,

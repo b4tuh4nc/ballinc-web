@@ -1,1 +1,946 @@
-{"league":"UNL_D","name":"Uluslar Ligi D","flag":"🇪🇺","season":"26/27","has_xg":false,"metrics":{},"matches":[{"id":"UNL_D-2026_2027-nt8566-nt5799","league":"UNL_D","kickoff":"2026-10-01T16:00:00Z","round":3,"time_confirmed":true,"home":{"id":"nt8566","name":"Azerbaycan","short":"Azerbaijan","elo":1407,"stats":{"xgf":null,"xga":null,"gf":0.5,"ga":2.6,"pts":0.3},"fm":"8566"},"away":{"id":"nt5799","name":"Lihtenştayn","short":"Liechtenstein","elo":1328,"stats":{"xgf":null,"xga":null,"gf":0.1,"ga":3.6,"pts":0.0},"fm":"5799"},"lambdas":[2.023,0.447],"markets":{"result":[0.7456,0.1871,0.0673],"btts":[0.6837,0.3163],"over_1_5":[0.2901,0.7099],"over_2_5":[0.5515,0.4485],"over_3_5":[0.764,0.236]},"scenario":{"result":0,"over":0,"btts":0,"prob":0.3407,"score":[2,0],"score_prob":0.1731},"top_scores":[{"home":2,"away":0,"prob":0.1731},{"home":1,"away":0,"prob":0.1677},{"home":3,"away":0,"prob":0.1167},{"home":0,"away":0,"prob":0.088},{"home":1,"away":1,"prob":0.0799},{"home":2,"away":1,"prob":0.0774}]},{"id":"UNL_D-2026_2027-nt8495-nt507764","league":"UNL_D","kickoff":"2026-10-01T18:45:00Z","round":3,"time_confirmed":true,"home":{"id":"nt8495","name":"Malta","short":"Malta","elo":1437,"stats":{"xgf":null,"xga":null,"gf":0.6,"ga":2.0,"pts":0.9},"fm":"8495"},"away":{"id":"nt507764","name":"Cebelitarık","short":"Gibraltar","elo":1358,"stats":{"xgf":null,"xga":null,"gf":0.4,"ga":2.9,"pts":0.2},"fm":"507764"},"lambdas":[1.93,0.688],"markets":{"result":[0.6641,0.2158,0.1201],"btts":[0.5705,0.4295],"over_1_5":[0.2596,0.7404],"over_2_5":[0.5139,0.4861],"over_3_5":[0.7321,0.2679]},"scenario":{"result":0,"over":0,"btts":0,"prob":0.2724,"score":[1,0],"score_prob":0.1365},"top_scores":[{"home":1,"away":0,"prob":0.1365},{"home":2,"away":0,"prob":0.1359},{"home":1,"away":1,"prob":0.1012},{"home":2,"away":1,"prob":0.0935},{"home":3,"away":0,"prob":0.0874},{"home":0,"away":0,"prob":0.0773}]},{"id":"UNL_D-2026_2027-nt8566-nt8254","league":"UNL_D","kickoff":"2026-10-04T13:00:00Z","round":4,"time_confirmed":true,"home":{"id":"nt8566","name":"Azerbaycan","short":"Azerbaijan","elo":1407,"stats":{"xgf":null,"xga":null,"gf":0.5,"ga":2.6,"pts":0.3},"fm":"8566"},"away":{"id":"nt8254","name":"Litvanya","short":"Lithuania","elo":1408,"stats":{"xgf":null,"xga":null,"gf":0.9,"ga":1.6,"pts":0.7},"fm":"8254"},"lambdas":[1.365,1.124],"markets":{"result":[0.4175,0.2798,0.3027],"btts":[0.4917,0.5083],"over_1_5":[0.2839,0.7161],"over_2_5":[0.5467,0.4533],"over_3_5":[0.76,0.24]},"scenario":{"result":0,"over":0,"btts":0,"prob":0.1849,"score":[1,0],"score_prob":0.1076},"top_scores":[{"home":1,"away":1,"prob":0.1331},{"home":1,"away":0,"prob":0.1076},{"home":0,"away":0,"prob":0.0887},{"home":0,"away":1,"prob":0.0876},{"home":2,"away":1,"prob":0.0869},{"home":2,"away":0,"prob":0.0773}]},{"id":"UNL_D-2026_2027-nt8495-nt10045","league":"UNL_D","kickoff":"2026-10-04T16:00:00Z","round":4,"time_confirmed":true,"home":{"id":"nt8495","name":"Malta","short":"Malta","elo":1437,"stats":{"xgf":null,"xga":null,"gf":0.6,"ga":2.0,"pts":0.9},"fm":"8495"},"away":{"id":"nt10045","name":"Andorra","short":"Andorra","elo":1387,"stats":{"xgf":null,"xga":null,"gf":0.4,"ga":1.8,"pts":0.2},"fm":"10045"},"lambdas":[1.673,0.796],"markets":{"result":[0.5775,0.2512,0.1713],"btts":[0.5491,0.4509],"over_1_5":[0.2887,0.7113],"over_2_5":[0.5519,0.4481],"over_3_5":[0.7643,0.2357]},"scenario":{"result":0,"over":0,"btts":0,"prob":0.2551,"score":[1,0],"score_prob":0.1366},"top_scores":[{"home":1,"away":0,"prob":0.1366},{"home":2,"away":0,"prob":0.1185},{"home":1,"away":1,"prob":0.1178},{"home":2,"away":1,"prob":0.0943},{"home":0,"away":0,"prob":0.0898},{"home":3,"away":0,"prob":0.0661}]},{"id":"UNL_D-2026_2027-nt10045-nt507764","league":"UNL_D","kickoff":"2026-11-13T19:45:00Z","round":5,"time_confirmed":false,"home":{"id":"nt10045","name":"Andorra","short":"Andorra","elo":1387,"stats":{"xgf":null,"xga":null,"gf":0.4,"ga":1.8,"pts":0.2},"fm":"10045"},"away":{"id":"nt507764","name":"Cebelitarık","short":"Gibraltar","elo":1358,"stats":{"xgf":null,"xga":null,"gf":0.4,"ga":2.9,"pts":0.2},"fm":"507764"},"lambdas":[1.609,0.908],"markets":{"result":[0.533,0.2599,0.207],"btts":[0.5173,0.4827],"over_1_5":[0.2784,0.7216],"over_2_5":[0.5393,0.4607],"over_3_5":[0.7538,0.2462]},"scenario":{"result":0,"over":0,"btts":0,"prob":0.2289,"score":[1,0],"score_prob":0.1245},"top_scores":[{"home":1,"away":0,"prob":0.1245},{"home":1,"away":1,"prob":0.1232},{"home":2,"away":0,"prob":0.1044},{"home":2,"away":1,"prob":0.0949},{"home":0,"away":0,"prob":0.086},{"home":0,"away":1,"prob":0.068}]},{"id":"UNL_D-2026_2027-nt5799-nt8566","league":"UNL_D","kickoff":"2026-11-13T19:45:00Z","round":5,"time_confirmed":false,"home":{"id":"nt5799","name":"Lihtenştayn","short":"Liechtenstein","elo":1328,"stats":{"xgf":null,"xga":null,"gf":0.1,"ga":3.6,"pts":0.0},"fm":"5799"},"away":{"id":"nt8566","name":"Azerbaycan","short":"Azerbaijan","elo":1407,"stats":{"xgf":null,"xga":null,"gf":0.5,"ga":2.6,"pts":0.3},"fm":"8566"},"lambdas":[0.537,2.2],"markets":{"result":[0.0726,0.174,0.7534],"btts":[0.6268,0.3732],"over_1_5":[0.2385,0.7615],"over_2_5":[0.4845,0.5155],"over_3_5":[0.7058,0.2942]},"scenario":{"result":2,"over":0,"btts":0,"prob":0.2956,"score":[0,2],"score_prob":0.1567},"top_scores":[{"home":0,"away":2,"prob":0.1567},{"home":0,"away":1,"prob":0.139},{"home":0,"away":3,"prob":0.1149},{"home":1,"away":2,"prob":0.0842},{"home":1,"away":1,"prob":0.08},{"home":0,"away":0,"prob":0.0682}]},{"id":"UNL_D-2026_2027-nt8254-nt5799","league":"UNL_D","kickoff":"2026-11-16T17:00:00Z","round":6,"time_confirmed":false,"home":{"id":"nt8254","name":"Litvanya","short":"Lithuania","elo":1408,"stats":{"xgf":null,"xga":null,"gf":0.9,"ga":1.6,"pts":0.7},"fm":"8254"},"away":{"id":"nt5799","name":"Lihtenştayn","short":"Liechtenstein","elo":1328,"stats":{"xgf":null,"xga":null,"gf":0.1,"ga":3.6,"pts":0.0},"fm":"5799"},"lambdas":[2.016,0.424],"markets":{"result":[0.7504,0.1859,0.0636],"btts":[0.6972,0.3028],"over_1_5":[0.2966,0.7034],"over_2_5":[0.5594,0.4406],"over_3_5":[0.7704,0.2296]},"scenario":{"result":0,"over":0,"btts":0,"prob":0.3496,"score":[2,0],"score_prob":0.1771},"top_scores":[{"home":2,"away":0,"prob":0.1771},{"home":1,"away":0,"prob":0.1724},{"home":3,"away":0,"prob":0.119},{"home":0,"away":0,"prob":0.0905},{"home":1,"away":1,"prob":0.0779},{"home":2,"away":1,"prob":0.0751}]},{"id":"UNL_D-2026_2027-nt507764-nt8495","league":"UNL_D","kickoff":"2026-11-16T19:45:00Z","round":6,"time_confirmed":false,"home":{"id":"nt507764","name":"Cebelitarık","short":"Gibraltar","elo":1358,"stats":{"xgf":null,"xga":null,"gf":0.4,"ga":2.9,"pts":0.2},"fm":"507764"},"away":{"id":"nt8495","name":"Malta","short":"Malta","elo":1437,"stats":{"xgf":null,"xga":null,"gf":0.6,"ga":2.0,"pts":0.9},"fm":"8495"},"lambdas":[0.762,2.282],"markets":{"result":[0.105,0.1817,0.7133],"btts":[0.5173,0.4827],"over_1_5":[0.1889,0.8111],"over_2_5":[0.4133,0.5867],"over_3_5":[0.6372,0.3628]},"scenario":{"result":2,"over":1,"btts":1,"prob":0.298,"score":[1,2],"score_prob":0.0945},"top_scores":[{"home":0,"away":2,"prob":0.124},{"home":0,"away":1,"prob":0.1049},{"home":1,"away":2,"prob":0.0945},{"home":0,"away":3,"prob":0.0943},{"home":1,"away":1,"prob":0.0866},{"home":1,"away":3,"prob":0.0719}]}],"results":[{"forecast":{"probs":[0.3092,0.2897,0.4012],"pick":2,"hit":false},"id":"UNL_D-2026_2027-nt507764-nt10045","kickoff":"2026-09-27T16:00:00Z","round":2,"home":{"id":"nt507764","name":"Cebelitarık","short":"Gibraltar","fm":"507764"},"away":{"id":"nt10045","name":"Andorra","short":"Andorra","fm":"10045"},"score":[0,0],"xg":null},{"forecast":{"probs":[0.4811,0.2685,0.2504],"pick":0,"hit":false},"id":"UNL_D-2026_2027-nt8254-nt8566","kickoff":"2026-09-27T13:00:00Z","round":2,"home":{"id":"nt8254","name":"Litvanya","short":"Lithuania","fm":"8254"},"away":{"id":"nt8566","name":"Azerbaycan","short":"Azerbaijan","fm":"8566"},"score":[1,1],"xg":null},{"forecast":{"probs":[0.0886,0.2111,0.7003],"pick":2,"hit":true},"id":"UNL_D-2026_2027-nt5799-nt8254","kickoff":"2026-09-24T18:45:00Z","round":1,"home":{"id":"nt5799","name":"Lihtenştayn","short":"Liechtenstein","fm":"5799"},"away":{"id":"nt8254","name":"Litvanya","short":"Lithuania","fm":"8254"},"score":[0,2],"xg":null},{"forecast":{"probs":[0.3234,0.2921,0.3845],"pick":2,"hit":true},"id":"UNL_D-2026_2027-nt10045-nt8495","kickoff":"2026-09-24T16:00:00Z","round":1,"home":{"id":"nt10045","name":"Andorra","short":"Andorra","fm":"10045"},"away":{"id":"nt8495","name":"Malta","short":"Malta","fm":"8495"},"score":[1,2],"xg":null}],"standings":[{"team_id":"nt8254","team":"Litvanya","short":"Lithuania","played":2,"w":1,"d":1,"l":0,"gf":3,"ga":1,"gd":2,"points":4,"xgf":null,"xga":null,"form":["G","B"],"rank":1},{"team_id":"nt8495","team":"Malta","short":"Malta","played":1,"w":1,"d":0,"l":0,"gf":2,"ga":1,"gd":1,"points":3,"xgf":null,"xga":null,"form":["G"],"rank":2},{"team_id":"nt8566","team":"Azerbaycan","short":"Azerbaijan","played":1,"w":0,"d":1,"l":0,"gf":1,"ga":1,"gd":0,"points":1,"xgf":null,"xga":null,"form":["B"],"rank":3},{"team_id":"nt507764","team":"Cebelitarık","short":"Gibraltar","played":1,"w":0,"d":1,"l":0,"gf":0,"ga":0,"gd":0,"points":1,"xgf":null,"xga":null,"form":["B"],"rank":4},{"team_id":"nt10045","team":"Andorra","short":"Andorra","played":2,"w":0,"d":1,"l":1,"gf":1,"ga":2,"gd":-1,"points":1,"xgf":null,"xga":null,"form":["M","B"],"rank":5},{"team_id":"nt5799","team":"Lihtenştayn","short":"Liechtenstein","played":1,"w":0,"d":0,"l":1,"gf":0,"ga":2,"gd":-2,"points":0,"xgf":null,"xga":null,"form":["M"],"rank":6}]}
+﻿{
+    "league": "UNL_D",
+    "name": "Uluslar Ligi D",
+    "flag": "🇪🇺",
+    "season": "26/27",
+    "has_xg": false,
+    "metrics": {},
+    "matches": [
+        {
+            "id": "UNL_D-2026_2027-nt5799-nt8566",
+            "league": "UNL_D",
+            "kickoff": "2026-11-13T19:45:00Z",
+            "round": 5,
+            "time_confirmed": false,
+            "home": {
+                "id": "nt5799",
+                "name": "Lihtenştayn",
+                "short": "Liechtenstein",
+                "elo": 1331,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0,
+                    "ga": 3.3,
+                    "pts": 0.1
+                },
+                "fm": "5799"
+            },
+            "away": {
+                "id": "nt8566",
+                "name": "Azerbaycan",
+                "short": "Azerbaijan",
+                "elo": 1404,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0.4,
+                    "ga": 2.3,
+                    "pts": 0.4
+                },
+                "fm": "8566"
+            },
+            "lambdas": [
+                0.666,
+                2.115
+            ],
+            "markets": {
+                "result": [
+                    0.1007,
+                    0.1931,
+                    0.7062
+                ],
+                "btts": [
+                    0.5683,
+                    0.4317
+                ],
+                "over_1_5": [
+                    0.2303,
+                    0.7697
+                ],
+                "over_2_5": [
+                    0.4739,
+                    0.5261
+                ],
+                "over_3_5": [
+                    0.6961,
+                    0.3039
+                ]
+            },
+            "scenario": {
+                "result": 2,
+                "over": 0,
+                "btts": 0,
+                "prob": 0.2657,
+                "score": [
+                    0,
+                    2
+                ],
+                "score_prob": 0.1386
+            },
+            "top_scores": [
+                {
+                    "home": 0,
+                    "away": 2,
+                    "prob": 0.1386
+                },
+                {
+                    "home": 0,
+                    "away": 1,
+                    "prob": 0.1271
+                },
+                {
+                    "home": 0,
+                    "away": 3,
+                    "prob": 0.0977
+                },
+                {
+                    "home": 1,
+                    "away": 2,
+                    "prob": 0.0923
+                },
+                {
+                    "home": 1,
+                    "away": 1,
+                    "prob": 0.0912
+                },
+                {
+                    "home": 0,
+                    "away": 0,
+                    "prob": 0.0659
+                }
+            ]
+        },
+        {
+            "id": "UNL_D-2026_2027-nt10045-nt507764",
+            "league": "UNL_D",
+            "kickoff": "2026-11-13T19:45:00Z",
+            "round": 5,
+            "time_confirmed": false,
+            "home": {
+                "id": "nt10045",
+                "name": "Andorra",
+                "short": "Andorra",
+                "elo": 1387,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0.4,
+                    "ga": 1.8,
+                    "pts": 0.2
+                },
+                "fm": "10045"
+            },
+            "away": {
+                "id": "nt507764",
+                "name": "Cebelitarık",
+                "short": "Gibraltar",
+                "elo": 1360,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0.4,
+                    "ga": 2.9,
+                    "pts": 0.2
+                },
+                "fm": "507764"
+            },
+            "lambdas": [
+                1.609,
+                0.92
+            ],
+            "markets": {
+                "result": [
+                    0.5301,
+                    0.26,
+                    0.21
+                ],
+                "btts": [
+                    0.5135,
+                    0.4865
+                ],
+                "over_1_5": [
+                    0.276,
+                    0.724
+                ],
+                "over_2_5": [
+                    0.5363,
+                    0.4637
+                ],
+                "over_3_5": [
+                    0.7513,
+                    0.2487
+                ]
+            },
+            "scenario": {
+                "result": 0,
+                "over": 0,
+                "btts": 0,
+                "prob": 0.2262,
+                "score": [
+                    1,
+                    0
+                ],
+                "score_prob": 0.123
+            },
+            "top_scores": [
+                {
+                    "home": 1,
+                    "away": 1,
+                    "prob": 0.1233
+                },
+                {
+                    "home": 1,
+                    "away": 0,
+                    "prob": 0.123
+                },
+                {
+                    "home": 2,
+                    "away": 0,
+                    "prob": 0.1032
+                },
+                {
+                    "home": 2,
+                    "away": 1,
+                    "prob": 0.095
+                },
+                {
+                    "home": 0,
+                    "away": 0,
+                    "prob": 0.085
+                },
+                {
+                    "home": 0,
+                    "away": 1,
+                    "prob": 0.068
+                }
+            ]
+        },
+        {
+            "id": "UNL_D-2026_2027-nt8254-nt5799",
+            "league": "UNL_D",
+            "kickoff": "2026-11-16T17:00:00Z",
+            "round": 6,
+            "time_confirmed": false,
+            "home": {
+                "id": "nt8254",
+                "name": "Litvanya",
+                "short": "Lithuania",
+                "elo": 1408,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0.9,
+                    "ga": 1.6,
+                    "pts": 0.7
+                },
+                "fm": "8254"
+            },
+            "away": {
+                "id": "nt5799",
+                "name": "Lihtenştayn",
+                "short": "Liechtenstein",
+                "elo": 1331,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0,
+                    "ga": 3.3,
+                    "pts": 0.1
+                },
+                "fm": "5799"
+            },
+            "lambdas": [
+                1.948,
+                0.566
+            ],
+            "markets": {
+                "result": [
+                    0.6997,
+                    0.206,
+                    0.0943
+                ],
+                "btts": [
+                    0.6253,
+                    0.3747
+                ],
+                "over_1_5": [
+                    0.2803,
+                    0.7197
+                ],
+                "over_2_5": [
+                    0.5401,
+                    0.4599
+                ],
+                "over_3_5": [
+                    0.7545,
+                    0.2455
+                ]
+            },
+            "scenario": {
+                "result": 0,
+                "over": 0,
+                "btts": 0,
+                "prob": 0.3072,
+                "score": [
+                    1,
+                    0
+                ],
+                "score_prob": 0.1536
+            },
+            "top_scores": [
+                {
+                    "home": 1,
+                    "away": 0,
+                    "prob": 0.1536
+                },
+                {
+                    "home": 2,
+                    "away": 0,
+                    "prob": 0.1536
+                },
+                {
+                    "home": 3,
+                    "away": 0,
+                    "prob": 0.0997
+                },
+                {
+                    "home": 1,
+                    "away": 1,
+                    "prob": 0.0933
+                },
+                {
+                    "home": 2,
+                    "away": 1,
+                    "prob": 0.0869
+                },
+                {
+                    "home": 0,
+                    "away": 0,
+                    "prob": 0.0849
+                }
+            ]
+        },
+        {
+            "id": "UNL_D-2026_2027-nt507764-nt8495",
+            "league": "UNL_D",
+            "kickoff": "2026-11-16T19:45:00Z",
+            "round": 6,
+            "time_confirmed": false,
+            "home": {
+                "id": "nt507764",
+                "name": "Cebelitarık",
+                "short": "Gibraltar",
+                "elo": 1360,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0.4,
+                    "ga": 2.9,
+                    "pts": 0.2
+                },
+                "fm": "507764"
+            },
+            "away": {
+                "id": "nt8495",
+                "name": "Malta",
+                "short": "Malta",
+                "elo": 1434,
+                "stats": {
+                    "xgf": null,
+                    "xga": null,
+                    "gf": 0.7,
+                    "ga": 2.1,
+                    "pts": 0.9
+                },
+                "fm": "8495"
+            },
+            "lambdas": [
+                0.802,
+                2.165
+            ],
+            "markets": {
+                "result": [
+                    0.1217,
+                    0.1959,
+                    0.6824
+                ],
+                "btts": [
+                    0.5077,
+                    0.4923
+                ],
+                "over_1_5": [
+                    0.2001,
+                    0.7999
+                ],
+                "over_2_5": [
+                    0.4306,
+                    0.5694
+                ],
+                "over_3_5": [
+                    0.6546,
+                    0.3454
+                ]
+            },
+            "scenario": {
+                "result": 2,
+                "over": 1,
+                "btts": 1,
+                "prob": 0.2894,
+                "score": [
+                    1,
+                    2
+                ],
+                "score_prob": 0.0967
+            },
+            "top_scores": [
+                {
+                    "home": 0,
+                    "away": 2,
+                    "prob": 0.1206
+                },
+                {
+                    "home": 0,
+                    "away": 1,
+                    "prob": 0.1074
+                },
+                {
+                    "home": 1,
+                    "away": 2,
+                    "prob": 0.0967
+                },
+                {
+                    "home": 1,
+                    "away": 1,
+                    "prob": 0.0933
+                },
+                {
+                    "home": 0,
+                    "away": 3,
+                    "prob": 0.0871
+                },
+                {
+                    "home": 1,
+                    "away": 3,
+                    "prob": 0.0698
+                }
+            ]
+        }
+    ],
+    "results": [
+        {
+            "forecast": {
+                "probs": [
+                    0.5889,
+                    0.2454,
+                    0.1657
+                ],
+                "pick": 0,
+                "hit": true
+            },
+            "id": "UNL_D-2026_2027-nt8495-nt10045",
+            "kickoff": "2026-10-04T16:00:00Z",
+            "round": 4,
+            "home": {
+                "id": "nt8495",
+                "name": "Malta",
+                "short": "Malta",
+                "fm": "8495"
+            },
+            "away": {
+                "id": "nt10045",
+                "name": "Andorra",
+                "short": "Andorra",
+                "fm": "10045"
+            },
+            "score": [
+                1,
+                0
+            ],
+            "xg": null,
+            "markets": {
+                "result": [
+                    0.5889,
+                    0.2454,
+                    0.1657
+                ],
+                "btts": [
+                    0.5441,
+                    0.4559
+                ],
+                "over_1_5": [
+                    0.2788,
+                    0.7212
+                ],
+                "over_2_5": [
+                    0.5394,
+                    0.4606
+                ],
+                "over_3_5": [
+                    0.7539,
+                    0.2461
+                ]
+            },
+            "lambdas": [
+                1.721,
+                0.797
+            ],
+            "scenario": {
+                "result": 0,
+                "over": 0,
+                "btts": 0,
+                "prob": 0.2532,
+                "score": [
+                    1,
+                    0
+                ],
+                "score_prob": 0.1338
+            },
+            "top_scores": [
+                {
+                    "home": 1,
+                    "away": 0,
+                    "prob": 0.1338
+                },
+                {
+                    "home": 2,
+                    "away": 0,
+                    "prob": 0.1194
+                },
+                {
+                    "home": 1,
+                    "away": 1,
+                    "prob": 0.1156
+                },
+                {
+                    "home": 2,
+                    "away": 1,
+                    "prob": 0.0951
+                },
+                {
+                    "home": 0,
+                    "away": 0,
+                    "prob": 0.0856
+                },
+                {
+                    "home": 3,
+                    "away": 0,
+                    "prob": 0.0685
+                }
+            ]
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.3736,
+                    0.356,
+                    0.2704
+                ],
+                "pick": 0,
+                "hit": true
+            },
+            "id": "UNL_D-2026_2027-nt8566-nt8254",
+            "kickoff": "2026-10-04T13:00:00Z",
+            "round": 4,
+            "home": {
+                "id": "nt8566",
+                "name": "Azerbaycan",
+                "short": "Azerbaijan",
+                "fm": "8566"
+            },
+            "away": {
+                "id": "nt8254",
+                "name": "Litvanya",
+                "short": "Lithuania",
+                "fm": "8254"
+            },
+            "score": [
+                1,
+                0
+            ],
+            "xg": null,
+            "markets": {
+                "result": [
+                    0.3736,
+                    0.356,
+                    0.2704
+                ],
+                "btts": [
+                    0.4757,
+                    0.5243
+                ],
+                "over_1_5": [
+                    0.2896,
+                    0.7104
+                ],
+                "over_2_5": [
+                    0.5753,
+                    0.4247
+                ],
+                "over_3_5": [
+                    0.7657,
+                    0.2343
+                ]
+            },
+            "lambdas": [
+                1.36,
+                1.118
+            ],
+            "scenario": {
+                "result": 1,
+                "over": 0,
+                "btts": 1,
+                "prob": 0.1692,
+                "score": [
+                    1,
+                    1
+                ],
+                "score_prob": 0.1692
+            },
+            "top_scores": [
+                {
+                    "home": 1,
+                    "away": 1,
+                    "prob": 0.1692
+                },
+                {
+                    "home": 0,
+                    "away": 0,
+                    "prob": 0.1138
+                },
+                {
+                    "home": 1,
+                    "away": 0,
+                    "prob": 0.097
+                },
+                {
+                    "home": 0,
+                    "away": 1,
+                    "prob": 0.0788
+                },
+                {
+                    "home": 2,
+                    "away": 1,
+                    "prob": 0.0776
+                },
+                {
+                    "home": 2,
+                    "away": 0,
+                    "prob": 0.0694
+                }
+            ]
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.6641,
+                    0.2158,
+                    0.1201
+                ],
+                "pick": 0,
+                "hit": false
+            },
+            "id": "UNL_D-2026_2027-nt8495-nt507764",
+            "kickoff": "2026-10-01T18:45:00Z",
+            "round": 3,
+            "home": {
+                "id": "nt8495",
+                "name": "Malta",
+                "short": "Malta",
+                "fm": "8495"
+            },
+            "away": {
+                "id": "nt507764",
+                "name": "Cebelitarık",
+                "short": "Gibraltar",
+                "fm": "507764"
+            },
+            "score": [
+                1,
+                1
+            ],
+            "xg": null
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.7456,
+                    0.1871,
+                    0.0673
+                ],
+                "pick": 0,
+                "hit": false
+            },
+            "id": "UNL_D-2026_2027-nt8566-nt5799",
+            "kickoff": "2026-10-01T16:00:00Z",
+            "round": 3,
+            "home": {
+                "id": "nt8566",
+                "name": "Azerbaycan",
+                "short": "Azerbaijan",
+                "fm": "8566"
+            },
+            "away": {
+                "id": "nt5799",
+                "name": "Lihtenştayn",
+                "short": "Liechtenstein",
+                "fm": "5799"
+            },
+            "score": [
+                0,
+                0
+            ],
+            "xg": null
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.2714,
+                    0.3764,
+                    0.3522
+                ],
+                "pick": 1,
+                "hit": true
+            },
+            "id": "UNL_D-2026_2027-nt507764-nt10045",
+            "kickoff": "2026-09-27T16:00:00Z",
+            "round": 2,
+            "home": {
+                "id": "nt507764",
+                "name": "Cebelitarık",
+                "short": "Gibraltar",
+                "fm": "507764"
+            },
+            "away": {
+                "id": "nt10045",
+                "name": "Andorra",
+                "short": "Andorra",
+                "fm": "10045"
+            },
+            "score": [
+                0,
+                0
+            ],
+            "xg": null
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.4655,
+                    0.2922,
+                    0.2423
+                ],
+                "pick": 0,
+                "hit": false
+            },
+            "id": "UNL_D-2026_2027-nt8254-nt8566",
+            "kickoff": "2026-09-27T13:00:00Z",
+            "round": 2,
+            "home": {
+                "id": "nt8254",
+                "name": "Litvanya",
+                "short": "Lithuania",
+                "fm": "8254"
+            },
+            "away": {
+                "id": "nt8566",
+                "name": "Azerbaycan",
+                "short": "Azerbaijan",
+                "fm": "8566"
+            },
+            "score": [
+                1,
+                1
+            ],
+            "xg": null
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.0886,
+                    0.2111,
+                    0.7003
+                ],
+                "pick": 2,
+                "hit": true
+            },
+            "id": "UNL_D-2026_2027-nt5799-nt8254",
+            "kickoff": "2026-09-24T18:45:00Z",
+            "round": 1,
+            "home": {
+                "id": "nt5799",
+                "name": "Lihtenştayn",
+                "short": "Liechtenstein",
+                "fm": "5799"
+            },
+            "away": {
+                "id": "nt8254",
+                "name": "Litvanya",
+                "short": "Lithuania",
+                "fm": "8254"
+            },
+            "score": [
+                0,
+                2
+            ],
+            "xg": null
+        },
+        {
+            "forecast": {
+                "probs": [
+                    0.2783,
+                    0.3909,
+                    0.3308
+                ],
+                "pick": 1,
+                "hit": false
+            },
+            "id": "UNL_D-2026_2027-nt10045-nt8495",
+            "kickoff": "2026-09-24T16:00:00Z",
+            "round": 1,
+            "home": {
+                "id": "nt10045",
+                "name": "Andorra",
+                "short": "Andorra",
+                "fm": "10045"
+            },
+            "away": {
+                "id": "nt8495",
+                "name": "Malta",
+                "short": "Malta",
+                "fm": "8495"
+            },
+            "score": [
+                1,
+                2
+            ],
+            "xg": null
+        }
+    ],
+    "standings": [
+        {
+            "team_id": "nt8495",
+            "team": "Malta",
+            "short": "Malta",
+            "played": 3,
+            "w": 2,
+            "d": 1,
+            "l": 0,
+            "gf": 4,
+            "ga": 2,
+            "gd": 2,
+            "points": 7,
+            "xgf": null,
+            "xga": null,
+            "form": [
+                "G",
+                "B",
+                "G"
+            ],
+            "rank": 1
+        },
+        {
+            "team_id": "nt8566",
+            "team": "Azerbaycan",
+            "short": "Azerbaijan",
+            "played": 3,
+            "w": 1,
+            "d": 2,
+            "l": 0,
+            "gf": 2,
+            "ga": 1,
+            "gd": 1,
+            "points": 5,
+            "xgf": null,
+            "xga": null,
+            "form": [
+                "B",
+                "B",
+                "G"
+            ],
+            "rank": 2
+        },
+        {
+            "team_id": "nt8254",
+            "team": "Litvanya",
+            "short": "Lithuania",
+            "played": 3,
+            "w": 1,
+            "d": 1,
+            "l": 1,
+            "gf": 3,
+            "ga": 2,
+            "gd": 1,
+            "points": 4,
+            "xgf": null,
+            "xga": null,
+            "form": [
+                "G",
+                "B",
+                "M"
+            ],
+            "rank": 3
+        },
+        {
+            "team_id": "nt507764",
+            "team": "Cebelitarık",
+            "short": "Gibraltar",
+            "played": 2,
+            "w": 0,
+            "d": 2,
+            "l": 0,
+            "gf": 1,
+            "ga": 1,
+            "gd": 0,
+            "points": 2,
+            "xgf": null,
+            "xga": null,
+            "form": [
+                "B",
+                "B"
+            ],
+            "rank": 4
+        },
+        {
+            "team_id": "nt10045",
+            "team": "Andorra",
+            "short": "Andorra",
+            "played": 3,
+            "w": 0,
+            "d": 1,
+            "l": 2,
+            "gf": 1,
+            "ga": 3,
+            "gd": -2,
+            "points": 1,
+            "xgf": null,
+            "xga": null,
+            "form": [
+                "M",
+                "B",
+                "M"
+            ],
+            "rank": 5
+        },
+        {
+            "team_id": "nt5799",
+            "team": "Lihtenştayn",
+            "short": "Liechtenstein",
+            "played": 2,
+            "w": 0,
+            "d": 1,
+            "l": 1,
+            "gf": 0,
+            "ga": 2,
+            "gd": -2,
+            "points": 1,
+            "xgf": null,
+            "xga": null,
+            "form": [
+                "M",
+                "B"
+            ],
+            "rank": 6
+        }
+    ]
+}
