@@ -46,6 +46,14 @@ jobs:
       - name: Takım eşlemesini tazele
         run: python -m pipeline.crosswalk --lenient
 
+      # FotMob maç detayları, Understat'ın erişilemediği liglerde xG yedeği.
+      # Bütçe, son oynanan maçlardaki xG'yi düzenli olarak güncel tutar.
+      - name: Maç detaylarından xG'yi tamamla
+        continue-on-error: true
+        run: >-
+          python -m pipeline.details --budget 150 --since 2026_2027
+          --leagues EPL La_Liga Serie_A Bundesliga Ligue_1
+
       - name: Hafta numaraları
         run: python -m pipeline.rounds
 
@@ -107,6 +115,7 @@ jobs:
         run: |
           git config user.name "ballinc-bot"
           git config user.email "actions@github.com"
+          git add -f data/details
           git add web/data web/assets models/metrics.json \
                   data/predictions.sqlite data/team_crosswalk.json \
                   data/market_odds.json

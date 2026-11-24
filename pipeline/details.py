@@ -12,6 +12,9 @@ istekle şunları birden veriyor:
     infoBox.Attendance        → seyirci sayısı
     infoBox.Referee           → hakem
 
+Önbellekteki xG, `features.load_raw` tarafından eşleşen maçlara yedek olarak
+eklenir; ham kaynakta bulunan xG değerleri korunur.
+
 Yani "kadro değeri", "ilk 11 gücü" ve "teknik direktör değişimi" için ayrı
 bir kaynak (Transfermarkt) gerekmiyor; hepsi aynı istekten çıkıyor.
 

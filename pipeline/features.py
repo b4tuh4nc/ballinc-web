@@ -62,7 +62,33 @@ def load_raw() -> pd.DataFrame:
 
     df = pd.concat(frames, ignore_index=True)
     df["datetime"] = pd.to_datetime(df["datetime"])
+    from pipeline.details import load_all
+    df = merge_detail_xg(df, load_all())
     return df.sort_values(["datetime", "match_id"]).reset_index(drop=True)
+
+
+def merge_detail_xg(matches: pd.DataFrame, details: pd.DataFrame) -> pd.DataFrame:
+    """FotMob maç detaylarından xG ekle; mevcut kaynak xG'sini koru."""
+    if details.empty:
+        return matches
+
+    detail_xg = details[["match_id", "home_xg", "away_xg"]].copy()
+    detail_xg = detail_xg.dropna(subset=["home_xg", "away_xg"])
+    detail_xg = detail_xg.drop_duplicates("match_id", keep="last")
+    if detail_xg.empty:
+        return matches
+
+    merged = matches.merge(
+        detail_xg, on="match_id", how="left", suffixes=("", "_detail"),
+        validate="one_to_one",
+    )
+    for column in ("home_xg", "away_xg"):
+        detail_column = f"{column}_detail"
+        merged[column] = merged[column].fillna(merged[detail_column])
+        merged = merged.drop(columns=detail_column)
+    if "has_xg" in merged:
+        merged["has_xg"] = merged["home_xg"].notna() & merged["away_xg"].notna()
+    return merged
 
 
 # ─── Takım-maç uzun formu ────────────────────────────────────────────────────

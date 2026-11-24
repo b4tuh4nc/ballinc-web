@@ -110,3 +110,26 @@ def test_no_leak_fields_present(built: pd.DataFrame) -> None:
 
     assert not (LEAK_FIELDS & set(built.columns))
     assert not (LEAK_FIELDS & set(features.feature_columns(built)))
+
+
+def test_fotmob_detail_xg_fills_missing_values_without_overwriting_source():
+    matches = pd.DataFrame({
+        "match_id": ["understat", "fallback", "no-detail"],
+        "home_xg": [1.1, np.nan, np.nan],
+        "away_xg": [0.8, np.nan, np.nan],
+        "has_xg": [True, False, False],
+    })
+    details = pd.DataFrame({
+        "match_id": ["understat", "fallback", "no-detail"],
+        "home_xg": [0.4, 1.7, 0.9],
+        "away_xg": [0.6, 0.5, np.nan],
+    })
+
+    enriched = features.merge_detail_xg(matches, details).set_index("match_id")
+
+    assert enriched.loc["understat", ["home_xg", "away_xg"]].tolist() == [1.1, 0.8]
+    assert enriched.loc["fallback", ["home_xg", "away_xg"]].tolist() == [1.7, 0.5]
+    assert enriched.loc["no-detail", ["home_xg", "away_xg"]].isna().all()
+    assert enriched["has_xg"].to_dict() == {
+        "understat": True, "fallback": True, "no-detail": False,
+    }
