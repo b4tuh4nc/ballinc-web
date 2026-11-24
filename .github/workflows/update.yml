@@ -52,7 +52,7 @@ jobs:
         continue-on-error: true
         run: >-
           python -m pipeline.details --budget 150 --since 2026_2027
-          --leagues EPL La_Liga Serie_A Bundesliga Ligue_1
+          --leagues EPL La_Liga Serie_A Bundesliga Ligue_1 UCL
 
       - name: Hafta numaraları
         run: python -m pipeline.rounds
