@@ -84,7 +84,9 @@ def merge_detail_xg(matches: pd.DataFrame, details: pd.DataFrame) -> pd.DataFram
     )
     for column in ("home_xg", "away_xg"):
         detail_column = f"{column}_detail"
-        merged[column] = merged[column].fillna(merged[detail_column])
+        merged[column] = merged[column].where(
+            merged[column].notna(), merged[detail_column],
+        )
         merged = merged.drop(columns=detail_column)
     if "has_xg" in merged:
         merged["has_xg"] = merged["home_xg"].notna() & merged["away_xg"].notna()
