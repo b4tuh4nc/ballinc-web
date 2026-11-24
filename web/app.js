@@ -2951,14 +2951,12 @@ const onContentClick = (event) => {
     const set = hiddenLeagues();
     if (set.has(code)) set.delete(code); else set.add(code);
     setHiddenLeagues(set);
-    state.day = null; state.stripStart = null;
     return route();
   }
 
   if (event.target.closest("[data-league-all]")) {
     event.insideFilter = true;
     setHiddenLeagues(new Set());
-    state.day = null; state.stripStart = null;
     return route();
   }
 
@@ -2969,7 +2967,6 @@ const onContentClick = (event) => {
     // Tıklama işleyicisi eşzamanlı; meta zaten önbellekte ama söz veriyor.
     return getJSON("meta.json").then((meta) => {
       setHiddenLeagues(new Set(meta.leagues.filter((l) => l.tier).map((l) => l.code)));
-      state.day = null; state.stripStart = null;
       return route();
     });
   }
